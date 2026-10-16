@@ -18,6 +18,7 @@ try
     {
         "devices" => Devices(),
         "info" => Info(args),
+        "convert-sng" => Glosa.Cli.SngCommand.Run(args),
         "play" => Play(args),
         "detect" => Detect(args),
         "jitter" => Glosa.Cli.Jitter.Run(args),
@@ -37,6 +38,7 @@ static int Usage()
 
           glosa devices
           glosa info <file.mid>
+          glosa convert-sng <file.sng> [output.mid]
           glosa play <file.mid> [options]
           glosa detect <file.DEF | define.yaml> <file.mid>... [options]
                                                   auto-detect each song's module
