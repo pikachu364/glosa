@@ -16,6 +16,15 @@ internal static class SngCommand
             ? args[2]
             : Path.ChangeExtension(inputPath, ".mid");
 
+        StringComparison pathComparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (Path.GetFullPath(inputPath).Equals(Path.GetFullPath(outputPath), pathComparison))
+        {
+            Console.Error.WriteLine("error: output path must be different from the input SNG path");
+            return 1;
+        }
+
         byte[] source = File.ReadAllBytes(inputPath);
         byte[] midi = Glosa.Core.Smf.SngConverter.ToSmf(source);
         File.WriteAllBytes(outputPath, midi);
