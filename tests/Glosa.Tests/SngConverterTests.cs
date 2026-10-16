@@ -25,6 +25,22 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void RejectsTruncatedPartBlockTable()
+    {
+        byte[] data = new byte[256];
+        Encoding.ASCII.GetBytes("BALLADE SONG").CopyTo(data, 0);
+        Encoding.ASCII.GetBytes("3.00").CopyTo(data, 18);
+
+        // Declare non-empty conductor and part blocks, but provide no room for
+        // the complete part headers or their event streams.
+        int table = 0x46;
+        for (int i = 0; i <= 10; i++)
+            BinaryPrimitives.WriteUInt32LittleEndian(data.AsSpan(table + 4 * i), 100);
+
+        Assert.Throws<InvalidDataException>(() => SngConverter.ToSmf(data));
+    }
+
+    [Fact]
     public void ConvertsMinimalVersionThreeSongAndReaderRecognizesIt()
     {
         byte[] sng = CreateMinimalSong("3.00", 10);
