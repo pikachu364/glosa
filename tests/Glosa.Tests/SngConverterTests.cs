@@ -70,17 +70,19 @@ public class SngConverterTests
         int firstTempoUs = 60_000_000 / 114;
         int secondTempoUs = 60_000_000 / 135;
 
-        Assert.Contains(TempoEvent(firstTempoUs), FindWindows(smf));
-        Assert.Contains(TempoEvent(secondTempoUs), FindWindows(smf));
+        Assert.True(ContainsSequence(smf, TempoEvent(firstTempoUs)));
+        Assert.True(ContainsSequence(smf, TempoEvent(secondTempoUs)));
         // The second change is at source tick 192, plus the one-bar lead-in
         // (192 ticks), so its delta in the conductor track is 384 ticks.
-        Assert.Contains(new byte[] { 0x83, 0x00 }.AsSpan().ToArray(), FindWindows(smf));
+        Assert.True(ContainsSequence(smf, [0x83, 0x00, 0xFF, 0x51, 0x03]));
     }
 
-    private static IEnumerable<byte[]> FindWindows(byte[] data)
+    private static bool ContainsSequence(byte[] data, byte[] expected)
     {
-        for (int i = 0; i < data.Length; i++)
-            yield return data.AsSpan(i, Math.Min(6, data.Length - i)).ToArray();
+        for (int i = 0; i <= data.Length - expected.Length; i++)
+            if (data.AsSpan(i, expected.Length).SequenceEqual(expected))
+                return true;
+        return false;
     }
 
     private static byte[] TempoEvent(int microsecondsPerQuarter)
