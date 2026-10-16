@@ -1,41 +1,31 @@
-# Ballade SNG version test data
+# Ballade SNG Version Test Data
 
-This directory tracks the locally available real-world SNG samples used during development of Ballade SNG conversion.
+This directory contains original Roland/Boss Ballade SNG test fixtures for version-specific converter compatibility testing.
 
-## Why the binary files are not stored here
+## Test fixtures
 
-The sample files are currently kept outside the repository (for example, under `R:\\testdata`). Permission to redistribute them publicly has not been confirmed, so this repository records metadata only. Do not commit the SNG binaries unless redistribution permission is confirmed.
-
-## Current sample matrix
-
-| File | Reported Ballade version | Size | Status |
+| File | Reported Ballade version | Size | SHA-256 |
 |---|---:|---:|---|
-| `SHIZUME0.SNG` | 2.00 | 75,597 bytes | Conversion and read-back validation pending |
-| `START__0.SNG` | 3.00 | 82,391 bytes | Conversion succeeded locally; generated MIDI is 48,923 bytes; read-back and playback validation pending |
-| `BOURREE0.SNG` | 4.00 | 49,517 bytes | Conversion and read-back validation pending |
+| `v2/SHIZUME0.SNG` | 2.00 | 75,597 bytes | `eb6e1eb5bd1aeb36acb7b53a89fb8409b09e7d3988a45847309da105622272ee` |
+| `v3/START__0.SNG` | 3.00 | 82,391 bytes | `b4b719cec15139e411c94c34b05ca698e9432b9ccad308a808f08a648256cbe4` |
+| `v4/BOURREE0.SNG` | 4.00 | 49,517 bytes | `a1eb69b4735b809e35c9c368776e9dae621e30405dc5a9c717133654c5f7b715` |
 
-The version labels above are the versions reported for the local samples. They are not yet a claim that Glosa automatically detects the version from every file header.
+The version labels are the reported versions of these samples. They do not yet imply that Glosa can automatically identify every version from its file header.
 
-See [manifest.json](manifest.json) for machine-readable metadata. SHA-256 values are intentionally left null until they are calculated directly from the local copies and checked in.
+See [`manifest.json`](manifest.json) for machine-readable metadata.
 
-## Local metadata verification on Windows
+## Validation status
 
-Run these commands from Command Prompt to record each file's SHA-256 value:
-
-```bat
-certutil -hashfile R:\\testdata\\SHIZUME0.SNG SHA256
-certutil -hashfile R:\\testdata\\START__0.SNG SHA256
-certutil -hashfile R:\\testdata\\BOURREE0.SNG SHA256
-```
-
-Compare the reported file sizes with `manifest.json` before recording hashes.
+- **Ballade 2.00:** File copied into the repository test fixtures; converter validation pending.
+- **Ballade 3.00:** Local conversion succeeded and generated a 48,923-byte MIDI file; MIDI read-back and playback validation pending.
+- **Ballade 4.00:** File copied into the repository test fixtures; converter validation pending.
 
 ## CI strategy
 
-GitHub Actions should run the synthetic SNG converter tests that are already part of `Glosa.Tests`. Those tests validate parsing and MIDI generation without requiring proprietary or user-provided binary samples. Real-file checks should remain a separate local validation step until redistribution rights and a fixture strategy are clear.
+GitHub Actions should run the existing synthetic SNG converter tests in `Glosa.Tests`. Fixture-based tests should also validate parsing and MIDI generation for each real SNG sample, so version-specific differences can be detected automatically.
 
 Future work:
-- verify converter output for each local sample;
-- read generated MIDI back through `SmfReader`;
-- record per-version results and any unsupported structures;
-- add automatic version identification only when the file format provides a reliable discriminator.
+
+- Convert each fixture and verify the generated MIDI can be read back through `SmfReader`.
+- Record per-version results and unsupported structures.
+- Implement automatic version identification only when the file format provides a reliable discriminator.
