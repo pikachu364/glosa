@@ -15,6 +15,7 @@ It also emulates one module on another, using TMIDI Player's definition files.
   - Standard MIDI Files (`.mid` `.midi` `.rmi`)
   - Recomposer files (`.rcp` `.r36` `.g18` `.g36`)
   - Songs inside ZIP and LZH archives, played as they are, without unpacking
+  - Roland / BOSS Ballade `.SNG` files can be converted to MIDI (`.mid`) with the developer CLI; direct playback in Glosa is not supported yet
 - **Target module detection** — Tells which module a song was written for (its target module) from the file name, song title, folder path and attached text.
   Which of these are used, and in what order, is chosen in Preferences. When the names give no answer, the song's MIDI data is looked at too.
 - **Port maps** — Connects a different MIDI device to each of the six outputs, ports A to F.
@@ -202,6 +203,22 @@ When started with `--config`, that folder is used instead.
 ## For developers
 
 How to build is in [DEVELOPMENT.md](DEVELOPMENT.md), and the design decisions are in [IMPLEMENTATION.md](IMPLEMENTATION.md) (in Japanese).
+
+### Convert Ballade SNG to MIDI (developer CLI)
+
+Roland / BOSS Ballade `.SNG` files can be converted to Standard MIDI Files (`.mid`). Run this from the repository root on a Windows, macOS or Linux environment that can build the repository:
+
+```sh
+dotnet run --project src/Glosa.Cli -- convert-sng input.SNG
+```
+
+By default, the output is `input.mid`. To choose an output path:
+
+```sh
+dotnet run --project src/Glosa.Cli -- convert-sng input.SNG output.mid
+```
+
+This is a developer CLI, not an app that runs directly on iPadOS. Converting from an iPad requires access to a Windows, Mac or Linux environment that can run the CLI. Validation with real SNG files and playback still needs to be completed.
 
 ## License
 

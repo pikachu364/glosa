@@ -15,6 +15,7 @@ TMIDI Player の定義ファイルを利用した音源エミュレーション�
   - スタンダード MIDI ファイル（`.mid` `.midi` `.rmi`）
   - レコンポーザのファイル（`.rcp` `.r36` `.g18` `.g36`）
   - ZIP・LZH の書庫の中の曲を、展開せずにそのまま演奏できます
+  - Roland / BOSS Ballade の `.SNG` ファイルは、開発用 CLI で MIDI（`.mid`）に変換できます（Glosa での直接再生には未対応です）
 - **対象音源の自動判別** — ファイル名・タイトル・フォルダパス・添付テキストから、その曲がどの音源向けか（対象音源）を判別します。
   どの情報をどの順番で使うかは、環境設定で選べます。
   名前で分からないときは、曲の MIDI データからも判別します。
@@ -29,7 +30,7 @@ TMIDI Player の定義ファイルを利用した音源エミュレーション�
   ドット絵が出ていないときはレベルメーターになります。
 - **演奏モニタ** — パートごとの音色名・音量・パン・鍵盤・コード名を表示します。
 - **タブ式のプレイリスト** — 複数のプレイリストをタブで開けます。
-- シーク、キーボードのメディアキー、ファイルのドロップやファイルマネージャから開いたときの演奏開始に対応しています。
+- シーク、キーボードのメディアキー、ファイルのドロップやファイルマネージャから開いたときの演奏開始に対応しています
 
 ### TMIDI定義ファイルを利用するとできること
 
@@ -188,13 +189,13 @@ glosa [オプション] [曲やフォルダ...]
 設定とプレイリストは次の場所に保存されます。**設定 → 設定フォルダを開く** で開けます。
 
 ```
-Windows  %APPDATA%\glosa\
+Windows  %APPDATA%\\glosa\\
 macOS    ~/Library/Application Support/glosa/
 Linux    ~/.config/glosa/
 ```
 
 - `settings.yaml` — 設定
-- `playlists\*.yaml` — プレイリスト（1 つにつき 1 ファイル）
+- `playlists\\*.yaml` — プレイリスト（1 つにつき 1 ファイル）
 - `brack-session.json` — オーディオプラグインのラック（プラグインの設定も含む）
 - `brack-plugin-cache.json` — 音源プラグインを探した結果
 
@@ -203,6 +204,22 @@ Linux    ~/.config/glosa/
 ## 開発者向け
 
 ビルドの方法は [DEVELOPMENT.ja.md](DEVELOPMENT.ja.md) に、設計の判断は [IMPLEMENTATION.md](IMPLEMENTATION.md) にあります。
+
+### Ballade SNG を MIDI に変換する（開発用 CLI）
+
+Roland / BOSS Ballade の `.SNG` ファイルを Standard MIDI File（`.mid`）に変換できます。リポジトリをビルドできる Windows・macOS・Linux 環境で、リポジトリのルートから実行します。
+
+```sh
+dotnet run --project src/Glosa.Cli -- convert-sng input.SNG
+```
+
+既定では `input.mid` に保存します。出力先を指定する場合：
+
+```sh
+dotnet run --project src/Glosa.Cli -- convert-sng input.SNG output.mid
+```
+
+これは開発用 CLI であり、iPadOS 上で直接実行するアプリではありません。iPad から変換する場合は、CLI を実行できる PC / Mac / Linux 環境が必要です。実ファイルでの変換結果と再生確認は、引き続き検証が必要です。
 
 ## ライセンス
 

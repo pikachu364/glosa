@@ -101,6 +101,7 @@ public static class SmfReader
     private static bool IsSong(ReadOnlySpan<byte> data)
         => (data.Length >= 4 && BinaryPrimitives.ReadUInt32BigEndian(data) == MThd)
            || RcpConverter.IsRecomposer(data)
+           || SngConverter.IsSng(data)
            || IsRmi(data);
 
     /// <summary>
@@ -113,6 +114,8 @@ public static class SmfReader
         data = UnwrapRiff(UnwrapMacBinary(data));
         if (RcpConverter.IsRecomposer(data))
             return Read(RcpConverter.ToSmf(data, infiniteLoopRepeatCount), infiniteLoopRepeatCount);
+        if (SngConverter.IsSng(data))
+            return Read(SngConverter.ToSmf(data), infiniteLoopRepeatCount);
 
         List<Range> bodies = ReadChunks(data, out int format, out int division);
 
@@ -157,6 +160,8 @@ public static class SmfReader
         if (RcpConverter.IsRecomposer(data))
             return ReadSummary(RcpConverter.ToSmf(data, infiniteLoopRepeatCount), openingMessages,
                                infiniteLoopRepeatCount);
+        if (SngConverter.IsSng(data))
+            return ReadSummary(SngConverter.ToSmf(data), openingMessages, infiniteLoopRepeatCount);
 
         List<Range> bodies = ReadChunks(data, out _, out int division);
 
