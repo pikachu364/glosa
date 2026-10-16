@@ -61,9 +61,9 @@ public class SngConverterTests
         // BPM = 2v - ceil(v / 8): 61 -> 114 BPM, 72 -> 135 BPM.
         new byte[] { 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF }
             .CopyTo(sng, conductor + 84);
-        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), 48);
         BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 98), 61);
-        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 100), 48);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 100), 0);
         BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 102), 72);
 
         byte[] smf = SngConverter.ToSmf(sng);
@@ -72,8 +72,8 @@ public class SngConverterTests
 
         Assert.True(ContainsSequence(smf, TempoEvent(firstTempoUs)));
         Assert.True(ContainsSequence(smf, TempoEvent(secondTempoUs)));
-        // The first tempo is written at the end of the one-bar lead-in
-        // (tick 192); the next change is 48 ticks later (delta 0x30).
+        // Each record's step advances the timeline after that record, so the
+        // first tempo lasts 48 ticks before the second tempo change (delta 0x30).
         Assert.True(ContainsSequence(smf, [0x30, 0xFF, 0x51, 0x03]));
     }
 
