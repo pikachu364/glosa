@@ -41,6 +41,28 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void RejectsMalformedPartEventAndControllerLengths()
+    {
+        const int table = 0x46;
+        const int parts = 10;
+        int firstPart = table + 4 * (parts + 1) + 94 + 120;
+
+        // Event streams are made of 8-byte records and controller streams
+        // of 4-byte records. Neither length may extend beyond its part block.
+        foreach ((int offset, ushort value) in new[]
+        {
+            (112, (ushort)15), // event length is not a multiple of 8
+            (114, (ushort)3),  // controller length is not a multiple of 4
+            (112, (ushort)256), // event stream exceeds the available block
+        })
+        {
+            byte[] sng = CreateMinimalSong("3.00", parts);
+            BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(firstPart + offset), value);
+            Assert.Throws<InvalidDataException>(() => SngConverter.ToSmf(sng));
+        }
+    }
+
+    [Fact]
     public void ConvertsMinimalVersionThreeSongAndReaderRecognizesIt()
     {
         byte[] sng = CreateMinimalSong("3.00", 10);
