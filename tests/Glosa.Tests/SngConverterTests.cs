@@ -77,7 +77,9 @@ public class SngConverterTests
         byte[] smf = SngConverter.ToSmf(sng);
         Assert.True(smf.AsSpan().StartsWith("MThd"u8));
 
-        MidiSequence sequence = SmfReader.Read(sng);
+        // Parse the generated SMF, not the SNG source, so this verifies the
+        // converter's output is structurally readable by the project's reader.
+        MidiSequence sequence = SmfReader.Read(smf);
         Assert.Equal(1, sequence.Format);
         Assert.Equal(11, sequence.TrackCount);
         Assert.Contains(sequence.Events, e => e.Kind == MidiEventKind.Channel);
@@ -90,7 +92,9 @@ public class SngConverterTests
         byte[] smf = SngConverter.ToSmf(sng);
         Assert.True(smf.AsSpan().StartsWith("MThd"u8));
 
-        MidiSequence sequence = SmfReader.Read(sng);
+        // Parse the generated SMF, not the SNG source, so this verifies the
+        // converter's output is structurally readable by the project's reader.
+        MidiSequence sequence = SmfReader.Read(smf);
         Assert.Equal(1, sequence.Format);
         Assert.Equal(17, sequence.TrackCount);
         Assert.Contains(sequence.Events, e => e.Kind == MidiEventKind.Channel);
