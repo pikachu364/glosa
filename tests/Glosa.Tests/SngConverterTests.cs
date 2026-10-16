@@ -50,12 +50,51 @@ public class SngConverterTests
         Assert.Contains(sequence.Events, e => e.Kind == MidiEventKind.Channel);
     }
 
+    [Fact]
+    public void ConvertsTempoSliderValuesAndTempoChanges()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+        int conductor = 0x46 + 4 * 11 + 94;
+
+        // The conductor heap marker is followed by 6 allocator bytes, then
+        // [step, tempo slider value] records. SNG2S's measured curve is
+        // BPM = 2v - ceil(v / 8): 61 -> 114 BPM, 72 -> 135 BPM.
+        new byte[] { 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF }
+            .CopyTo(sng, conductor + 84);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 98), 61);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 100), 192);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 102), 72);
+
+        byte[] smf = SngConverter.ToSmf(sng);
+        int firstTempoUs = 60_000_000 / 114;
+        int secondTempoUs = 60_000_000 / 135;
+
+        Assert.Contains(TempoEvent(firstTempoUs), FindWindows(smf));
+        Assert.Contains(TempoEvent(secondTempoUs), FindWindows(smf));
+        // The second change is at source tick 192, plus the one-bar lead-in
+        // (192 ticks), so its delta in the conductor track is 384 ticks.
+        Assert.Contains(new byte[] { 0x83, 0x00 }.AsSpan().ToArray(), FindWindows(smf));
+    }
+
+    private static IEnumerable<byte[]> FindWindows(byte[] data)
+    {
+        for (int i = 0; i < data.Length; i++)
+            yield return data.AsSpan(i, Math.Min(6, data.Length - i)).ToArray();
+    }
+
+    private static byte[] TempoEvent(int microsecondsPerQuarter)
+        => [0xFF, 0x51, 0x03,
+            (byte)(microsecondsPerQuarter >> 16),
+            (byte)(microsecondsPerQuarter >> 8),
+            (byte)microsecondsPerQuarter];
+
     private static byte[] CreateMinimalSong(string version, int parts)
     {
         const int table = 0x46;
         int tableEnd = table + 4 * (parts + 1);
         int firstBlock = tableEnd + 94;
-        const int conductorSize = 100;
+        const int conductorSize = 120;
         const int partEntrySize = 100;
         int partBlockSize = partEntrySize + 81;
         byte[] data = new byte[firstBlock + conductorSize + parts * partBlockSize];
