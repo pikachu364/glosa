@@ -123,6 +123,31 @@ public class SngConverterTests
         Assert.True(ContainsSequence(smf, [0x30, 0xFF, 0x51, 0x03]));
     }
 
+    [Fact]
+    public void IgnoresMalformedTempoRecordsAndUsesDefaultTempo()
+    {
+        foreach ((ushort step, ushort value) in new[]
+        {
+            ((ushort)0, (ushort)501),  // tempo slider value is out of range
+            ((ushort)4001, (ushort)61), // step is out of range
+        })
+        {
+            byte[] sng = CreateMinimalSong("3.00", 10);
+            int conductor = 0x46 + 4 * 11 + 94;
+            new byte[] { 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF }
+                .CopyTo(sng, conductor + 84);
+            BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), step);
+            BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 98), value);
+
+            byte[] smf = SngConverter.ToSmf(sng);
+
+            // Invalid first records terminate tempo parsing, leaving the
+            // converter's documented 120 BPM default in place.
+            Assert.True(ContainsSequence(smf, TempoEvent(500_000)));
+            Assert.False(ContainsSequence(smf, TempoEvent(60_000_000 / 114)));
+        }
+    }
+
     private static bool ContainsSequence(byte[] data, byte[] expected)
     {
         for (int i = 0; i <= data.Length - expected.Length; i++)
