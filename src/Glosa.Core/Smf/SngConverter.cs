@@ -119,7 +119,7 @@ public static class SngConverter
 
         foreach (Track track in tracks)
         {
-            track.Events.Sort((a, b) => a.Tick != b.Tick ? a.Tick.CompareTo(b.Tick) : a.Order.CompareTo(b.Order));
+            // OrderBy/ThenBy are stable, preserving source order for otherwise equal events.
             using var body = new MemoryStream();
             WriteVar(body, 0); body.WriteByte(0xFF); body.WriteByte(0x03);
             WriteVar(body, (uint)track.Name.Length); body.Write(track.Name);
@@ -127,7 +127,7 @@ public static class SngConverter
             WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 100, 0]);
             WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 6, 2]);
             int previous = 0;
-            foreach (var e in track.Events)
+            foreach (var e in track.Events.OrderBy(e => e.Tick).ThenBy(e => e.Order))
             {
                 int at = Math.Max(0, e.Tick + barLength);
                 WriteVar(body, (uint)Math.Max(0, at - previous));
