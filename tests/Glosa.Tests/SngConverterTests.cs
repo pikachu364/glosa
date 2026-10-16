@@ -27,7 +27,7 @@ public class SngConverterTests
     [Fact]
     public void ConvertsMinimalVersionThreeSongAndReaderRecognizesIt()
     {
-        byte[] sng = CreateMinimalSong();
+        byte[] sng = CreateMinimalSong("3.00", 10);
         byte[] smf = SngConverter.ToSmf(sng);
         Assert.True(smf.AsSpan().StartsWith("MThd"u8));
 
@@ -37,9 +37,21 @@ public class SngConverterTests
         Assert.Contains(sequence.Events, e => e.Kind == MidiEventKind.Channel);
     }
 
-    private static byte[] CreateMinimalSong()
+    [Fact]
+    public void ConvertsMinimalVersionFourSongWithSixteenParts()
     {
-        const int parts = 10;
+        byte[] sng = CreateMinimalSong("4.00", 16);
+        byte[] smf = SngConverter.ToSmf(sng);
+        Assert.True(smf.AsSpan().StartsWith("MThd"u8));
+
+        MidiSequence sequence = SmfReader.Read(sng);
+        Assert.Equal(1, sequence.Format);
+        Assert.Equal(17, sequence.TrackCount);
+        Assert.Contains(sequence.Events, e => e.Kind == MidiEventKind.Channel);
+    }
+
+    private static byte[] CreateMinimalSong(string version, int parts)
+    {
         const int table = 0x46;
         int tableEnd = table + 4 * (parts + 1);
         int firstBlock = tableEnd + 94;
@@ -49,7 +61,7 @@ public class SngConverterTests
         byte[] data = new byte[firstBlock + conductorSize + parts * partBlockSize];
 
         Encoding.ASCII.GetBytes("BALLADE SONG").CopyTo(data, 0);
-        Encoding.ASCII.GetBytes("3.00").CopyTo(data, 18);
+        Encoding.ASCII.GetBytes(version).CopyTo(data, 18);
         for (int i = 0; i <= parts; i++)
             BinaryPrimitives.WriteUInt32LittleEndian(data.AsSpan(table + 4 * i),
                 (uint)(i == 0 ? conductorSize : partEntrySize));
