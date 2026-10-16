@@ -72,9 +72,9 @@ public class SngConverterTests
 
         Assert.True(ContainsSequence(smf, TempoEvent(firstTempoUs)));
         Assert.True(ContainsSequence(smf, TempoEvent(secondTempoUs)));
-        // The second change is at source tick 192, plus the one-bar lead-in
-        // (192 ticks), so its delta in the conductor track is 384 ticks.
-        Assert.True(ContainsSequence(smf, [0x83, 0x00, 0xFF, 0x51, 0x03]));
+        // The first tempo is repeated at the end of the one-bar lead-in
+        // (tick 192). The next source change is another 192 ticks later.
+        Assert.True(ContainsSequence(smf, [0x81, 0x40, 0xFF, 0x51, 0x03]));
     }
 
     private static bool ContainsSequence(byte[] data, byte[] expected)
