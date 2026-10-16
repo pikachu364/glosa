@@ -204,6 +204,22 @@ Linux    ~/.config/glosa/
 
 ビルドの方法は [DEVELOPMENT.ja.md](DEVELOPMENT.ja.md) に、設計の判断は [IMPLEMENTATION.md](IMPLEMENTATION.md) にあります。
 
+### Ballade SNG を MIDI に変換する（開発用 CLI）
+
+Roland / BOSS Ballade の `.SNG` ファイルを Standard MIDI File（`.mid`）に変換できます。リポジトリをビルドできる Windows・macOS・Linux 環境で、リポジトリのルートから実行します。
+
+```sh
+dotnet run --project src/Glosa.Cli -- convert-sng input.SNG
+```
+
+既定では `input.mid` に保存します。出力先を指定する場合：
+
+```sh
+dotnet run --project src/Glosa.Cli -- convert-sng input.SNG output.mid
+```
+
+これは開発用 CLI であり、iPadOS 上で直接実行するアプリではありません。iPad から変換する場合は、CLI を実行できる PC / Mac / Linux 環境が必要です。実ファイルでの変換結果と再生確認は、引き続き検証が必要です。
+
 ## ライセンス
 
 Glosa は MIT License で公開しています（[LICENSE](LICENSE)）。
