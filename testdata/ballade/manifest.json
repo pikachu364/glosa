@@ -1,0 +1,26 @@
+{
+  "description": "Locally held Roland/Boss Ballade SNG samples. Binary files are intentionally not committed until redistribution permission is confirmed.",
+  "samples": [
+    {
+      "file": "SHIZUME0.SNG",
+      "balladeVersion": "2.00",
+      "sizeBytes": 75597,
+      "sha256": null,
+      "verification": "version and size reported from local test data; converter validation pending"
+    },
+    {
+      "file": "START__0.SNG",
+      "balladeVersion": "3.00",
+      "sizeBytes": 82391,
+      "sha256": null,
+      "verification": "version and size reported from local test data; conversion generated START__0.mid (48923 bytes); MIDI read-back/playback validation pending"
+    },
+    {
+      "file": "BOURREE0.SNG",
+      "balladeVersion": "4.00",
+      "sizeBytes": 49517,
+      "sha256": null,
+      "verification": "version and size reported from local test data; converter validation pending"
+    }
+  ]
+}
