@@ -45,10 +45,17 @@ public class SngConverterTests
     {
         const int table = 0x46;
         const int parts = 10;
-        int firstPart = table + 4 * (parts + 1) + 94 + 120;
+        int tableEnd = table + 4 * (parts + 1);
+        int[] candidateFirstParts =
+        [
+            tableEnd + 94 + 120,
+            tableEnd + 2 + 120,
+            tableEnd + 120,
+        ];
 
-        // Event streams are made of 8-byte records and controller streams
-        // of 4-byte records. Neither length may extend beyond its part block.
+        // The parser supports several historical header layouts. Corrupt the
+        // first part header under each candidate so it cannot accept a fallback
+        // interpretation of the same malformed file.
         foreach ((int offset, ushort value) in new[]
         {
             (112, (ushort)15), // event length is not a multiple of 8
@@ -57,7 +64,8 @@ public class SngConverterTests
         })
         {
             byte[] sng = CreateMinimalSong("3.00", parts);
-            BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(firstPart + offset), value);
+            foreach (int firstPart in candidateFirstParts)
+                BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(firstPart + offset), value);
             Assert.Throws<InvalidDataException>(() => SngConverter.ToSmf(sng));
         }
     }
