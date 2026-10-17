@@ -1,31 +1,14 @@
-# Glosa 引き継ぎメモ（Ballade SNG 変換）
+# Glosa 作業引き継ぎ・進捗台帳（Ballade SNG → MIDI）
 
-最終更新: 2026-10-17
+最終更新: 2026-10-17  
+対象リポジトリ: https://github.com/pikachu364/glosa  
+この文書は、チャットを新しくしても作業を再開できるように、完了事項・確認済みの事実・未解決事項・次の手順を区別して記録する。
 
-## 目的
-チャット移行後も作業履歴、確認済み事項、未解決の不具合、次の調査手順を引き継ぐ。
+## 0. 最重要サマリー
 
-## リポジトリと環境
-- GitHub: https://github.com/pikachu364/glosa
-- Windows 作業ディレクトリ: R:\glosa
-- 参照用の元実装: R:\jmplayer（https://github.com/jihodaya/jmplayer）
-- 直近確認時のローカルブランチ: main
-- main の確認済みコミット: 8325a0d
-- PR #1（SNG→SMF 変換）マージ済み: https://github.com/pikachu364/glosa/pull/1
-- PR #3（バージョン別テストデータ文書）マージ済み: https://github.com/pikachu364/glosa/pull/3
-- PR #2: https://github.com/pikachu364/glosa/pull/2
+**現在の優先課題は、v1 の SNG ファイルを Glosa の CLI で変換するとレイアウト判定エラーになる問題の原因究明。**
 
-## 確認済みテスト
-次のコマンドでテスト成功を確認した。
-
-    dotnet test -p:Platform="Any CPU"
-
-結果: 964 passed、0 failed、0 skipped。
-
-環境によっては dotnet test 単体で、ソリューション設定 Debug|x64 が無効という MSB4126 エラーになった。Platform="Any CPU" を指定すると通った。
-
-## 未解決の不具合
-次のコマンドで v1 fixture の変換を試した。
+実行したコマンド:
 
     dotnet run --project src/Glosa.Cli -- convert-sng testdata/ballade/v1/runner.SNG testdata/ballade/v1/runner.mid
 
@@ -33,64 +16,189 @@
 
     error: Invalid or unsupported Ballade SNG layout.
 
-原因は未特定。修正済みと扱わないこと。
+- 原因は未特定。
+- 修正はまだ行っていない／修正成功は確認していない。
+- テストスイートが通ることと、実際の SNG 変換が成功することは別。変換成功を主張しないこと。
+- 次は元実装と Glosa のレイアウト判定を比較し、候補ごとの失敗条件を確認する。
+- ユーザーは Windows CMD を使用している。PowerShell 専用コマンドは `powershell -NoProfile -Command "..."` の形で提示する。
+- 一度に大量の手順を提示せず、1ステップずつ案内する。
 
-## v1 fixture の調査記録
-- ファイル: testdata/ballade/v1/runner.SNG
+## 1. リポジトリ・作業環境
+
+- Glosa: https://github.com/pikachu364/glosa
+- ローカル作業ディレクトリ: `R:\glosa`
+- 元実装 JMPlayer: https://github.com/jihodaya/jmplayer
+- 元実装のローカルクローン: `R:\jmplayer`
+- 元実装コード: `R:\jmplayer\sngmidi.cpp`
+- 元実装の形式資料: `R:\jmplayer\docs\formats\sng-ballade.md`
+- 直近に確認されたローカルブランチ: `main`
+- 直近に確認された main コミット: `8325a0d`
+- 引き継ぎ文書の前回コミット: `62e93ef4fb67d279e8387d1d184d894b749cdac4`
+
+ローカル状態は時間とともに変わるので、新しいチャットで必要になったら `git status` と `git log -1 --oneline` で再確認する。引き継ぎメモだけを根拠に、現在も同じブランチ・コミットだと決めつけない。
+
+## 2. 完了したこと
+
+### GitHub / PR
+- PR #1「Add Ballade SNG to SMF conversion」はマージ済み。  
+  https://github.com/pikachu364/glosa/pull/1
+- PR #3「Document Ballade SNG version test data」は main にマージ済み。  
+  https://github.com/pikachu364/glosa/pull/3
+- PR #3 は base main、head `docs/ballade-version-testdata`。4 commits、6 files changed、66 additions、0 deletions と確認した。
+- PR #3 の CI は全て green とユーザーが確認した。
+- PR #2 は次のリンク。内容・現在の状態をこのメモでは詳細に検証していない。  
+  https://github.com/pikachu364/glosa/pull/2
+- main に SNG converter ソースと fixture ファイルが含まれる状態まで pull したことを確認した。
+
+### ローカルテスト
+次のコマンドでテスト成功を確認した:
+
+    dotnet test -p:Platform="Any CPU"
+
+結果:
+- 964 passed
+- 0 failed
+- 0 skipped
+- build success
+
+注意: `dotnet test` 単体では、環境設定によって次のエラーになった:
+
+    error MSB4126: specified solution configuration "Debug|x64" is invalid
+
+この環境では `-p:Platform="Any CPU"` を付けることでテストが通った。
+
+### CLI の確認
+次のコマンドで CLI のヘルプを確認した:
+
+    dotnet run --project src/Glosa.Cli -- sng --help
+
+表示された汎用ヘルプには次が含まれていた:
+
+    glosa convert-sng <file.sng> [output.mid]
+
+## 3. 未完了・やり残し
+
+### 最優先: v1 のレイアウト判定エラーを解決
+- [ ] `TryLayout` のどの候補・条件で失敗しているか特定する。
+- [ ] Glosa と JMPlayer の `buildLayout`、および little-endian 読み取りヘルパーを比較する。
+- [ ] 必要なら診断ログを一時的に加え、失敗した条件を明示する。
+- [ ] 最小限の修正を行う。
+- [ ] v1 の変換コマンドを再実行し、成功を確認する。
+- [ ] 生成した MIDI のサイズ・形式・読み戻しを確認する。
+- [ ] 可能なら MIDI プレイヤーで実際に再生し、イベントや音が期待どおりか確認する。
+
+### 4バージョンすべての実データ検証
+- [ ] v1 `runner.SNG` を変換・検証する。
+- [ ] v2 `SHIZUME0.SNG` を変換・検証する。
+- [ ] v3 `START__0.SNG` を変換・検証する。
+- [ ] v4 `BOURREE0.SNG` を変換・検証する。
+- [ ] 各バージョンの検証結果を既存の fixture 文書に正確に反映する。
+- [ ] エラー・警告・未検証事項を文書に残す。
+
+### 品質・GitHub
+- [ ] 修正後に `dotnet test -p:Platform="Any CPU"` を再実行する。
+- [ ] 関連する SNG テストが存在するか確認し、不足していれば回帰テストを追加する。
+- [ ] 修正とテストをブランチにコミットし、必要なら PR を作成する。
+- [ ] CI が成功したことを確認する。
+- [ ] 完了した作業・未完了事項・検証結果をこの文書と関連文書に更新する。
+
+## 4. 判明した事実
+
+### v1 fixture
+- パス: `testdata/ballade/v1/runner.SNG`
 - サイズ: 85,897 bytes
-- SHA-256: e61b8b0315a3752dfa3d3546d5a436df0d4b0421201183c21ce4bf1780556e15
-- ヘッダー: BALLADE SONG Ver. 1.00
-- バージョン文字列はオフセット18にある。
-- サイズ表はオフセット 0x46 から始まり、v1 は10パート。
-- 元資料には headerEnd 候補として tableEnd+94、tableEnd+2、tableEnd が記載されている。
-- 各パートのサイズはサイズ表の値に81を足して計算している。
-- headerEnd=116 の候補で計算した最初のパート位置は1510。そこから読み出した値は used=0、ctl=53248、idx=1。ctl が不自然に見えるが、この候補が誤りと断定はしていない。
-- オフセット110～129のバイト列も確認済み。配置の結論はまだ出ていない。
+- SHA-256: `e61b8b0315a3752dfa3d3546d5a436df0d4b0421201183c21ce4bf1780556e15`
+- 先頭シグネチャ: `BALLADE SONG`
+- ヘッダー文字列: `BALLADE SONG Ver. 1.00`
+- バージョン文字列はオフセット 18 にあることを確認した。
+- バージョンの4バイト文字列は `1.00`。
+- サイズ表の開始位置は `0x46`。
+- v1/v2/v3 は10パート、v4 は16パートとして扱う実装・資料を確認した。
 
-## 関係するファイル
-- 変換実装: src/Glosa.Core/Smf/SngConverter.cs
-- CLI: src/Glosa.Cli
-- v1 fixture: testdata/ballade/v1/runner.SNG
-- v2 fixture: testdata/ballade/v2/SHIZUME0.SNG
-- v3 fixture: testdata/ballade/v3/START__0.SNG
-- v4 fixture: testdata/ballade/v4/BOURREE0.SNG
-- 元実装: R:\jmplayer\sngmidi.cpp
-- 元実装の形式資料: R:\jmplayer\docs\formats\sng-ballade.md
+v1 サイズ表の先頭値（32-bit little-endian）:
+- `0x46`: 1394
+- `0x4A`: 1230
+- `0x4E`: 28398
+- `0x52`: 10914
+- `0x56`: 5984
+- `0x5A`: 4482
+- `0x5E`: 4764
+- `0x62`: 8766
+- `0x66`: 2766
+- `0x6A`: 6856
+- `0x6E`: 9362
 
-## SNG fixture 一覧
+### v1 のヘッダー候補調査
+- `tableEnd = 0x46 + 4 * (10 + 1) = 114`。
+- JMPlayer の資料・実装で候補として確認した値は `tableEnd+94`、`tableEnd+2`、`tableEnd`。
+- CMD から実行した調査で `headerEnd=116` とした場合、最初のパート開始位置は1510となった。
+- その位置から `used=0`、`ctl=53248`、`idx=1` を読んだ。
+- `ctl=53248` は期待される4バイト単位の長さとしては不自然に見える。ただし、これだけで候補が間違いだと断定してはいけない。開始位置やオフセットの前提を再確認する必要がある。
+- オフセット `0x6E`～`0x81` の一部バイトを表示したが、配置を確定するには至っていない。
+- 一度診断 PowerShell コマンドで配列演算エラーが出た。これは調査コマンド側のエラーで、SNG ファイルが壊れたことを示すものではない。
 
-| バージョン | ファイル | サイズ | SHA-256 |
-|---|---|---:|---|
-| v1 | testdata/ballade/v1/runner.SNG | 85,897 | e61b8b0315a3752dfa3d3546d5a436df0d4b0421201183c21ce4bf1780556e15 |
-| v2 | testdata/ballade/v2/SHIZUME0.SNG | 75,597 | eb6e1eb5bd1aeb36acb7b53a89fb8409b09e7d3988a45847309da105622272ee |
-| v3 | testdata/ballade/v3/START__0.SNG | 82,391 | b4b719cec15139e411c94c34b05ca698e9432b9ccad308a808f08a648256cbe4 |
-| v4 | testdata/ballade/v4/BOURREE0.SNG | 49,517 | a1eb69b4735b809e35c9c368776e9dae621e30405dc5a9c717133654c5f7b715 |
+### JMPlayer のレイアウト判定（これまでにソースで確認した内容）
+`R:\jmplayer\sngmidi.cpp` の `buildLayout` を読み、次を確認した:
+- ファイルサイズとシグネチャを確認する。
+- バージョン文字列を読み、v1/v2/v3 は10パート、v4 は16パートにする。
+- サイズ表は `0x46` から32-bit little-endian で読む。
+- 各パートサイズの計算に81を足す。
+- ヘッダー候補は `tableEnd+94`、`tableEnd+2`、`tableEnd`。
+- パート先頭から `+112`、`+114`、`+116` の位置で `used`、`ctl`、`idx` を読む。
+- `used % 8 == 0`、`ctl % 4 == 0`、`used + ctl + idx <= capacity` を検証する。
+- 元実装のコメントでは、一部の破損ファイルでブロックの終端がファイル末尾を超えることを許容するが、ブロック開始位置はファイル内である必要があると説明している。
 
-v3 は以前ローカル変換で 48,923-byte の MIDI ができた記録があるが、読戻し・再生検証は未完了。他のバージョンも変換と再生の検証が必要。
+Glosa の `src/Glosa.Core/Smf/SngConverter.cs` にある `TryLayout` も上記に近い実装に見える。現段階では、両実装の差分が原因だと確定していない。
 
-## 元実装との照合で分かっていること
-R:\jmplayer\sngmidi.cpp の buildLayout では以下を確認した。
-- 先頭シグネチャとバージョンを確認する。
-- v1/v2/v3 は10パート、v4 は16パート。
-- 32-bit little-endian のサイズ表は 0x46 から読む。
-- 各パートのサイズ計算に81を足す。
-- ヘッダー候補は tableEnd+94、tableEnd+2、tableEnd。
-- パート先頭の +112、+114、+116 から used、ctl、idx を読む。
-- used は8の倍数、ctl は4の倍数で、used+ctl+idx が capacity 以下であることを確認する。
-- 元実装のコメントでは、壊れたファイルではブロック末尾がファイル末尾を越えることを許容するが、ブロック開始位置はファイル内に必要としている。
+## 5. SNG fixture 一覧
 
-Glosa の TryLayout も概ね同じロジックに見える。原因はまだ特定できていない。条件ごとの失敗箇所を診断出力して確認する。
+| Version | File | Size | SHA-256 | 実変換・再生の検証 |
+|---|---|---:|---|---|
+| v1 | `testdata/ballade/v1/runner.SNG` | 85,897 | `e61b8b0315a3752dfa3d3546d5a436df0d4b0421201183c21ce4bf1780556e15` | 変換失敗。原因未特定 |
+| v2 | `testdata/ballade/v2/SHIZUME0.SNG` | 75,597 | `eb6e1eb5bd1aeb36acb7b53a89fb8409b09e7d3988a45847309da105622272ee` | 未検証 |
+| v3 | `testdata/ballade/v3/START__0.SNG` | 82,391 | `b4b719cec15139e411c94c34b05ca698e9432b9ccad308a808f08a648256cbe4` | 以前 48,923-byte の MIDI ができた記録あり。読み戻し・再生検証は未完了 |
+| v4 | `testdata/ballade/v4/BOURREE0.SNG` | 49,517 | `a1eb69b4735b809e35c9c368776e9dae621e30405dc5a9c717133654c5f7b715` | 未検証 |
 
-## 次にやること
-1. 元実装の該当箇所を再確認する。
+「MIDI ファイルが生成された」ことと「MIDI の内容が正しく、再生できる」ことを分けて記録する。
+
+## 6. 関係するファイル・コード
+
+Glosa:
+- `src/Glosa.Core/Smf/SngConverter.cs`: SNG レイアウト判定・変換の主要な調査対象。
+- `src/Glosa.Cli`: CLI の `convert-sng` コマンド。
+- `testdata/ballade/v1/runner.SNG`
+- `testdata/ballade/v2/SHIZUME0.SNG`
+- `testdata/ballade/v3/START__0.SNG`
+- `testdata/ballade/v4/BOURREE0.SNG`
+- バージョン別 fixture 文書は PR #3 の変更内容を確認すること。
+- `docs/DEVELOPMENT_HANDOFF.md`: この引き継ぎ文書。
+
+JMPlayer:
+- `R:\jmplayer\sngmidi.cpp`: 元実装。
+- `R:\jmplayer\docs\formats\sng-ballade.md`: SNG 形式の説明。CMD の `type` で表示すると文字化けして見えることがあったが、内容の一部は読めた。
+
+## 7. 次に行う手順（未実施）
+
+**次の一手から始める。まだ修正を急がない。**
+
+1. 元実装の関数位置を再確認する:
 
        findstr /n /c:"buildLayout" /c:"tableEnd" /c:"headerEnd" R:\jmplayer\sngmidi.cpp
 
-2. Glosa の SngConverter.cs と元実装の buildLayout を、関数全体および rd16/rd32 相当の読み取りヘルパーまで比較する。
-3. 必要なら一時的な診断出力を加え、3つの headerEnd 候補ごとに各パートの start、size、used、ctl、idx、capacity と失敗条件を表示する。
-4. 原因特定後に最小限の修正を行い、dotnet test -p:Platform="Any CPU" と v1 変換を再実行する。
-5. v1 が成功したら出力 MIDI のサイズ、読み戻し、再生可能性を確認し、他のバージョンも検証する。
-6. テスト結果が確定してから fixture 文書の検証ステータスを更新する。
+2. 該当する `buildLayout` 全体を表示し、必要なら `rd16` / `rd32` 相当の読み取り関数も表示する。
+3. Glosa の `TryLayout` と元実装を条件単位で比較する。
+4. 3候補それぞれについて、最初に失敗する条件を表示する短い診断を作る。PowerShell の配列式でエラーが起きた前回のコマンドをそのまま再利用せず、スカラー値を明示して一つずつ検証する。
+5. 最初に失敗する条件が分かってから、サイズ表の解釈・オフセット・読み取り幅・候補順・境界チェックのどこが違うか判断する。
+6. 原因が特定できたら修正し、同じ v1 コマンドを再実行する。
+7. 変換後に MIDI の存在・サイズを確認し、テストを実行する。
+8. v1 の成功後、v2/v3/v4 の順に実データで検証する。各段階で結果を記録する。
 
-## 新しいチャットで最初に伝える文章
-「Glosa リポジトリで Ballade SNG→MIDI 変換を調査中です。PR #1 と PR #3 はマージ済み、main は 8325a0d。dotnet test -p:Platform="Any CPU" は964件成功。ただし v1 fixture の convert-sng は Invalid or unsupported Ballade SNG layout. で失敗し、原因未特定です。この引き継ぎ文書の『次にやること』から、一手ずつ案内してください。Windows CMD 向けのコマンドを示し、長い手順をまとめて出さないでください。」
+## 8. 新しいチャットに貼る開始メッセージ
+
+次の文章をコピーして、新しいチャットの最初のメッセージに使う:
+
+> Glosa リポジトリで Ballade SNG→MIDI 変換を調査しています。詳細は GitHub の docs/DEVELOPMENT_HANDOFF.md を読んでください。
+>
+> PR #1 と PR #3 はマージ済み。dotnet test -p:Platform="Any CPU" は964件成功しました。ただし v1 fixture の convert-sng は「Invalid or unsupported Ballade SNG layout.」で失敗し、原因は未特定です。SNG converter の修正成功はまだありません。
+>
+> Windows CMD を使っています。元実装は R:\jmplayer\sngmidi.cpp、Glosa の主要調査対象は src/Glosa.Core/Smf/SngConverter.cs です。まず元実装の buildLayout を照合するところから、一度に一手順ずつ案内してください。確認前に原因を決めつけたり、成功したと扱ったりしないでください。
