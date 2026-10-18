@@ -124,3 +124,29 @@ GitHub でリリースを公開すると、`.github/workflows/release.yml` が�
 - Actions の **Release → Run workflow** にタグを渡すと、既にあるリリースの配布物を作り直して差し替える。
 
 `build-app.sh` と `package.sh` は `--version`、`package.ps1` は `-Version` でバージョンを受け取る。無ければプロジェクトの `Version`（未設定なので 1.0.0）になる。
+
+## Windows 音声デバイスの調査メモ（2026-10）
+
+S-MU2000 の `make` 後に音声デバイスを開けないことがあり、Windows の再起動で復旧するという報告があった。現時点では Norton のスキャンとの因果関係は未確認であり、Norton が原因だとは断定しない。音を出せる環境が整うまで、実機での音声確認は保留する。
+
+### 確認済みのこと
+
+- Glosa CLI の `devices` は WinMM バックエンドで動作した。
+- Windows MIDI Services の初期化は `Windows.Devices.Midi2.MidiApi` の有効化に失敗し、コード `0x80040154` が表示された。これは MIDI 2.0 API の利用可否に関する別の観察事項であり、S-MU2000 の音声出力エラーの原因と結びつける根拠はまだない。
+- MIDI 出力一覧には `Microsoft GS Wavetable Synth`、`Roland port A`、`Roland port B`、`YAMAHA port A`、`YAMAHA port B` が表示された。ユーザーの説明では `Roland port A` は 88emuPlayer に接続されている。
+- S-MU2000 のログでは MIDI IN A/B が `YAMAHA port A/B`、C/D/E は未接続と表示された。
+- 問題が発生した際、Windows の `Audiosrv` と `AudioEndpointBuilder` は `Running` だった。
+- `Win32_SoundDevice` の列挙では Realtek、NVIDIA、Intel Smart Sound、ASUS Utility などが `OK` だった。
+- `Get-PnpDevice -Class AudioEndpoint` では `スピーカー (Realtek(R) Audio)`、`AI Noise-cancelling Output (ASUS Utility)`、および入力エンドポイントが `OK` だった。
+- S-MU2000 起動ログに、パネル設定 `panel.txt` の 59 行目でボタン画像を開けないという警告が 2 回出た。音声デバイスの問題との関連は未確認。
+- `--audio "スピーカー"` を指定した際、デバイス名が文字化けしたような形で「その名前の再生デバイスが無い」と報告された。引数の文字コード、デバイス名の完全一致、アプリ側の引数処理のどれかは未確定。
+
+### 再開時の手順
+
+1. まず Windows を再起動し、音声を出せる環境であることを確認する。音を出せない場所ではテスト音の確認を進めない。
+2. S-MU2000 の起動時に音声デバイスの指定を省略した状態（`./build/gui.exe /r/roms --audio`）で再現するか確認する。
+3. 問題が再現した場合、再起動する前に Windows の「再生」タブ（`Win + R` → `mmsys.cpl`）からスピーカーのテスト音を確認する。
+4. その結果と S-MU2000 の正確なエラーメッセージを記録する。必要に応じて `Get-Service Audiosrv,AudioEndpointBuilder` と `Get-PnpDevice -Class AudioEndpoint` の結果も記録する。
+5. Norton のスキャンを原因と決めつけず、再現時刻・ビルド時刻・スキャン時刻との関係を比較する。保護機能を無効にすることは、最初の切り分け手段にしない。
+
+現状の結論：Windows のオーディオサービスとエンドポイントは調査時点で認識されていたが、実際のテスト音は未確認。S-MU2000 が再生デバイスを開けない原因は未特定。
