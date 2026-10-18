@@ -334,11 +334,3 @@ SNG の tie 付きレコードを、音高ごとに同じ音の終了 tick と�
 > PR #1 と PR #3 はマージ済み。過去に dotnet test -p:Platform="Any CPU" は964件成功した記録がありますが、現在このチャットから再実行したわけではありません。v1 fixture の convert-sng は「Invalid or unsupported Ballade SNG layout.」で失敗した過去の記録があり、原因は未特定です。
 >
 > 現在は PC を使わず、GitHub 上のソース・資料・既存の MIDI を ChatGPT から調査しています。主要コードは src/Glosa.Core/Smf/SngConverter.cs、元実装は https://github.com/jihodaya/jmplayer/blob/main/sngmidi.cpp です。実行していないテストや再生を実施済みと扱わず、確認済み事実と仮説を分け、1ステップずつ進めてください。
-
-次の文章をコピーして、新しいチャットの最初のメッセージに使う:
-
-> Glosa リポジトリで Ballade SNG→MIDI 変換を調査しています。詳細は GitHub の docs/DEVELOPMENT_HANDOFF.md を読んでください。
->
-> PR #1 と PR #3 はマージ済み。dotnet test -p:Platform="Any CPU" は964件成功しました。ただし v1 fixture の convert-sng は「Invalid or unsupported Ballade SNG layout.」で失敗し、原因は未特定です。SNG converter の修正成功はまだありません。
->
-> Windows CMD を使っています。元実装は R:\jmplayer\sngmidi.cpp、Glosa の主要調査対象は src/Glosa.Core/Smf/SngConverter.cs です。まず元実装の buildLayout を照合するところから、一度に一手順ずつ案内してください。確認前に原因を決めつけたり、成功したと扱ったりしないでください。
