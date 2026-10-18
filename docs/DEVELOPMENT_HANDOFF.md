@@ -1,6 +1,6 @@
 # Glosa 作業引き継ぎ・進捗台帳（Ballade SNG → MIDI）
 
-最終更新: 2026-10-17  
+最終更新: 2026-10-19  
 対象リポジトリ: https://github.com/pikachu364/glosa  
 この文書は、チャットを新しくしても作業を再開できるように、完了事項・確認済みの事実・未解決事項・次の手順を区別して記録する。
 
@@ -193,7 +193,68 @@ JMPlayer:
 7. 変換後に MIDI の存在・サイズを確認し、テストを実行する。
 8. v1 の成功後、v2/v3/v4 の順に実データで検証する。各段階で結果を記録する。
 
-## 8. 新しいチャットに貼る開始メッセージ
+## 8. 2026-10-19 追加記録（PCなしでの継続調査）
+
+### 作業方針の更新
+- ユーザーは当面 PC を使わず、ChatGPT から GitHub 上のコード・資料・記録を確認して調査を続けたい。
+- 以後は GitHub コネクタでファイルを直接読み、必要な変更はユーザーの明示依頼に沿って GitHub に反映する。ユーザーにローカル CMD コマンドの実行を前提とした案内をしない。
+- ローカル環境にしかない情報は、GitHub 上で確認できた事実と混同しない。実行・再生していないテストを実施済みと書かない。
+- 一度に大量の操作を求めず、進捗と次の一手を小さく区切る。
+
+### v2 の既存 MIDI 比較で確認した数値
+対象:
+- SNG: `testdata/ballade/v2/SHIZUME0.SNG`
+- SNG2GS 参照 MIDI: `testdata/ballade/v2/sng2gs/SHIZUME0.MID`
+- Glosa 出力 MIDI: `testdata/ballade/v2/glosa-test-convert/SHIZUME0.mid`
+
+| 指標 | SNG2GS 参照 MIDI | Glosa MIDI |
+|---|---:|---:|
+| ファイルサイズ | 30,262 bytes | 45,380 bytes |
+| SMF format | 1 | 1 |
+| トラック数 | 12 | 11 |
+| TPQ | 48 | 48 |
+| Note-on 数 | 2,713 | 3,657 |
+| テンポイベント数 | 424 | 439 |
+| Program Change 数 | 62 | 57 |
+| 最後のノート tick | 25,088 | 25,632 |
+
+この比較から、既存の2つの MIDI に差があることは確認できる。ただし、イベント単位の対応付け・トラック対応・差の原因はまだ確定していない。これらの数値だけで、どちらが正しいか、または Glosa の不具合原因が何かを断定しない。
+
+### SNG2GS v3.3 のオプションメモ
+既存の解析資料に記載されたオプション:
+- `/0`: SMF Format 0
+- `/1`: SMF Format 1（既定）
+- `/F`: パート／トラック割り当て順を変更
+- `/LA`: PCM 音色を LA 音色に変換
+- `/N`: ノートデータがないパートも省略しない
+- `/R`: Running Status を無効化
+- `/X1`、`/X2`: Exclusive データの出力先を変更
+- `/XD`: Exclusive データを無効化
+
+比較時には、参照 MIDI がどのオプションで生成されたものか分かる場合に記録する。オプション条件が不明なら、結果を単純比較する前に不明と明記する。
+
+### 2026-10-19 の作業記録へのリンク
+この日の調査メモを GitHub に追加した:
+- [2026-10-19 作業記録](https://github.com/pikachu364/glosa/blob/docs/ballade-version-testdata/testdata/ballade/%E4%BD%9C%E6%A5%AD%E8%A8%98%E9%8C%B2/2026-10-19.md)
+- ブランチ: `docs/ballade-version-testdata`
+- コミット: `1f8da8c27a1ac838efbde64e905bc5cd7cb5030e`
+
+### 次に進める調査
+1. GitHub 上の `SngConverter.cs`、形式資料、作業記録を再読して、現在の実装と確認済み事項を揃える。
+2. v2 の MIDI をイベント単位で比較できる範囲から分析する。まずトラック名・トラック数・テンポ・Program Change・Note-on/off を区別して確認する。
+3. ノート数の差を、トラック対応、同音連結／ノート延長、イベント重複、空パート扱いなどの仮説に分ける。仮説は検証前に結論として書かない。
+4. v1 のレイアウト判定問題は未解決のまま維持し、ソースの条件を GitHub 上で再確認する。追加データや実行結果が得られない場合、その制約を明示して静的解析を進める。
+5. 解析結果が固まったら、この文書と日付別作業記録を更新する。
+
+## 9. 新しいチャットに貼る開始メッセージ
+
+次の文章をコピーして、新しいチャットの最初のメッセージに使う:
+
+> Glosa リポジトリで Ballade SNG→MIDI 変換を調査しています。まず GitHub の docs/DEVELOPMENT_HANDOFF.md とリンク先の作業記録を読んでください。
+>
+> PR #1 と PR #3 はマージ済み。過去に dotnet test -p:Platform="Any CPU" は964件成功した記録がありますが、現在このチャットから再実行したわけではありません。v1 fixture の convert-sng は「Invalid or unsupported Ballade SNG layout.」で失敗した過去の記録があり、原因は未特定です。
+>
+> 現在は PC を使わず、GitHub 上のソース・資料・既存の MIDI を ChatGPT から調査しています。主要コードは src/Glosa.Core/Smf/SngConverter.cs、元実装は https://github.com/jihodaya/jmplayer/blob/main/sngmidi.cpp です。実行していないテストや再生を実施済みと扱わず、確認済み事実と仮説を分け、1ステップずつ進めてください。
 
 次の文章をコピーして、新しいチャットの最初のメッセージに使う:
 
