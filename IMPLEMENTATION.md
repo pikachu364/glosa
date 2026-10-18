@@ -729,3 +729,28 @@ SkiaSharp の Windows 版のものだけで 100 MB ある。deps.json にはネ�
 - OS ごとにその OS のランナーで作る。`glosa.exe` にアイコンを入れられるのは Windows だけ（ほかの OS で作ると SDK はアプリホストの書き換えを飛ばす）で、署名は macOS でしかできず、tar.gz に実行権限を残すには Unix で作る必要がある。
 - Windows の zip は Windows の `tar` で作る（`package.ps1`）。Windows PowerShell 5.1 の `Compress-Archive` はパスの区切りを `\` で書き、ほかの OS の展開ツールで崩れることがある。
 - macOS の zip は `ditto` で作る。`zip` では署名に要る拡張属性が落ちる。
+
+
+## Windows 音声デバイスの調査記録（2026-10）
+
+S-MU2000 で `make` 後などに音声デバイスを開けないことがあり、Windows を再起動すると復旧するという報告があった。Norton のスキャンが関係している可能性は利用者から挙げられた仮説であり、因果関係は未確認。現時点では原因を特定していない。
+
+### 確認した状態
+
+- 問題の調査時、Windows サービス `Audiosrv` と `AudioEndpointBuilder` はどちらも `Running`。
+- `Win32_SoundDevice` で列挙された Realtek、NVIDIA、Intel Smart Sound、ASUS Utility などのデバイスは `OK`。
+- `Get-PnpDevice -Class AudioEndpoint` では `スピーカー (Realtek(R) Audio)` と `AI Noise-cancelling Output (ASUS Utility)` などが `OK`。ただし、Windows の一覧上で認識されていることは、実際にテスト音を再生できることや、S-MU2000 から開けることを保証しない。
+- S-MU2000 の起動ログでは MIDI IN A/B が `YAMAHA port A/B`、C/D/E は未接続と表示された。
+- `--audio "スピーカー"` を指定したとき、再生デバイス名が文字化けしたような表示になり「その名前の再生デバイスが無い」と報告された。引数の文字コード、デバイス名の不一致、引数処理のどれが関係するかは未確認。
+- `panel.txt` の 59 行目について、ボタン画像を開けない警告が 2 回出た。音声デバイスの問題との関連は不明。
+- 実際のテスト音の再生確認は、音を出せる環境がないため保留中。
+
+### 再開時の確認手順
+
+1. Windows 再起動後、音を出せる環境になってから確認を再開する。
+2. S-MU2000 を `./build/gui.exe /r/roms --audio` で起動し、デバイス名を明示しない場合の挙動を確認する。
+3. 症状が再現したら、再起動する前に `Win + R` → `mmsys.cpl` を開き、「再生」タブからスピーカーのテスト音を確認する。
+4. S-MU2000 の正確なエラー表示と、テスト音が鳴るかどうかを記録する。
+5. Norton が原因だと決めつけず、再現時刻・ビルド時刻・スキャン時刻の関係を比較する。保護機能を無効にすることを最初の切り分け手段にしない。
+
+現状の結論：Windows のサービスとエンドポイントは調査時点で認識されていたが、実際のテスト音は未確認であり、S-MU2000 が再生デバイスを開けない原因は未特定。音声を出せる環境が整うまで実機での音声確認は進めない。
