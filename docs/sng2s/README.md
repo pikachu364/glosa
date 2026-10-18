@@ -13,8 +13,9 @@ The files currently available in the user's local `R:\sng2s33` directory are:
 - `README.DOC` — 865 bytes; dated 1993-08-03
 - `sng2s33.lzh` — 21,660 bytes; archive dated 2026-10-11 locally
 - `runner.MID` — 40,398 bytes; output generated on PC-98/MS-DOS 6.2 using SNG2S
+  - SHA-256: `9ed48715a4dd79345a7574234e93e149f36ebd5896468f6d36fe5eccb580b956`
 
-The user reports that `Runner.sng` launched in Mimpi v4 without errors and that conversion with SNG2S succeeded. This makes the SNG2S-produced MIDI a useful comparison reference, but does not by itself prove which component is responsible for any conversion difference.
+The user reports that `Runner.sng` launched in Mimpi v4 without errors and that conversion with SNG2S succeeded. This makes the SNG2S-produced MIDI a useful comparison reference, but does not by itself prove which component is responsible for any conversion difference. The SHA-256 value above identifies the exact local MIDI file used as the baseline.
 
 ## Findings from SNG2S.DOC (version 3.3)
 
@@ -66,6 +67,7 @@ For now, keep the original archive and executable in local research storage. Do 
 ## Current status
 
 - [x] Confirmed the local directory contains the SNG2S executable, docs, archive, and `runner.MID`.
+- [x] Recorded the SHA-256 checksum for `runner.MID`.
 - [x] Reviewed `SNG2S.DOC` version 3.3 and recorded relevant options and constraints.
 - [x] Reviewed `README.DOC` and recorded release notes.
 - [ ] Produce a structural report for `runner.MID`.
