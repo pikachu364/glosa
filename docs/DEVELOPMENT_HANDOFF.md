@@ -334,3 +334,21 @@ SNG の tie 付きレコードを、音高ごとに同じ音の終了 tick と�
 > PR #1 と PR #3 はマージ済み。過去に dotnet test -p:Platform="Any CPU" は964件成功した記録がありますが、現在このチャットから再実行したわけではありません。v1 fixture の convert-sng は「Invalid or unsupported Ballade SNG layout.」で失敗した過去の記録があり、原因は未特定です。
 >
 > 現在は PC を使わず、GitHub 上のソース・資料・既存の MIDI を ChatGPT から調査しています。主要コードは src/Glosa.Core/Smf/SngConverter.cs、元実装は https://github.com/jihodaya/jmplayer/blob/main/sngmidi.cpp です。実行していないテストや再生を実施済みと扱わず、確認済み事実と仮説を分け、1ステップずつ進めてください。
+
+## 追加調査：JMPlayerとの実装差を区別する（2026-10-19 続き）
+
+JMPlayer の `sngmidi.cpp` を該当箇所まで再確認した。
+
+- ノート変換部（`sngmidi.cpp` 267–292行）も、bit 7 が立ったレコードを「直前の同じ音高のノートが、そのレコードの開始 tick まで継続している」場合に限って既存 Note-off を延長する。それ以外は新しい Note-on/Note-off を出力する。
+- したがって、**Glosa の現在の tie 判定は、この JMPlayer 実装と基本的に同じ**。この仕様だけでは、SNG2GS 基準 MIDI が tie フラグ付きレコードをすべて Note-on から除外している観測を説明できない。
+- これは、基準 MIDI を生成した実行ファイルが JMPlayer の実装と異なること、基準 MIDI の生成オプションやバージョンが異なること、または基準ファイルと解析対象の実行ファイルが同一でない可能性を残す。どれかはまだ確定していない。
+- JMPlayer はコンダクタの小節長を読み、出力時に `lead = barLen` を全イベントに加える（同ファイル 197–209行、314–316行）。従って「先頭に1小節を加える」こと自体は JMPlayer の仕様として確認できる。ただし、今回の基準 MIDI で観測した +128 tick と、Glosa の +288 tick の差は、今回の基準出力を JMPlayer と同一視できないため、依然として未解決。入力ファイルのコンダクタ小節長と基準 MIDI の生成条件を再確認する必要がある。
+
+### 次の調査順序（更新）
+
+1. 37件の Note-off 差分を、同音高の重複・重なりと Note-off の対応付けを考慮して分類する。
+2. 基準 MIDI の生成元（SNG2GS / SNG2S の実行ファイル名・版・オプション）を確かめ、JMPlayer の動作と区別する。
+3. +128 tick と +288 tick の差を、基準 MIDI のイベント列と入力 SNG のコンダクタ値を再照合して説明する。
+4. v1 `runner.SNG` のレイアウト失敗を、引き続き独立した問題として調べる。
+
+この追加調査でも、Glosa の変換ソースは変更していない。
