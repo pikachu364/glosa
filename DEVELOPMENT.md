@@ -151,3 +151,30 @@ form of a version fails.
 
 `build-app.sh` and `package.sh` take the version with `--version`, and `package.ps1` with
 `-Version`. Without it, the version is the project's `Version` (1.0.0, as it is not set).
+
+
+## Windows audio-device investigation notes (2026-10)
+
+There was a report that S-MU2000 sometimes fails to open its audio device after `make`, and that rebooting Windows restores operation. The suspected relationship with Norton scans has not been established; Norton should not be treated as the confirmed cause. Direct audio testing is paused until an environment where audio can be played is available.
+
+### Observations so far
+
+- The Glosa CLI `devices` command ran using the WinMM backend.
+- Initialization of Windows MIDI Services failed while activating `Windows.Devices.Midi2.MidiApi`, with error `0x80040154`. This is a separate observation about availability of the MIDI 2.0 API; there is not yet evidence linking it to S-MU2000's audio-output error.
+- The MIDI output list contained `Microsoft GS Wavetable Synth`, `Roland port A`, `Roland port B`, `YAMAHA port A`, and `YAMAHA port B`. The user reports that `Roland port A` is connected to 88emuPlayer.
+- S-MU2000's log listed `YAMAHA port A/B` for MIDI IN A/B, with C/D/E disconnected.
+- During investigation, Windows services `Audiosrv` and `AudioEndpointBuilder` were both `Running`.
+- `Win32_SoundDevice` listed devices including Realtek, NVIDIA, Intel Smart Sound and ASUS Utility, all with status `OK`.
+- `Get-PnpDevice -Class AudioEndpoint` showed `Speakers (Realtek(R) Audio)`, `AI Noise-cancelling Output (ASUS Utility)`, and input endpoints with status `OK`.
+- S-MU2000 startup output included two warnings that a button image could not be opened from line 59 of `panel.txt`. Their relationship to the audio-device issue is unknown.
+- When `--audio "スピーカー"` was specified, the application reported that a playback device with a garbled-looking name could not be found. It is not yet known whether this is due to argument encoding, an exact device-name mismatch, or argument handling in the application.
+
+### Steps when resuming
+
+1. Reboot Windows and resume only when audio can be played. Do not try to verify test audio in a place where sound cannot be played.
+2. Check whether the issue reproduces without explicitly naming a playback device: `./build/gui.exe /r/roms --audio`.
+3. If it reproduces, before rebooting again, open the Windows Playback tab (`Win + R` → `mmsys.cpl`) and test the speakers.
+4. Record the result and the exact S-MU2000 error message. If useful, also record the output of `Get-Service Audiosrv,AudioEndpointBuilder` and `Get-PnpDevice -Class AudioEndpoint`.
+5. Do not assume Norton scanning is the cause. Compare the reproduction time with build and scan times. Disabling protection should not be the first troubleshooting step.
+
+Current conclusion: Windows reported the audio services and endpoints as present during the investigation, but actual test audio has not yet been checked. The reason S-MU2000 sometimes fails to open the playback device remains unknown.
