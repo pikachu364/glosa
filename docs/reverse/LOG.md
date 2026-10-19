@@ -60,3 +60,9 @@
 - `FUN_1000_183A` は queue reader のラッパー。呼び出し元 `FUN_1000_0Bxx` 付近で Note-off、Note-on、poly pressure、control change、program change、channel pressure、pitch bend、SysEx に対応するステータス範囲へ分岐する命令列を確認した。
 - SysEx 経路では `F0` から `F7` まで byte を収集し、条件によって `FUN_1000_16E6` へ渡す。これにより queue が MIDI 解析器への byte-stream 中継点であることが強く裏付けられた。
 - FACTS F-014 を追加。次は各ステータス経路と最終 SMF 出力先の対応を追う。変換ソースは未変更。
+
+## 2026-10-19 — consumer から出力バッファへの経路を確認
+
+- `FUN_1000_17C2` は `FUN_1000_5648` に byte を渡し、出力位置 `0x1C2A:0x1C2C` を加算する。`FUN_1000_5648` は `0x1AE0` の出力バッファ管理構造体に byte を書き、残量を減らす。残量不足時は `FUN_1000_48A2` を呼ぶ。
+- `FUN_1000_16E6` と `FUN_1000_1754` は 7-bit 継続形式の値を組み立て直し、それぞれ `FUN_1000_17C2` / `FUN_1000_17FE` を通して出力する。VLQ と整合するが、各 call-site の意味は未確定。
+- FACTS F-015 を追加。次は call-site から delta-time 等の役割を確定し、バッファ flush 経路を追う。変換コードは未変更。
