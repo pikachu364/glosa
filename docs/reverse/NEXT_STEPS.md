@@ -162,3 +162,6 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] 実 MIDI における同音高重複時の Note-off 所有関係を確定する。これは fixture/CI 修正とは別の意味論上の調査として T-007 で継続する。
 
 **完了条件:** fixture 修正コミットの CI が3 OS で成功すること。達成済み。
+
+- [x] `FUN_1000_40c8` の引数配置と DOS `INT 21h` 呼び出しを確認。`0x4201` と `CX=0, DX=value` の組み合わせから、v1 の13個の16-bit値が現在位置基準の相対 seek 距離であることを確認した。
+- [ ] seek 距離を runner.SNG の全10パートに適用し、各パートの終端候補と算出位置を照合する。相対 seek の役割を確定するまでは converter を変更しない。
