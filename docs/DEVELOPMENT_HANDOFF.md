@@ -893,3 +893,34 @@ GitHub 上の現行 `src/Glosa.Core/Smf/SngConverter.cs` と元実装 `jihodaya/
 ### 次の一手
 
 v1 の旧形式候補で、参照 MIDI の Note-on を各パートについて pitch・velocity・tick の組として照合する。既存の handoff では byte 4=pitch、byte 0=velocity、byte 6=デルタ時間という候補が複数パートで強く一致しているため、まずこの候補を使い、flags・step/nudge・一定 tick オフセットの影響を分離して調べる。候補が一致しない場合は、実装変更をせず、不一致レコードの生バイトと参照イベントを記録する。
+
+
+## 2026-10-19 追加調査：v1候補レコードと参照MIDIのtick照合を再現
+
+GitHub コネクタで取得した v1 `runner.SNG` と `sng2gs/runner.MID` のバイト列を、読み取り専用のスクリプトで解析し、handoff に記録済みの候補を再検証した。ファイルはそれぞれ 85,897 bytes / 40,398 bytes。参照 MIDI は Format 1、12 tracks、TPQ 48 で、ノート数は既存記録と一致した。
+
+旧形式候補 `headerEnd=114`、part block size=`table entry + 80`、`used` offset `+117`、ノート領域 `+159` で各パートを読み、byte 4=pitch、byte 0=velocity、byte 6=累積デルタ候補として参照トラックの `(pitch, velocity, tick)` を照合した。参照トラックはパート2〜10に対し Mero.1〜Rhythm の順で対応させた。
+
+| SNG part | 参照トラック | gate>0候補レコード | 参照 Note-on | 最良tickオフセット | pitch/velocity/tick一致数 |
+|---:|---|---:|---:|---:|---:|
+| 2 | Mero.1 | 715 | 473 | +576 | 48 |
+| 3 | Mero.2 | 399 | 175 | +576 | 31 |
+| 4 | Mero.3 | 203 | 110 | +576 | 17 |
+| 5 | Chord1 | 254 | 234 | +576 | 229 |
+| 6 | Chord2 | 219 | 146 | +384 | 138 |
+| 7 | Backing | 726 | 688 | +216 | 665 |
+| 8 | Bass | 86 | 61 | +576 | 60 |
+| 9 | Per. | 523 | 480 | +576 | 478 |
+| 10 | Rhythm | 971 | 928 | +564 | 728 |
+
+### 解釈と制約
+
+- 既存記録の一致数と最良オフセットを再現できた。特に Chord1、Backing、Bass、Per. は pitch/velocity/tick の一致が強く、旧形式レイアウトとフィールド候補を支持する。
+- パート2〜4と Rhythm は一致率が低い。全パート共通の tick オフセットや「gate>0なら必ず Note-on」という単純モデルでは説明できない。flags、step/nudge、パート別状態、イベント抑制条件を別途考慮する必要がある。
+- 今回の一致数は多重集合照合であり、個々のSNGレコードとMIDIイベントの一対一対応やSNG2Sのアルゴリズム全体を証明しない。ノート開始時刻の最良オフセットもパート間で異なるため、+576を全パート共通値とは扱わない。
+- 参照MIDIのトラック名には `(LA)` などの音色表記が付く。対応付けはトラック名の先頭部分を使った静的なもの。
+- **コード変更なし。** `SngConverter.cs` は変更していない。実行変換・音声再生は行っていない。
+
+### 次の一手
+
+一致率が高いパート（Chord1、Backing、Bass、Per.）から、不一致イベントをSNGレコード番号・全8 bytes・flags・候補tick・pitch/velocityとともに抽出する。そのうえで、参照MIDI側の該当pitch/velocityのNote-on/offと照合し、gate・flags・nudgeが一致／不一致にどう関係するかを調べる。低一致率のメロディーとRhythmは、その規則を確認した後に分けて解析する。
