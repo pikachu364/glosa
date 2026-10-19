@@ -292,6 +292,6 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - ノートイベントを持つ各パートの MIDI channel は `part - 1` と一致した。具体例として v3 は part 1 DRUMS→channel 0、part 2 BASS→channel 1、part 3 GUITAR 1→channel 2、part 10（リズム/SE）→channel 9。v4 は part 2 Violin 1→channel 1、part 12 Basoon 2→channel 11。空パートも順序上の track と channel を保持する。
 - この結果は参照 MIDI の実際の track chunk 順・channel と SNG part の対応を支持し、SNG2S マニュアル記載の既定順と一致する。`/F` オプション時の順序は未検証。
 - 現行 Glosa は SNG part の昇順に track を出力するが、各 part の channel は `part - 1` としている。従って現時点の差は主に track chunk の並び順であり、チャンネル割当そのものではない。
-- fixture branch commit [2ba756b](https://github.com/pikachu364/glosa/commit/2ba756b10e138e1093b13507605205de66c899b0) で、トラックごとのイベント比較に MIDI channel も含めるようテストを強化した。CI は確認中。
+- fixture branch commit [2ba756b](https://github.com/pikachu364/glosa/commit/2ba756b10e138e1093b13507605205de66c899b0) で、トラックごとのイベント比較に MIDI channel も含めるようテストを強化した。GitHub Actions run [39223684171](https://github.com/pikachu364/glosa/actions/runs/39223684171) は Linux・Windows・macOS の全 job で成功した。
 
 **制約:** v2 の参照イベント比較には +160 tick の補正を使う。ここで確認したのはノートイベントと track/channel の対応であり、各 MIDI track の全メタイベントや `/F` 出力はまだ比較していない。
