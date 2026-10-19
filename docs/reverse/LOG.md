@@ -112,3 +112,10 @@
 - `FUN_1000_4CA4` は write-mode 管理構造体の未出力 byte を `FUN_1000_59AC` に渡す flush 経路。`FUN_1000_470E` は有効な管理構造体を走査して flush を試みる。
 - `FUN_1000_5690` は DOS `AH=3Eh` による OS handle close。`FUN_1000_49F8` の動的バッファ cleanup とは別で、`FUN_1000_4697` では cleanup の後に close が続く。
 - FACTS F-022 を追加。converter は未変更。次は close 前 flush の caller 条件と handle 登録フラグの設定源を確認する。
+
+
+## 2026-10-19 — close 経路と OS handle flag table を接続
+
+- `FUN_1000_4697` 内部の命令順を追い、`FUN_1000_4CA4` の flush 試行が `FUN_1000_49F8` cleanup と `FUN_1000_5690` DOS close より前に実行されることを確認。
+- `FUN_1000_572A` が成功した OS handle ごとに `0x1782+h` flag byte を初期化し、`FUN_1000_4CA4` が管理構造体 `+7` の handle を `FUN_1000_59AC` に渡すことから、両 table の接続は管理構造体 index ではなく handle 値経由と確定。
+- `FUN_1000_59AC` の `0x20` (seek-to-end) と `0x80` (LF→CR/LF) の用途を命令列で再確認。FACTS F-023 を追加。converter は未変更。
