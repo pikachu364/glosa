@@ -87,3 +87,12 @@ v1 `runner.SNG` を現行 `SngConverter` で変換する統合テストは `Inva
 - 候補ごとのブロック境界と長さフィールドを独立に確認する。
 - SNG2GS 参照 MIDI の各パートと SNG データ領域を対応付ける。
 - SNG2S/SNG2GS 側の v1 処理を解析し、候補レイアウトを裏付ける。
+
+
+## H-010 — v1 Note-off は単純な onset + duration だけでは説明できない
+
+**状態:** イベント比較で反例を確認。生成元のスケジューラ規則は未確定。
+
+v1 part 10 には Tie flag のない pitch 69 / velocity 21 / duration 1 のレコードが2件あり、Note-on は同 tick 1728 に発生する。参照 MIDI の対応する Note-off は tick 1728 と 1729 に分かれるため、両方を `onset + duration` に置く単純モデルでは一致しない。同様のパターンは後続の12-tick間隔でも観測される。
+
+**確認に必要なこと:** `FUN_1000_272a` から内部イベント生成・期限管理関数まで Note-off の登録と期限切れ処理を追跡し、同 tick・同音高ノートが競合する場合の規則を特定する。これが完了するまで v1 の Note-off 処理を converter に実装しない。
