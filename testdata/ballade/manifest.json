@@ -21,7 +21,7 @@
         "perTrackNoteOnOffEventsMatch": true
       }
     },
-    "status": "Offline event-generation model matches checked-in reference MIDI; CI and compiled post-fix MIDI output are not yet confirmed."
+    "status": "Actual C# converter note-event comparisons are covered by CI for v2-v4; v1 is excluded because its layout is not currently supported."
   },
   "samples": [
     {
@@ -34,7 +34,7 @@
         "sizeBytes": 40398
       },
       "glosaMidi": null,
-      "verification": "SNG fixture hash recorded; SNG2GS reference MIDI is present; Glosa conversion and v1 layout validation pending."
+      "verification": "Current converter rejects this sample as an unsupported layout; v1 layout investigation is required before an output comparison can run."
     },
     {
       "file": "v2/SHIZUME0.SNG",
