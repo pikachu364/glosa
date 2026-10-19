@@ -232,6 +232,7 @@ public static class SngConverter
                 int rawKey = record.Key;
                 int outputKey = Math.Clamp(rawKey + shift, 0, 127);
                 bool hasTimer = timers.TryGetValue(rawKey, out int expiry);
+                bool registerTimer = true;
                 if (hasTimer)
                 {
                     if (record.Flags != 0xC0)
@@ -241,10 +242,10 @@ public static class SngConverter
                     if (expiry - at < record.Duration)
                         timers.Remove(rawKey);
                     else
-                        continue;
+                        registerTimer = false;
                 }
 
-                if (record.Flags != 0x40)
+                if (registerTimer && record.Flags != 0x40)
                     timers[rawKey] = at + record.Duration;
 
                 if (record.Flags != 0xC0)
