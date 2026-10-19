@@ -214,3 +214,11 @@
 - Tie は開始 tick 以下の同音高 pending Note-off のうち最も遅いものを選び、同 tick なら後から追加されたものを選択する。選択後は Note-off を `Tie start + duration` に移す。
 - 期待値だけを変更することは保留。実際に読み取られたレコード位置・各 tick・選択された event index を追跡して不一致の根因を確定する必要がある。
 - この時点でコード修正も新しい CI run も行っておらず、修正完了とは扱わない。
+
+
+## 2026-10-19 — Tie 重複テスト fixture 修正と CI 成功
+
+- fixture branch commit [07e8b57](https://github.com/pikachu364/glosa/commit/07e8b57c73628b7e263781fdff84b20748172b36) の差分を確認。TieRecordExtendsLatestEligibleNoteOffWhenSamePitchNotesOverlap の最初のレコードに渡す duration/step 値を入れ替え、同音高ノートの予定 Note-off tick が一致するように fixture を修正した。
+- commit に紐づく Actions run [39224987508](https://github.com/pikachu364/glosa/actions/runs/39224987508) の job 結果を GitHub から取得し、Windows (117968976787)、Ubuntu (117968976840)、macOS (117968976870) の全 job が completed/success であることを確認。
+- 修正はテスト fixture のみで、SngConverter.cs の Tie アルゴリズムは変更していない。したがって fixture/CI の失敗は解消したが、実 MIDI における Note-off 所有関係の検証は引き続き必要。
+- FACTS.md F-031 と NEXT_STEPS.md T-008 を更新。
