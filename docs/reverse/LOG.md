@@ -104,3 +104,11 @@
 - FUN_1000_4768 は特殊管理領域の初期化 FUN_1000_4B8A、処理 FUN_1000_4D12、後始末 FUN_1000_4C0E を順に呼ぶ。
 - FUN_1000_49F8 の参照元 1000:4697 では cleanup 後に FUN_1000_5690 が続くため、close と即断せず、ハンドル後処理を継続調査する。
 - FACTS F-021 を追加。converter は未変更。次は FUN_1000_5687 の関数境界と、管理構造体の実インデックスを caller から追う。
+
+
+## 2026-10-19 — flush / buffer cleanup / OS close を分離
+
+- `FUN_1000_5670` は buffered reader で、残量が尽きた場合のみ `FUN_1000_47E2` に読み取りを委譲することを確認。
+- `FUN_1000_4CA4` は write-mode 管理構造体の未出力 byte を `FUN_1000_59AC` に渡す flush 経路。`FUN_1000_470E` は有効な管理構造体を走査して flush を試みる。
+- `FUN_1000_5690` は DOS `AH=3Eh` による OS handle close。`FUN_1000_49F8` の動的バッファ cleanup とは別で、`FUN_1000_4697` では cleanup の後に close が続く。
+- FACTS F-022 を追加。converter は未変更。次は close 前 flush の caller 条件と handle 登録フラグの設定源を確認する。
