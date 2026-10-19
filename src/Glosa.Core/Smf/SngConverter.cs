@@ -60,10 +60,16 @@ public static class SngConverter
                 {
                     int at = Math.Max(0, tick + nudge);
                     int key = Math.Clamp(record[0] + shift, 0, 127);
-                    if ((record[7] & 0x80) != 0 && key == lastKey && lastOff >= 0 && lastOffTick == at)
+                    if ((record[7] & 0x80) != 0)
                     {
-                        track.Events[lastOff] = track.Events[lastOff] with { Tick = at + record[1] };
-                        lastOffTick = at + record[1];
+                        // A Tie record continues an existing note; it never starts a new one.
+                        // Extend the prior Note-off only when this record is contiguous and
+                        // has the same key. Otherwise ignore the unmatched continuation.
+                        if (key == lastKey && lastOff >= 0 && lastOffTick == at)
+                        {
+                            track.Events[lastOff] = track.Events[lastOff] with { Tick = at + record[1] };
+                            lastOffTick = at + record[1];
+                        }
                     }
                     else
                     {
