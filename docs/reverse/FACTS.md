@@ -296,12 +296,12 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 **制約:** v2 の参照イベント比較には +160 tick の補正を使う。ここで確認したのはノートイベントと track/channel の対応であり、各 MIDI track の全メタイベントや `/F` 出力はまだ比較していない。
 
-## F-031 — 同音高重複 Tie 合成テストの CI 失敗
-**状態:** GitHub Actions の失敗ログと fixture branch のソースで確認
+## F-031 — 同音高重複 Tie 合成テストの fixture 修正と CI 成功
+**状態:** 修正コミットと3 OS の CI 成功を確認
 
-- fixture branch commit `9f1eb4ae7b7c90a60a8f982453cbf648e97b7179` の run [39224478408](https://github.com/pikachu364/glosa/actions/runs/39224478408) は Windows・Ubuntu・macOS の全 job で失敗。ビルドは成功し、972 テスト中 971 成功、失敗は `TieRecordExtendsLatestEligibleNoteOffWhenSamePitchNotesOverlap` のみ。
-- テストは Note-off tick `[240, 264]` を期待するが、実際の SMF 解析結果は `[216, 288]`。
-- 現行コードは Tie 開始 tick 以下の同音高 pending Note-off を予定 tick の最大値で選び、同 tick なら後に追加されたイベントを選択する。選択した Note-off を `Tie start + Tie duration` に移す。
-- テスト fixture は3レコードの duration/step と終端位置を明示しているが、上記の実出力はコメント上の予定時刻と整合しない。期待値を変更する前に、選択されたレイアウト、実際に読み取られるレコード位置、各イベントの source tick と出力 tick を追加検証する必要がある。
+- 初回 run [39224478408](https://github.com/pikachu364/glosa/actions/runs/39224478408) は、旧 fixture が意図した重なり条件を正しく表現しておらず、3 OS すべてで失敗した。
+- fixture branch の commit [07e8b57](https://github.com/pikachu364/glosa/commit/07e8b57c73628b7e263781fdff84b20748172b36) は、最初のノートレコードの duration/step 引数を入れ替え、同音高ノートの Note-off が同じ tick になるよう修正した（変更差分で確認）。
+- 修正コミットに紐づく CI run [39224987508](https://github.com/pikachu364/glosa/actions/runs/39224987508) は Windows・Ubuntu・macOS の全 job で成功。
+- これは合成テスト fixture の修正であり、SngConverter.cs の Tie 選択アルゴリズムを変更したものではない。実 MIDI の Note-off 所有関係が完全に確定したという意味ではない。
 
-**制約:** Note-off 所有関係の正解はまだ確定していない。実装・テストの修正および修正後 CI 成功は未確認。
+**残作業:** 実 MIDI の重複同音高ノートで Note-off の対応関係を一意に検証できる証拠はまだ不足している。T-008 は fixture/CI 問題を解消済みとし、意味論の検証は T-007 の残項目として継続する。
