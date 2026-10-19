@@ -47,7 +47,7 @@ public static class SngConverter
             int controllerBytes = U16(data, start + (layout.IsLegacyV1 ? 117 : 114));
             int stream = start + streamOffset, controllers = stream + used;
             int channel = part - 1, module = data[start + 94];
-            int shift = module is 2 or 5 ? 0 : transpose;
+            int shift = layout.IsLegacyV1 || module is 2 or 5 ? 0 : transpose;
             int nameOffset = layout.IsLegacyV1 ? start + 69 : start + 81;
             int nameLength = 0;
             while (nameLength < 12 && nameOffset + nameLength < data.Length && data[nameOffset + nameLength] != 0) nameLength++;
