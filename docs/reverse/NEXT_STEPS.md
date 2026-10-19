@@ -119,3 +119,6 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] `0x02` の clear は `FUN_1000_56B0` の seek 成功後 (`1000:5722`)、`0x04` は `FUN_1000_58CE` 内でセット・次回 text pass 冒頭でクリアされることを確認。解析テキスト全体検索では `0x04` の外部参照は未検出。
 - [ ] Tie/reference MIDI のイベント単位比較に戻り、余分な Note-on の発生条件を検証.
 - [ ] Tie/reference MIDI のイベント単位比較に戻り、余分な Note-on の発生条件を検証。
+
+- [ ] Tie/reference MIDI のイベント単位比較に必要な、SNG2GS/SNG2S が実際に出力した参照 `.mid` を、出典・バージョン・オプション付きで testdata に用意する。現行 `testdata/ballade` には `.SNG` 4件のみで参照 MIDI は見当たらず、`SngConverterTests.cs` も Tie の重複音/Note-off 延長を直接検証していない。
+- [ ] 参照 MIDI が用意できたら、各パートについて SNG raw record と MIDI Note-on/Note-off を tick/key/velocity ごとに突合し、`record[7] & 0x80` の条件別に差分を分類する。
