@@ -1,10 +1,8 @@
 # SNG2GS conversion result — Ballade v4
 
-This directory is reserved for the MIDI output converted from [`../BOURREE0.SNG`](../BOURREE0.SNG) using SNG2GS.
-
-- Input: `BOURREE0.SNG`
-- Output: `BOURREE0.MID`
+- Input: [`../BOURREE0.SNG`](../BOURREE0.SNG)
+- Output: `BOURREE0.MID` (19,623 bytes; present)
 - Converter: SNG2GS
-- Converter version and options: to be documented
+- Converter version and options: unknown; document when provenance is recovered
 
-The converted `BOURREE0.MID` file still needs to be added.
+The reference MIDI is checked in and contains 1,721 Note-ons and 1,721 Note-offs.
