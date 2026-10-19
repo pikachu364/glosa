@@ -4,6 +4,9 @@
 対象リポジトリ: https://github.com/pikachu364/glosa  
 この文書は、チャットを新しくしても作業を再開できるように、完了事項・確認済みの事実・未解決事項・次の手順を区別して記録する。
 
+> **整理先:** 逆解析の現在の知識ベースは [docs/reverse/README.md](reverse/README.md) から参照してください。確認済み事実は [FACTS.md](reverse/FACTS.md)、仮説・未解決事項は [HYPOTHESES.md](reverse/HYPOTHESES.md)、優先タスクは [NEXT_STEPS.md](reverse/NEXT_STEPS.md)、短い日付順ログは [LOG.md](reverse/LOG.md) に分離しています。この文書は詳細な経緯を残すアーカイブとして維持します。
+
+
 ## 0. 最重要サマリー
 
 **現在の優先課題は、v1 のレイアウト判定エラーの原因究明と、tie の Note-off 延長・160 ticks の開始時刻差の検証。** ノートオン数の差（3,657対2,713）は tie フラグ処理の不一致で説明できた。v1 は3候補すべてが最初のパート長検証で失敗し、v2〜v4 はそれぞれ少なくとも1候補が通る。詳細は §10。
