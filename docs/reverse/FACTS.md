@@ -301,6 +301,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 - 初回 run [39224478408](https://github.com/pikachu364/glosa/actions/runs/39224478408) は、旧 fixture が意図した重なり条件を正しく表現しておらず、3 OS すべてで失敗した。
 - fixture branch の commit [07e8b57](https://github.com/pikachu364/glosa/commit/07e8b57c73628b7e263781fdff84b20748172b36) は、最初のノートレコードの duration/step 引数を入れ替え、同音高ノートの Note-off が同じ tick になるよう修正した（変更差分で確認）。
+- レコードの時刻計算（テスト helper の引数順は duration, step）: 1件目は duration=48 / step=24 なので Note-off は tick 48、2件目は開始 tick 24・duration=24 なので Note-off も tick 48。3件目の Tie は累積 step で tick 48 に始まり、同 tick の候補から後に追加された2件目の Note-off を tick 72 へ延長する。SMF の基準 tick 192 を加えた結果は Note-off `[240, 264]` となる。
 - 修正コミットに紐づく CI run [39224987508](https://github.com/pikachu364/glosa/actions/runs/39224987508) は Windows・Ubuntu・macOS の全 job で成功。
 - これは合成テスト fixture の修正であり、SngConverter.cs の Tie 選択アルゴリズムを変更したものではない。実 MIDI の Note-off 所有関係が完全に確定したという意味ではない。
 
