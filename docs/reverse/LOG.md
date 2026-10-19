@@ -140,3 +140,10 @@
 - `FUN_1000_58CE` の命令列を再確認。text flag `0x80` が立つ場合にのみ CR/LF processing loop に入り、loop 冒頭で `0x04` をクリア、読み込みバッファ先頭が LF の場合に `0x04` をセットする。
 - text loop 内で SUB (`0x1A`) を検出すると `0x02` をセットして終了し、次の read 呼び出しは `0x02` を見て DOS read をスキップする。`FUN_1000_47E2` の zero/error-like result に対応する `0x10/0x20` とは別経路として記録。
 - FACTS F-026 と NEXT_STEPS を更新。`0x02` の reset/clear caller と `0x04` の reader/caller を全検索するのが次の作業。変換コードは未変更。
+
+
+## 2026-10-19 — EOF-like flag clear path と flag byte 全体検索
+
+- `FUN_1000_56B0` (`1000:5722`) で DOS seek (`AH=42h`) 成功後に handle flag `0x02` を clear する命令を確認。`0x02` は text SUB (`0x1A`) 後の read 停止状態だが、成功した seek で解除可能。
+- `0x04` は `FUN_1000_58CE` の text loop でセットされ、同関数の次の text loop 開始時に clear。checked-in disassembly 全文の直接検索では外部参照を確認できず、これ以上の意味付けは保留。
+- close (`FUN_1000_5690`) 成功時は `0x1782+h` flag byte 全体をゼロクリア。FACTS F-026 / NEXT_STEPS を更新。converter 未変更。
