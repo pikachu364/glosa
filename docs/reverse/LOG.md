@@ -377,3 +377,11 @@
 - tick の対応は、source tick 0 の初期状態イベントが MIDI tick 8、それ以降が source tick +191。v1 専用 converter にこの時刻変換と状態重複抑制を実装し、v1 では参照に存在しない RPN 初期化イベントを出さないようにした。v2〜v4 の controller 経路は維持する。
 - `BalladeV1MatchesSng2GsReferenceControllerAndProgramEvents` テストを追加した。CI run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) は記録時点で pending のため、テスト成功とはまだ扱わない。
 - この一致は fixture のオフライン比較に基づき、SNG2S 実行時トレースではない。tempo/meta event、SMF track chunk 順、実再生・聴感確認は継続課題。
+
+
+## 2026-10-20 — v1 tempo meta の汎用パーサー不一致を検出
+
+- 参照 `runner.MID` の conductor track を解析し、tempo meta が tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter、time signature が tick 0 に 4/4 であることを確認した。
+- v1 conductor の sentinel（file offset 761）後を現行 `ReadTempi` と同じ方法で読むと step 37 / value 144、step 37 / value 192 ... となり、現行の tempo 変換式では参照 tempo と一致しない。
+- SNG2S の静的命令列には初期 500,000 tempo meta と、`0x7BA` が120以外のとき `FUN_1000_618A` で `60,000,000 / tempo` を計算して tempo meta を出す経路がある。ただし tick 8 / 192 の参照イベントと SNG のどのフィールドが対応するかは未確定。
+- FACTS F-053、HYPOTHESES H-012、NEXT_STEPS T-003 を更新。根拠が不足するため tempo conversion のコードは推測で変更せず、tempo/meta は未検証のままとする。
