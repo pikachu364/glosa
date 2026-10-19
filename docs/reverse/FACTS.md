@@ -448,3 +448,19 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `FUN_1000_3A10` は `AL` と `AH` をタイマー表項目の `+2/+3` に保存し、`FUN_1000_3A3F` は入力 `AX` とその word を比較する。したがって照合キーは velocity ではなく、実際には status/channel byte と音高 byte の組である。
 - `FUN_1000_3A3F` は一致項目の先頭 byte（タイマー値）と新規レコード長 `DL` を比較する。これにより同じチャンネル・音高の既存タイマーは、新しいレコードの処理に影響し得る。
 - ただし、タイマー値比較の各分岐が参照 MIDI の特定の Note-off tick をどう生むか、また同 tick 重複のときに出力イベントがどのノートに対応するかは未確定。
+
+
+## F-044 — v1 Note-off のタイマー規則をオフライン再現し参照 MIDI と完全一致
+
+**状態:** `runner.SNG` と `runner.MID` の全イベント照合、および `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的命令列に基づくオフライン再現。SNG2S 本体の実行時トレースではない。
+
+`testdata/ballade/v1/runner.SNG` の10パートについて、`+145` の8-byte record stream と note duration at `partStart+115` を使用し、source onset を既に確立した `+192 ticks` で MIDI tick に写像した。`record[7] & 0xC0` をイベント処理フラグとして扱い、次のタイマー規則を実装した。
+
+1. タイマー表のキーは Note-on status/channel byte と pitch byte の組。各 tick のイベント処理前に期限切れタイマーを Note-off として出力する。
+2. 同じキーのタイマーが既にある場合、残り時間と新しい record duration を比較する。既存残り時間が新 duration 未満なら既存タイマーを解除し、呼び出し側条件に応じて新タイマーを登録する。残り時間が新 duration 以上なら既存タイマーを保持し、新規登録をしない。
+3. 衝突時の即時 Note-off は flag `0xC0` では抑止され、flag `0x40` では新タイマー登録が抑止される。flag `0x80` の record はこの Note-on / timer lookup 経路を通らない。
+4. タイマー期限切れの Note-off と衝突時の即時 Note-off を合わせて参照 MIDI と照合する。
+
+**結果:** 参照 MIDI の Note-on 3,295件は既報どおり一致。今回、Note-off 3,295件も `(channel, pitch, tick)` の multiset で完全一致し、差分キー 0、欠落 0、余分 0。パート別件数は part 1: 0、part 2: 473、part 3: 175、part 4: 110、part 5: 234、part 6: 146、part 7: 688、part 8: 61、part 9: 480、part 10: 928。
+
+**注意:** この一致は静的逆アセンブルから再構成した規則を参照 MIDI に当てはめた結果であり、元 EXE の実行時状態を直接計測した証拠ではない。ファイル構造全体や13個の16-bit値、末尾65 bytes の意味は別課題として残る。
