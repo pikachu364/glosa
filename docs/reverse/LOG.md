@@ -54,3 +54,9 @@
 - `FUN_1000_39E9` の命令列を確認。読み取りポインタ `0x1154` から1 byte を取り出し、共有カウンタ `0x1150` を減らす。空の場合は `0xFFFF` を返し、ポインタは writer と同じ `0x1556 → 0x1156` の折り返しを使う。
 - `FUN_1000_3BA7` は `F0`/`F7` を含む byte 列を writer 経由で積んでおり、writer を汎用 byte queue producer とする見方を補強する。
 - FACTS F-013 を追加。次は `FUN_1000_39E9` の複数呼び出し元と `FUN_1000_3BA7` の consumer 側の扱いを追う。変換コードは変更していない。
+
+## 2026-10-19 — キュー consumer の MIDI ステータス分岐を確認
+
+- `FUN_1000_183A` は queue reader のラッパー。呼び出し元 `FUN_1000_0Bxx` 付近で Note-off、Note-on、poly pressure、control change、program change、channel pressure、pitch bend、SysEx に対応するステータス範囲へ分岐する命令列を確認した。
+- SysEx 経路では `F0` から `F7` まで byte を収集し、条件によって `FUN_1000_16E6` へ渡す。これにより queue が MIDI 解析器への byte-stream 中継点であることが強く裏付けられた。
+- FACTS F-014 を追加。次は各ステータス経路と最終 SMF 出力先の対応を追う。変換ソースは未変更。
