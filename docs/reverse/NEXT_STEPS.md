@@ -171,3 +171,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [ ] v1 part 10 の同 tick・同音高ノート（例: pitch 69、tick 1728、duration 1 が2件）について、参照 MIDI が Note-off を tick 1728/1729 に分ける規則を SNG2S のスケジューラ処理から追う。
 - [ ] part 2 / 3 の Note-off 残差を、Note-on が一致する具体的なレコード・参照 Note-off と対応付けて説明する。
+
+- [x] `FUN_1000_3A10` / `FUN_1000_3A3F` / `FUN_1000_3406` の静的命令列を確認し、同じ識別値を持つ既存タイマーと新しい長さを照合する経路、および期限切れ時の処理を記録。
+- [ ] v1 part 10 の同 tick・同音高レコードに対し、`FUN_1000_3A3F` の実際の入力 `AX/DX` とタイマー表の各値を対応付け、参照 MIDI の tick 1728/1729 の Note-off を説明する。
+- [ ] part 2 / 3 の Note-off 残差にも同じタイマー競合処理が当てはまるか検証する。
