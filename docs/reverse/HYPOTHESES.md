@@ -73,7 +73,7 @@ JMPlayer の `sngmidi.cpp` 267–292行と Glosa の現行実装は、Tie bit �
 
 ## H-008 — v1 の +80 レイアウト候補と JMPlayer 実装の不一致
 
-**状態:** SNG2S 逆解析は旧版80 byte／後続版81 byteの固定読込幅を支持し、runner.SNG の全10パートでも +80 / +115 / +117 / +119 / +161 候補が容量・アラインメント条件を満たす。ただし、算出終端後の65 byteとイベント意味は未解決。
+**状態:** SNG2S 逆解析と Note-on 全件照合は +145 record start、+115 note length、+117 controller length を支持。+119〜+143 は13個の16-bit値群で、意味と seek 列の関係は未解決。算出終端後の65 byteと Note-off 残差も未解決。
 
 JMPlayer の `buildLayout`（`sngmidi.cpp` 96–147行）は全バージョンに同じ3つの header 候補、パートサイズ `entry+81`、長さフィールド `+112/+114/+116` を適用し、v1 専用分岐を持たない。runner.SNG では +80 パートサイズ候補と、SNG2S が支持する +115/+117 の長さフィールド、+145 record start が観測される。
 
