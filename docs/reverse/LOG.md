@@ -303,3 +303,11 @@
 - 10パート全てで note length が8の倍数、controller length が4の倍数となり、3列長合計は各パートの size-161 以内。これは +80 候補の構造的整合性を補強する。
 - 算出終端 85832 に対してファイル長は 85897 で、末尾65 byteが残る。用途は未解明。F-037 にパートごとの開始位置・サイズ・列長を記録した。
 - 参照 MIDI の差分4音、サイズ表の正式な意味、末尾65 byteの役割は未解決。converter とテストコードは変更していない。
+
+
+## 2026-10-19 — v1 のレコード開始位置を SNG2S 読込順と参照 MIDI で再検証
+
+- `FUN_1000_272a` の旧版クラスでは 80-byte 情報バッファの後に note 列を読む。runner.SNG の候補パート開始位置に対して情報バッファは +65、note length は +115、controller length は +117、note record 列は +145 と対応する。
+- 以前の候補 +161 は16 byte後ろであり、SNG2S の read 順と参照 Note-on に一致しないため撤回。+119 は単一の index length ではなく、v1 経路で走査される13個の16-bit値の先頭と判断し、意味は未確定として記録。
+- +145 から8-byte recordを読み、Tie bit の立ったレコードを新規 Note-on から除外するモデルでは、全10パートの Note-on 3,295件について、参照 MIDI と channel/pitch/velocity/tick（source tick +192）の署名差分が0件。
+- Note-off は同じモデルで未一致が残る（part 2/3/10）。レイアウト全体の確定や converter 実装変更はまだ行わない。FACTS F-038 と H-001/T-002 を更新。
