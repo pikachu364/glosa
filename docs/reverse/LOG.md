@@ -327,3 +327,10 @@
 - 各パートで情報バッファ読み取り後の `+145` から note length と controller length のデータを読み、13個の相対 seek 距離を順次加算した。全10パートで結果位置は次パート開始候補 `+65` と一致し、差分は0 byte。
 - 最終パートの seek 後位置は 85,897 byteで、runner.SNG のファイル長と一致。以前「境界候補85832の後ろに未説明の65 byteがある」としていた扱いを改め、次の情報バッファ開始位置がEOFに到達する関係として説明した。
 - FACTS F-040、NEXT_STEPS、HYPOTHESES H-001 を更新。Note-off tick 残差（part 2/3/10）は残るため、converter は変更していない。
+
+
+## 2026-10-19 — v1 Note-off 残差の具体例を抽出
+
+- `runner.SNG` part 10 の record file offset 76607 / 76615 を確認。pitch 69、velocity 21、duration 1、Tie flagなしの2レコードがどちらも tick 1728 に Note-on を出す。
+- 参照 MIDI では同 pitch/channel の Note-off が tick 1728 と 1729 に分かれる。単純な onset + duration モデルでは両方 tick 1729 になるため、Tie がない場合にもスケジューラ側の別規則が必要。
+- 同様の組み合わせは tick 1740 以降も12-tick間隔で繰り返される。原因はまだ断定せず、H-010 として検証項目を分離。converter とテストコードは変更していない。
