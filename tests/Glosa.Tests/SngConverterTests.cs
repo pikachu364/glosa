@@ -203,6 +203,26 @@ public class SngConverterTests
             referenceTickShift: 0);
 
     [Fact]
+    public void BalladeV1PreservesSameTickDuplicateNoteOrdering()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+        byte[] reference = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "sng2gs", "runner.MID"));
+        MidiSequence actual = SmfReader.Read(SngConverter.ToSmf(sng));
+        MidiSequence expected = SmfReader.Read(reference);
+
+        static byte[] SameTickVelocities(MidiSequence sequence)
+            => sequence.Events
+                .Where(e => e.Kind == MidiEventKind.Channel &&
+                    e.Ticks == 1728 && e.Status == 0x99 && e.Data1 == 69)
+                .Select(e => e.Data2)
+                .ToArray();
+
+        Assert.Equal(new byte[] { 21, 0, 21 }, SameTickVelocities(expected));
+        Assert.Equal(SameTickVelocities(expected), SameTickVelocities(actual));
+    }
+
+    [Fact]
     public void BalladeV2MatchesSng2GsReferenceNoteEvents()
         => AssertReferenceNoteEvents(
             "v2/SHIZUME0.SNG",
