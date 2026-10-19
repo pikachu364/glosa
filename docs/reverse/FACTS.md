@@ -284,3 +284,14 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - CI run [39220897447](https://github.com/pikachu364/glosa/actions/runs/39220897447) と [39220904556](https://github.com/pikachu364/glosa/actions/runs/39220904556) は Linux・macOS・Windows の全 job が成功した。
 
 **制約:** このテストはトラック番号や MIDI チャンネル番号そのものの一致を検証しない。同音高の重複ノートで Note-off がどの Note-on に対応するかも、この単純なイベント列比較だけでは完全に確定できない。両 CI run は全 job 成功。ただし、この結果はトラック番号や MIDI チャンネル番号自体の一致、同音高重複時の Note-off 所有関係までは保証しない。
+
+## F-030 — SNG2GS 参照 MIDI のパート順とチャンネル対応
+**状態:** fixture branch の v2〜v4 参照 MIDI と SNG のノートレコードを照合して確認
+
+- 参照 MIDI の先頭は conductor track（track 0）、続いて SysEx 用の track 1。その後にパートトラックが並ぶ。参照 MIDI のパート名・ノートイベントを SNG の各パートと照合すると、v2/v3 の順序は SNG part `10, 9, 8, 7, 6, 5, 4, 3, 2, 1`、v4 は `10, 16, 15, 14, 13, 12, 11, 9, 8, 7, 6, 5, 4, 3, 2, 1`。
+- ノートイベントを持つ各パートの MIDI channel は `part - 1` と一致した。具体例として v3 は part 1 DRUMS→channel 0、part 2 BASS→channel 1、part 3 GUITAR 1→channel 2、part 10（リズム/SE）→channel 9。v4 は part 2 Violin 1→channel 1、part 12 Basoon 2→channel 11。空パートも順序上の track と channel を保持する。
+- この結果は参照 MIDI の実際の track chunk 順・channel と SNG part の対応を支持し、SNG2S マニュアル記載の既定順と一致する。`/F` オプション時の順序は未検証。
+- 現行 Glosa は SNG part の昇順に track を出力するが、各 part の channel は `part - 1` としている。従って現時点の差は主に track chunk の並び順であり、チャンネル割当そのものではない。
+- fixture branch commit [2ba756b](https://github.com/pikachu364/glosa/commit/2ba756b10e138e1093b13507605205de66c899b0) で、トラックごとのイベント比較に MIDI channel も含めるようテストを強化した。CI は確認中。
+
+**制約:** v2 の参照イベント比較には +160 tick の補正を使う。ここで確認したのはノートイベントと track/channel の対応であり、各 MIDI track の全メタイベントや `/F` 出力はまだ比較していない。
