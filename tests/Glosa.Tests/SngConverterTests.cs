@@ -196,6 +196,13 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void BalladeV1MatchesSng2GsReferenceNoteEvents()
+        => AssertReferenceNoteEvents(
+            "v1/runner.SNG",
+            "v1/sng2gs/runner.MID",
+            referenceTickShift: 0);
+
+    [Fact]
     public void BalladeV2MatchesSng2GsReferenceNoteEvents()
         => AssertReferenceNoteEvents(
             "v2/SHIZUME0.SNG",
