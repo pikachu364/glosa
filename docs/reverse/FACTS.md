@@ -275,3 +275,12 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - v1 テストはコミット [`b75612a`](https://github.com/pikachu364/glosa/commit/b75612ae59fd1d71aeb299834d427dbaf98c1c54) でいったん削除し、fixture README と manifest に未対応状況を記録した。
 
 **制約:** v2〜v4 の CI 成功は、トラック順・チャンネル・同音高重複時の Note-off 所有関係まで一致することを意味しない。v1 の +80 レイアウト候補は未確定のままで、実装へ反映する根拠にはまだ足りない。
+
+## F-029 — トラックごとの Note-on/off 構成比較テストを追加
+**状態:** テストコード追加済み、CI 実行中
+
+- fixture branch commit [`65ace59`](https://github.com/pikachu364/glosa/commit/65ace594fc829e81e6824c871915448074f7f424) で、v2〜v4 の参照 MIDI と C# 変換出力について、Note-on/off イベントをトラックごとにグループ化して比較するテストを追加した。
+- 各トラックのイベントは tick・on/off・pitch・velocity で比較し、トラック番号とチャンネル番号は正規化する。各トラック内のイベント構成を保ったままトラック間で照合するため、全トラック集計だけでは見えないトラック間のイベント移動を検出できる。
+- CI run [39220897447](https://github.com/pikachu364/glosa/actions/runs/39220897447) と [39220904556](https://github.com/pikachu364/glosa/actions/runs/39220904556) は確認時点で実行中だった。
+
+**制約:** このテストはトラック番号や MIDI チャンネル番号そのものの一致を検証しない。同音高の重複ノートで Note-off がどの Note-on に対応するかも、この単純なイベント列比較だけでは完全に確定できない。CI が完了するまでは、トラック単位比較が成功したとは扱わない。
