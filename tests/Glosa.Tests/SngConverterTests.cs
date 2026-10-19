@@ -223,9 +223,9 @@ public class SngConverterTests
 
         Assert.Equal(NoteEvents(expected, referenceTickShift), NoteEvents(actual, 0));
 
-        // Preserve each MIDI track's note-event grouping while ignoring track
-        // numbers and channel assignments, which may differ between converters.
-        // This catches cross-track leakage that an aggregate comparison hides.
+        // Preserve each MIDI track's note-event grouping and channel assignment while
+        // ignoring physical track numbers, which differ with SNG2GS track-order options.
+        // This catches cross-track leakage and channel mismatches hidden by aggregation.
         static string[] TrackNoteEvents(MidiSequence sequence, int tickShift)
             => sequence.Events
                 .Where(e => e.Kind == MidiEventKind.Channel &&
@@ -238,7 +238,7 @@ public class SngConverterTests
                     if (!noteOn && !noteOff) return (Track: e.Track, Event: (string?)null);
                     int velocity = noteOn ? e.Data2 : 0;
                     return (Track: e.Track,
-                        Event: (string?)$"{e.Ticks + tickShift}:{(noteOn ? 1 : 0)}:{e.Data1}:{velocity}");
+                        Event: (string?)$"{e.Ticks + tickShift}:{(noteOn ? 1 : 0)}:{e.Data1}:{velocity}:{e.Status & 0x0F}");
                 })
                 .Where(x => x.Event is not null)
                 .GroupBy(x => x.Track)
