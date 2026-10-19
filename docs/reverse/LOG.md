@@ -233,10 +233,12 @@
 
 
 
+
 ## 2026-10-19 — Windows CI 再実行成功と v2/v3 Tie 候補走査
 
 - run [39228366606](https://github.com/pikachu364/glosa/actions/runs/39228366606) の Windows job は初回に `SequencerTests.KeepsEventsRoughlyOnSchedule` だけ失敗したが、失敗 job の再実行で Windows・Ubuntu・macOS の全 job が成功。失敗したタイミングテストのコードや許容範囲は変更していない。
-- 次の調査として T-001 を進め、v2 `SHIZUME0.SNG` と v3 `START__0.SNG`、各 SNG2GS 参照 MIDI のバイナリを直接走査。v2 は通常ノート 2,713 / Tie 1,070、v3 は通常ノート 5,362 / Tie 357。参照 MIDI の Note-on/off 件数は通常ノート数と一致した。
+- T-001 を進め、v2 `SHIZUME0.SNG` と v3 `START__0.SNG`、各 SNG2GS 参照 MIDI のバイナリを直接走査。v2 は通常ノート 2,713 / Tie 1,070、v3 は通常ノート 5,362 / Tie 357。参照 MIDI の Note-on/off 件数は通常ノート数と一致した。
 - Tie の同音高候補は、v2 が候補なし 0 / 候補1件 153 / 候補複数 917、v3 が候補なし 0 / 候補1件 40 / 候補複数 317。複数候補があっても、最新 tick が同値になる競合候補は両バージョンで 0 件。
-- 両参照 MIDI ともトラック内で同音高 Note-on が前の Note-off より先に重なる例は 0 件。従って実データからは、合成テストの「同 tick に同音高 Note-off 候補が複数」の特殊ケースの tie-break 規則を直接確定できない。
-- FACTS F-032 と NEXT_STEPS T-001 を更新。残作業は Note-on/off の tick・pitch・velocity をイベント単位で対応付け、実データが tie-break 規則をどこまで裏付けるかを確認すること。
+- Tie 開始 tick と選択された Note-off tick は、v2 で 1,021/1,070 件が一致し、49 件に 4〜33 ticks の gap。v3 では 353/357 件が一致し、4 件に 1〜3 ticks の gap。候補なしは両方 0 件。
+- Tie 延長を含むオフライン再構成から作った Note-on/off 署名を参照 MIDI と比較し、v2 5,426 件・v3 10,724 件で差分 0 件。参照 MIDI のトラック内で同音高 Note-on が前の Note-off より先に重なる例も両バージョンで 0 件。
+- 実データでは最新候補の同 tick 競合がなく、合成 fixture の「同 tick に同音高 Note-off 候補が複数」の tie-break 規則は未確定のまま。FACTS F-032 と NEXT_STEPS T-001 を更新。次は v4 に同じ検査を広げるか、SNG2GS の生成条件を特定して意味論の根拠を増やす。
