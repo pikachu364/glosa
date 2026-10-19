@@ -44,6 +44,8 @@
 - [ ] 参照 MIDI の作成条件が不明なら、未確認として明記する。
 - [ ] +128 tick の根拠をコンダクタ情報と出力イベントから追跡する。
 
+- [ ] v1 `runner.MID` の tempo meta（tick 0 / 8 / 192）と、v1 conductor に現行 `ReadTempi` を適用した値列の不一致を解消する。`0x7BA`、`FUN_1000_618A` / `FUN_1000_61EC`、conductor data の対応を調べる（FACTS F-053 / HYPOTHESES H-012）。
+
 **完了条件:** 生成条件とオフセット差の説明が、根拠付きで記録される。
 
 ## T-004 — スケジューラ表と slot 対応を回収する
