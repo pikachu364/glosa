@@ -361,3 +361,11 @@
 - v1 Note-off を `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的モデルに沿って生成する専用経路を追加。v2/v3/v4 の既存経路は維持。
 - `BalladeV1MatchesSng2GsReferenceNoteEvents` 回帰テストを追加し、`runner.SNG` と `runner.MID` の Note-on/off を比較する。
 - コードは work branch `docs/ballade-version-testdata` にコミット済み。CI run [39251768760](https://github.com/pikachu364/glosa/actions/runs/39251768760) は確認時点で進行中で、成功／失敗はまだ確定していない。
+
+
+## 2026-10-20 — 調査記録の現状整合性を修正
+
+- HYPOTHESES.md の H-001 / H-008 / H-009 / H-010 / H-002 を最新の FACTS F-040〜F-045 と照合し、Note-off 残差と末尾65 byteを未解決とする古い記述、v1 converter 未対応とする古い記述を更新した。
+- NEXT_STEPS.md の T-002 / T-007 に残っていた「v1テスト未対応」「末尾65 byte未解決」の記述を履歴と現在の状態に分け、13 seek 値の累積位置は解決済み、各値の個別用途と controller/tempo/meta/track chunk 順は未解決と整理した。
+- 実装の確認済み範囲は v1 Note-on 3,295件・Note-off 3,295件の参照 MIDI 一致と、CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) の Ubuntu/macOS/Windows 成功。これは静的解析に基づくオフライン再現と Note イベントの照合であり、SNG2S 実行時トレースや MIDI 全イベントの完全一致を意味しない。
+- 次の技術調査は、v1 の controller/tempo/meta event を参照 MIDI と比較するテスト設計、13 seek 値と後段バッファ参照の対応付け、そして実再生確認。実再生はユーザー環境が必要なため、実施済みとは扱わない。
