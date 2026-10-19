@@ -168,3 +168,6 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] 全10パートの seek 後位置を検算し、最終65 byteが最終パートの読み取り位置とファイル末尾の関係で説明できることを確認（FACTS F-040）。
 - [ ] Note-off tick 残差（part 2/3/10）について、各パートのレコード duration と参照 MIDI の Note-off tick を個別に照合する。
+
+- [ ] v1 part 10 の同 tick・同音高ノート（例: pitch 69、tick 1728、duration 1 が2件）について、参照 MIDI が Note-off を tick 1728/1729 に分ける規則を SNG2S のスケジューラ処理から追う。
+- [ ] part 2 / 3 の Note-off 残差を、Note-on が一致する具体的なレコード・参照 Note-off と対応付けて説明する。
