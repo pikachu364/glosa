@@ -222,3 +222,11 @@
 - commit に紐づく Actions run [39224987508](https://github.com/pikachu364/glosa/actions/runs/39224987508) の job 結果を GitHub から取得し、Windows (117968976787)、Ubuntu (117968976840)、macOS (117968976870) の全 job が completed/success であることを確認。
 - 修正はテスト fixture のみで、SngConverter.cs の Tie アルゴリズムは変更していない。したがって fixture/CI の失敗は解消したが、実 MIDI における Note-off 所有関係の検証は引き続き必要。
 - FACTS.md F-031 と NEXT_STEPS.md T-008 を更新。
+
+
+## 2026-10-19 — Tie fixture の時刻計算を明示
+
+- WriteNoteRecord helper の引数順が duration, step であることをソースで確認。
+- 修正後 fixture は、1件目 duration=48/step=24 → Note-off tick 48、2件目は開始 tick 24 + duration 24 → Note-off tick 48。Tie は累積 step により tick 48 で開始し、同 tick の候補のうち後から追加された2件目を tick 72 に延長する。
+- SMF 出力の基準 tick 192 を含めた Note-off は 240 と 264。これで修正後の期待値が fixture の算術と一致することを説明できる。
+- この確認は合成 fixture の期待値を裏付けるもの。実 MIDI の Note-off 所有関係は T-001 / T-007 で継続する。
