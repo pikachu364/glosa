@@ -464,3 +464,14 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 **結果:** 参照 MIDI の Note-on 3,295件は既報どおり一致。今回、Note-off 3,295件も `(channel, pitch, tick)` の multiset で完全一致し、差分キー 0、欠落 0、余分 0。パート別件数は part 1: 0、part 2: 473、part 3: 175、part 4: 110、part 5: 234、part 6: 146、part 7: 688、part 8: 61、part 9: 480、part 10: 928。
 
 **注意:** この一致は静的逆アセンブルから再構成した規則を参照 MIDI に当てはめた結果であり、元 EXE の実行時状態を直接計測した証拠ではない。F-040 により13値の累積相対 seek と次パート位置／EOFの関係は説明済みだが、各 seek 距離の個別の意味は未確定。末尾65 bytes は未説明の trailing data ではなく、最終パート後の次情報バッファ位置が EOF に達する関係として説明される。
+
+## F-045 — v1 Note-on/off 変換実装と3 OS CI
+
+**状態:** 作業ブランチ `docs/ballade-version-testdata` の実装・統合テスト・GitHub Actions 結果を確認。
+
+- `src/Glosa.Core/Smf/SngConverter.cs` に v1 専用のレイアウト／ノートイベント変換経路が追加された。v1 の transpose は未確定フィールドを推測せず 0 として扱い、同 tick のイベント順は処理順を保持する。
+- `tests/Glosa.Tests/SngConverterTests.cs` に `runner.SNG` と参照 `runner.MID` の Note-on/off 比較、および part 10 / channel 9 / pitch 69 / tick 1728 の同 tick 順序（velocity 列 `[21, 0, 21]`）を確認するテストが追加された。
+- GitHub Actions run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) は Ubuntu・macOS・Windows の全 job で成功した。
+- 実装とテストは作業ブランチ上で確認済みだが、この記録を追加した時点で PR #2 は main へマージ済みとは扱わない。
+
+**制約:** 参照比較で確認したのは Note-on/off のイベントであり、controller、tempo/meta event、SMF track chunk 順を含むファイル全体の完全一致を意味しない。13個の seek 値の個別の意味も引き続き未確定。
