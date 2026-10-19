@@ -100,3 +100,9 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] FUN_1000_5687 を含む関数境界と引数を確定し、FUN_1000_47E2 / FUN_1000_48A2 が呼び分けられる条件を追う。
 - [ ] FUN_1000_4697 の FUN_1000_49F8 呼び出し前後を追い、cleanup が handle/stream close のどの段階に相当するかを確認。
 - [ ] 管理構造体の実インデックスを呼び出し元から逆算し、各フラグの遷移表をストリーム単位で完成する。
+
+
+- [x] `FUN_1000_5670` を特定し、残量カウンタが尽きた時に `FUN_1000_47E2` を呼ぶ buffered reader と確認。
+- [x] `FUN_1000_4CA4` の write-buffer flush 条件、`FUN_1000_470E` の全管理構造体走査、`FUN_1000_5690` の DOS close (`AH=3Eh`) を区別。
+- [ ] `FUN_1000_4697` の上位 caller を確認し、close 前 flush の保証有無を検証。
+- [ ] `FUN_1000_59AC` の各 handle フラグと `FUN_1000_572A` の handle 登録・フラグ初期化をつなぎ、handle と管理構造体の対応を確定。
