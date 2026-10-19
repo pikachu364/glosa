@@ -31,7 +31,8 @@
 - [x] 末尾65 byteは未説明の余剰データではなく、最終パート後の次情報バッファ開始候補が EOF に一致する位置関係として説明済み（F-040）。
 - [x] SNG2GS 参照 MIDI とイベント単位で照合。v1 専用経路で Note-on 3,295件と Note-off 3,295件を channel/part・pitch・velocity・tick で照合し、差分0を確認（F-038/F-044）。
 - [x] controller/program/pitch-bend の比較で、1,966候補レコードから連続する同一状態を抑制すると参照 MIDI の1,595件と一致することを確認。v1 converter と回帰テストを追加し、CI run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) が Ubuntu/macOS/Windows で成功（F-052）。
-- [ ] tempo/meta event と MIDI track chunk 順の完全一致は未検証。
+- [ ] tempo/meta event の v1 変換規則は未解決（F-053）。
+- [ ] v1 参照 MIDI は12 track chunkで、タイトル track・名前なし track・part 10→1・空の Keyboard track を含む。各 track の役割と Glosa 出力との順序差を確定してから実装する（F-054）。
 - [x] v1 専用レイアウト分岐を v2〜v4 と分離し、fixture の参照 Note-on/off 比較テストを追加。作業ブランチ `docs/ballade-version-testdata` の CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) は Ubuntu・macOS・Windows の全 job が成功。
 
 **完了条件:** 候補がソース解析または参照 MIDI と一致する。整合性だけを根拠に実装へ反映しない。
