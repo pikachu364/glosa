@@ -3,7 +3,7 @@
 仮説は確認済み事実と混ぜず、検証条件を明記します。
 
 ## H-001 — v1 は v2 以降と異なるパートブロック構造を持つ可能性
-**状態:** パート開始・+80幅・情報バッファ/レコード位置・seek後位置は実データと整合。Note-off意味論は未確定
+**状態:** v1 の主要レイアウト候補と Note-on/off は参照 MIDI と照合済み。13 seek 値の個別の意味は未確定。SNG2S の実行時トレースではない。
 
 v1 `runner.SNG` のサイズ表を直接走査した結果、次の組み合わせが全10パートで容量・長さ条件を満たす。
 
@@ -14,12 +14,12 @@ v1 `runner.SNG` のサイズ表を直接走査した結果、次の組み合わ�
 - v1 の13個の16-bit値群: +119〜+143（DOS 相対 seek 距離。全10パートで累積後の位置が次パート開始候補+65に一致し、最終パートはEOFに一致）
 - ノートレコード列の開始候補: +145
 
-これは、現行 converter の v2〜v4 向け +81 / +112 / +114 / +116 / +158 前提では検証に失敗することと整合する。read/seek の累積位置と Note-on 3,295件の全件一致は構造候補を強く支持する。ただし、Note-off tick 残差（part 2/3/10）が残り、イベント意味論全体は未確定。
+これは、現行 converter の v2〜v4 向け +81 / +112 / +114 / +116 / +158 前提とは異なる v1 レイアウトを支持する。read/seek の累積位置、Note-on 3,295件、静的逆アセンブルから再構成したタイマー規則による Note-off 3,295件が参照 MIDI と一致した。イベント全体（controller、tempo/meta、トラックチャンク順）の一致は未検証。
 
-**確認に必要なこと:**
-- Note-off tick 残差（part 2/3/10）を説明し、参照 MIDI のイベント単位照合を完了する。
-- Note-off tick 残差（part 2/3/10）を説明し、末尾65 byteの役割を調べる。
-- 可能なら SNG2S の v1 分岐を実行時または追加の逆アセンブル証拠で検証する。
+**残る確認:**
+- controller、tempo/meta event と SMF track chunk 順を参照 MIDI と照合する。
+- 13個の seek 距離を `0x21DC` / `0x21E0` / `0x21E4` 等の後段参照と対応付け、個々の用途を確定する。
+- 可能なら SNG2S の v1 分岐を追加の静的証拠または実行時観測で検証する。
 
 ## H-002 — Tie の Note-on 抑制と Note-off 延長規則
 **状態:** v2〜v4 の実 C# 変換出力と参照 MIDI の集計比較テストが CI で成功。トラック／チャンネル単位の検証は未完了。
@@ -73,20 +73,17 @@ JMPlayer の `sngmidi.cpp` 267–292行と Glosa の現行実装は、Tie bit �
 
 ## H-008 — v1 の +80 レイアウト候補と JMPlayer 実装の不一致
 
-**状態:** SNG2S 逆解析と Note-on 全件照合は +145 record start、+115 note length、+117 controller length を支持。+119〜+143 は13個の16-bit値群で、意味と seek 列の関係は未解決。算出終端後の65 byteと Note-off 残差も未解決。
+**状態:** SNG2S の静的逆解析、実データ境界、参照 MIDI の Note-on/off 全件照合は主要レイアウトを支持。+119〜+143 は13個の16-bit相対 seek 値で、個別の用途は未確定。末尾65 byteは次の情報バッファ位置として説明済み。
 
 JMPlayer の `buildLayout`（`sngmidi.cpp` 96–147行）は全バージョンに同じ3つの header 候補、パートサイズ `entry+81`、長さフィールド `+112/+114/+116` を適用し、v1 専用分岐を持たない。runner.SNG では +80 パートサイズ候補と、SNG2S が支持する +115/+117 の長さフィールド、+145 record start が観測される。
 
-**確認に必要なこと:** FACTS F-038 で残る +119〜+143 のオフセット表と seek/read 呼び出し、Note-off tick 残差、末尾65 byteを説明する。Note-on 一致だけでレイアウト全体を確定しない.
+**残る確認:** FACTS F-046〜F-050 の後段バッファ解析を踏まえ、13個の seek 値と個々の読み込み先の対応を調べる。末尾65 byteと Note-off は F-040 / F-044 で説明済みだが、静的解析であり実行時トレースではない。
 ## H-009 — v1 layout は現行 converter の候補探索では認識されない
-**状態:** 実変換テストで確認した制約。代替レイアウト候補は未確定。
+**状態:** 当初の失敗は作業ブランチ上の v1 専用変換経路と参照 MIDI 比較テストで解消。残るのは Note-on/off 以外のイベントとレイアウト細部。
 
-v1 `runner.SNG` を現行 `SngConverter` で変換する統合テストは `Invalid or unsupported Ballade SNG layout.` で失敗した。これは現行のレイアウト候補が当該ファイルに適合しないことを示すが、+80 / +115 / +117 / +145 の候補が正しいと証明するものではない。
+v1 `runner.SNG` は、作業ブランチ `docs/ballade-version-testdata` の専用経路で変換され、参照 `runner.MID` に対する Note-on 3,295件・Note-off 3,295件の比較が一致する。同 tick の重複ノート順もテストで固定し、GitHub Actions run 39253494378 は Ubuntu/macOS/Windows で成功した。
 
-**確認に必要なこと:**
-- 候補ごとのブロック境界と長さフィールドを独立に確認する。
-- SNG2GS 参照 MIDI の各パートと SNG データ領域を対応付ける。
-- SNG2S/SNG2GS 側の v1 処理を解析し、候補レイアウトを裏付ける。
+**残る確認:** controller、tempo/meta event、SMF track chunk 順の比較。変換ソースの変更は作業ブランチ上であり、PR #2 の main への取り込み状態とは区別する。
 
 
 ## H-010 — v1 Note-off は単純な onset + duration だけでは説明できない
@@ -95,7 +92,7 @@ v1 `runner.SNG` を現行 `SngConverter` で変換する統合テストは `Inva
 
 v1 part 10 には Tie flag のない pitch 69 / velocity 21 / duration 1 のレコードが2件あり、Note-on は同 tick 1728 に発生する。参照 MIDI の対応する Note-off は tick 1728 と 1729 に分かれるため、両方を `onset + duration` に置く単純モデルでは一致しない。同様のパターンは後続の12-tick間隔でも観測される。
 
-**解決記録:** `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的命令列からタイマー競合モデルを組み立て、参照 MIDI の Note-off 3,295件と差分0を確認した。v1 専用 converter 経路は work branch に実装済みで、CI の完了待ち。
+**解決記録:** `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的命令列からタイマー競合モデルを組み立て、参照 MIDI の Note-off 3,295件と差分0を確認した。v1 専用 converter 経路は work branch に実装済みで、CI run 39253494378 は Ubuntu/macOS/Windows で成功済み。
 
 
 ## H-011 — SNG2S は同じ識別値の Note-off タイマー登録を統合／競合処理する可能性
