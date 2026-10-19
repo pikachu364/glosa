@@ -232,9 +232,11 @@
 - この確認は合成 fixture の期待値を裏付けるもの。実 MIDI の Note-off 所有関係は T-001 / T-007 で継続する。
 
 
-## 2026-10-19 — Windows CI 再実行成功と v2 Tie 候補走査
+
+## 2026-10-19 — Windows CI 再実行成功と v2/v3 Tie 候補走査
 
 - run [39228366606](https://github.com/pikachu364/glosa/actions/runs/39228366606) の Windows job は初回に `SequencerTests.KeepsEventsRoughlyOnSchedule` だけ失敗したが、失敗 job の再実行で Windows・Ubuntu・macOS の全 job が成功。失敗したタイミングテストのコードや許容範囲は変更していない。
-- 次の調査として T-001 を進め、v2 `SHIZUME0.SNG` と SNG2GS 参照 MIDI のバイナリを直接走査。通常ノート 2,713 件、Tie 1,070 件、参照 MIDI の Note-on/off 各 2,713 件を確認。
-- v2 の Tie 1,070 件は同音高の候補なし 0、候補1件 153、候補複数 917。複数候補がある場合も最新 tick はすべて一意で、同 tick の候補が競合する実例は見つからなかった。参照 MIDI のトラック内イベント走査でも同音高 Note-on の重なりは 0 件。
-- したがって v2 実データは合成テストの「同 tick で同音高候補が複数」の所有関係を決定できる証拠にはならない。FACTS F-032 と NEXT_STEPS T-001 を更新。v3 はレイアウト候補の検証に失敗したため今回の集計対象に含めず、レコード境界の確認後に再調査する。
+- 次の調査として T-001 を進め、v2 `SHIZUME0.SNG` と v3 `START__0.SNG`、各 SNG2GS 参照 MIDI のバイナリを直接走査。v2 は通常ノート 2,713 / Tie 1,070、v3 は通常ノート 5,362 / Tie 357。参照 MIDI の Note-on/off 件数は通常ノート数と一致した。
+- Tie の同音高候補は、v2 が候補なし 0 / 候補1件 153 / 候補複数 917、v3 が候補なし 0 / 候補1件 40 / 候補複数 317。複数候補があっても、最新 tick が同値になる競合候補は両バージョンで 0 件。
+- 両参照 MIDI ともトラック内で同音高 Note-on が前の Note-off より先に重なる例は 0 件。従って実データからは、合成テストの「同 tick に同音高 Note-off 候補が複数」の特殊ケースの tie-break 規則を直接確定できない。
+- FACTS F-032 と NEXT_STEPS T-001 を更新。残作業は Note-on/off の tick・pitch・velocity をイベント単位で対応付け、実データが tie-break 規則をどこまで裏付けるかを確認すること。
