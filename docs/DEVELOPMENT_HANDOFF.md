@@ -869,3 +869,27 @@ v1 の参照 MIDI を正しい SMF big-endian ヘッダーとして再解析し�
 3. 一致しないイベントをレコード番号付きで抽出し、Note-on 生成条件を確定する。
 
 **実装方針:** 解析記録のみ。 `SngConverter.cs` は変更していない。
+
+
+## 2026-10-19 追加調査：JMPlayer と Glosa の変換実装を直接比較
+
+GitHub 上の現行 `src/Glosa.Core/Smf/SngConverter.cs` と元実装 `jihodaya/jmplayer/sngmidi.cpp` を読み比べた。元実装の `buildLayout` と Glosa の `TryLayout` は、次のレイアウト前提・判定条件が一致している。
+
+- バージョン文字列の位置は offset 18、v1〜v3 は10パート、v4 は16パート。
+- サイズ表は offset `0x46` から little-endian 32-bit 値として読む。
+- ヘッダー候補は `tableEnd + 94`、`tableEnd + 2`、`tableEnd` の順。
+- パートサイズはサイズ表の値 +81、パートヘッダーの `used / ctl / idx` は `+112 / +114 / +116`、データ領域開始は `+158`。
+- 容量検査は `used % 8 == 0`、`ctl % 4 == 0`、`used + ctl + idx <= size - 158`。
+
+ノート処理も、両実装で同じ主要ロジックを確認した。8-byte レコードの key/gate/step/signed nudge/velocity/flags を読み、bit 7 が立ち、直前に処理した key と一致し、直前 Note-off の tick と現在 tick が一致する場合だけ Note-off を延長する。それ以外は新しい Note-on/Note-off を追加する。したがって、既知の v1 レイアウト候補が正しいなら、v1 の変換失敗は C++ から C# への単純な移植差では説明できず、両実装が共有する旧形式レイアウト前提が主な調査対象となる。
+
+### 今回の結論
+
+- **確認済み：** GitHub 上の2つのソースでは、レイアウト候補とノート処理の主要条件が一致する。
+- **有力な仮説：** v1 は v2〜v4 と異なるブロック配置（既存の静的候補：`headerEnd=114`、サイズ表値 +80、ヘッダーフィールド `+117/+119/+121`、ノート領域 `+159`）を使う可能性が高い。この候補は handoff 内の既存記録で10パートすべての長さ検査を通過している。
+- **未確認：** 旧形式候補が仕様上正しいこと、SNG2S の全イベント生成規則、Glosa の実行変換結果。GitHub 上の静的解析のみで、CLI 実行や MIDI 再生はしていない。
+- **変更なし：** `SngConverter.cs` は変更していない。現行実装へ候補を適用する前に、v1参照 MIDI `testdata/ballade/v1/sng2gs/runner.MID` と旧形式候補から復号したイベントをパート別・tick別に照合する。
+
+### 次の一手
+
+v1 の旧形式候補で、参照 MIDI の Note-on を各パートについて pitch・velocity・tick の組として照合する。既存の handoff では byte 4=pitch、byte 0=velocity、byte 6=デルタ時間という候補が複数パートで強く一致しているため、まずこの候補を使い、flags・step/nudge・一定 tick オフセットの影響を分離して調べる。候補が一致しない場合は、実装変更をせず、不一致レコードの生バイトと参照イベントを記録する。
