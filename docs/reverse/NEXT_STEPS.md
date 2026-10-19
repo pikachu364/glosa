@@ -113,3 +113,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] open mode ごとの `0x1782+h` flag byte 遷移表を完成し、`FUN_1000_4654` の全 caller が flush エラーを処理するか確認。
 
 - [x] close routine の正しい関数名が `FUN_1000_4654` で、`1000:4697` は内部 call site であると訂正。複数 caller で戻り値直後の検査がないことを確認。
+
+- [x] open mode `r/w/a`, `+`, `b/t` と DOS handle flag byte の生成条件を整理（F-025）。
+- [ ] フラグ `0x02`/`0x04` の read-side 状態遷移を caller と合わせて確定し、mode ごとの状態表を完成。
+- [ ] Tie/reference MIDI のイベント単位比較に戻り、余分な Note-on の発生条件を検証。
