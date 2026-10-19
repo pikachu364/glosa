@@ -120,16 +120,41 @@ public static class SngConverter
             }
 
             tick = 0;
+            var controllerStates = new Dictionary<int, int>();
             int safeControllers = Math.Min(controllerBytes, Math.Max(0, end - controllers));
             for (int pos = 0; pos + 4 <= safeControllers; pos += 4)
             {
                 var record = data.Slice(controllers + pos, 4);
                 if (record[0] == 0xFC) break;
                 int status = record[0] & 0xF0;
-                if (status is 0xB0 or 0xE0)
-                    track.Events.Add(new MidiOutEvent(tick, 0, [(byte)(status | channel), (byte)(record[2] & 0x7F), (byte)(record[3] & 0x7F)]));
-                else if (status == 0xC0)
-                    track.Events.Add(new MidiOutEvent(tick, 0, [(byte)(0xC0 | channel), (byte)(record[2] & 0x7F)]));
+                int data1 = record[2] & 0x7F;
+                int data2 = record[3] & 0x7F;
+                if (status is 0xB0 or 0xC0 or 0xE0)
+                {
+                    // The v1 stream repeats unchanged controller states. SNG2GS's
+                    // reference MIDI emits only state changes, so suppress repeats.
+                    int stateKey = status == 0xB0 ? (status << 8) | data1 : status;
+                    int stateValue = status == 0xC0 ? data1 :
+                        status == 0xE0 ? data1 | (data2 << 7) : data2;
+                    if (!controllerStates.TryGetValue(stateKey, out int previousValue) ||
+                        previousValue != stateValue)
+                    {
+                        controllerStates[stateKey] = stateValue;
+
+                        // v1's initial state messages are emitted at tick 8; subsequent
+                        // events follow the accumulated stream time with a 191-tick lead-in.
+                        // Stored ticks are adjusted because the SMF writer adds barLength.
+                        int eventTick = layout.IsLegacyV1
+                            ? (tick == 0 ? 8 - barLength : tick - 1)
+                            : tick;
+                        if (status is 0xB0 or 0xE0)
+                            track.Events.Add(new MidiOutEvent(eventTick, 0,
+                                [(byte)(status | channel), (byte)data1, (byte)data2]));
+                        else if (status == 0xC0)
+                            track.Events.Add(new MidiOutEvent(eventTick, 0,
+                                [(byte)(0xC0 | channel), (byte)data1]));
+                    }
+                }
                 tick += record[1];
             }
             tracks.Add(track);
@@ -167,9 +192,12 @@ public static class SngConverter
             using var body = new MemoryStream();
             WriteVar(body, 0); body.WriteByte(0xFF); body.WriteByte(0x03);
             WriteVar(body, (uint)track.Name.Length); body.Write(track.Name);
-            WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 101, 0]);
-            WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 100, 0]);
-            WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 6, 2]);
+            if (!layout.IsLegacyV1)
+            {
+                WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 101, 0]);
+                WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 100, 0]);
+                WriteVar(body, 0); body.Write([(byte)(0xB0 | track.Channel), 6, 2]);
+            }
             int previous = 0;
             foreach (var e in track.Events.OrderBy(e => e.Tick).ThenBy(e => e.Order))
             {
