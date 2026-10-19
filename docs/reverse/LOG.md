@@ -369,3 +369,11 @@
 - NEXT_STEPS.md の T-002 / T-007 に残っていた「v1テスト未対応」「末尾65 byte未解決」の記述を履歴と現在の状態に分け、13 seek 値の累積位置は解決済み、各値の個別用途と controller/tempo/meta/track chunk 順は未解決と整理した。
 - 実装の確認済み範囲は v1 Note-on 3,295件・Note-off 3,295件の参照 MIDI 一致と、CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) の Ubuntu/macOS/Windows 成功。これは静的解析に基づくオフライン再現と Note イベントの照合であり、SNG2S 実行時トレースや MIDI 全イベントの完全一致を意味しない。
 - 次の技術調査は、v1 の controller/tempo/meta event を参照 MIDI と比較するテスト設計、13 seek 値と後段バッファ参照の対応付け、そして実再生確認。実再生はユーザー環境が必要なため、実施済みとは扱わない。
+
+
+## 2026-10-20 — v1 controller/program/pitch-bend eventsを参照 MIDI と照合
+
+- `runner.SNG` の各パートで note stream 直後の4-byte streamを走査し、B0 controller / C0 program change / E0 pitch bend 候補1,966件を抽出した。status 種別と controller number ごとに連続する同一状態を抑制すると1,595件となり、参照 `runner.MID` の同種イベント1,595件と tick/status/data1/data2 の全件一致を確認した。
+- tick の対応は、source tick 0 の初期状態イベントが MIDI tick 8、それ以降が source tick +191。v1 専用 converter にこの時刻変換と状態重複抑制を実装し、v1 では参照に存在しない RPN 初期化イベントを出さないようにした。v2〜v4 の controller 経路は維持する。
+- `BalladeV1MatchesSng2GsReferenceControllerAndProgramEvents` テストを追加した。CI run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) は記録時点で pending のため、テスト成功とはまだ扱わない。
+- この一致は fixture のオフライン比較に基づき、SNG2S 実行時トレースではない。tempo/meta event、SMF track chunk 順、実再生・聴感確認は継続課題。
