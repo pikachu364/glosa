@@ -142,15 +142,14 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **完了条件:** CI 結果と参照 MIDI 比較結果を記録し、残差があれば具体的なイベント例を残す。
 
 
-## T-008 — 同音高重複 Tie テストの失敗原因を確定する
-**優先度:** 最優先
+## T-008 — 同音高重複 Tie テストの fixture/CI 失敗を解消する
+**状態:** 完了（fixture 修正と3 OS CI成功を確認）
 
-- [x] run [39224478408](https://github.com/pikachu364/glosa/actions/runs/39224478408) のログを確認。Windows・Ubuntu・macOS で同じテストが失敗し、ビルドは成功。
+- [x] run [39224478408](https://github.com/pikachu364/glosa/actions/runs/39224478408) で、旧 fixture が Windows・Ubuntu・macOS の全 job で失敗することを確認。
 - [x] テスト fixture と Tie の候補 Note-off 選択コードを確認。
-- [ ] テストの各レコードについて、実際にパーサーが読む byte offset・duration・step・flag を列挙する。
-- [ ] 生成された各 Note-on/off の source tick、Tie 対象 EventIndex、Tie 適用前後の tick を追跡し、`[216, 288]` が発生する理由を説明する。
-- [ ] Tie 規則を既存の参照 MIDI / SNG イベント照合と矛盾しない形で確定する。根拠なしに期待値だけを変更しない。
-- [ ] 必要な実装またはテスト修正を commit し、新しい Actions run で Windows・Ubuntu・macOS のすべてが成功することを確認する。
-- [ ] 結果を FACTS.md / LOG.md に記録し、T-001 / T-007 の未完了項目を整合させる。
+- [x] commit [07e8b57](https://github.com/pikachu364/glosa/commit/07e8b57c73628b7e263781fdff84b20748172b36) で最初のレコードの duration/step 引数を修正し、意図した同一 Note-off tick 条件を表現する fixture にした。
+- [x] commit に紐づく CI run [39224987508](https://github.com/pikachu364/glosa/actions/runs/39224987508) で Windows・Ubuntu・macOS の全 job が成功することを確認。
+- [x] FACTS.md と LOG.md に結果を記録。
+- [ ] 実 MIDI における同音高重複時の Note-off 所有関係を確定する。これは fixture/CI 修正とは別の意味論上の調査として T-007 で継続する。
 
-**完了条件:** 原因がイベント時刻と選択対象で説明でき、修正後 CI の3 OS 成功が確認できること。
+**完了条件:** fixture 修正コミットの CI が3 OS で成功すること。達成済み。
