@@ -210,6 +210,7 @@ public static class SngConverter
         // immediate Note-off; duration comparison decides whether to replace the timer.
         // Flags 0x40 and 0xC0 have distinct registration/output behavior in the old path.
         var timers = new Dictionary<int, int>();
+        int eventOrder = 10;
         int index = 0;
         while (index < records.Count || timers.Count != 0)
         {
@@ -221,7 +222,7 @@ public static class SngConverter
             foreach (var timer in timers.Where(item => item.Value <= at).ToArray())
             {
                 int outputKey = Math.Clamp(timer.Key + shift, 0, 127);
-                track.Events.Add(new MidiOutEvent(timer.Value, 1,
+                track.Events.Add(new MidiOutEvent(timer.Value, eventOrder++,
                     [(byte)(0x90 | channel), (byte)outputKey, 0]));
                 timers.Remove(timer.Key);
             }
@@ -236,7 +237,7 @@ public static class SngConverter
                 if (hasTimer)
                 {
                     if (record.Flags != 0xC0)
-                        track.Events.Add(new MidiOutEvent(at, 1,
+                        track.Events.Add(new MidiOutEvent(at, eventOrder++,
                             [(byte)(0x90 | channel), (byte)outputKey, 0]));
 
                     if (expiry - at < record.Duration)
@@ -249,7 +250,7 @@ public static class SngConverter
                     timers[rawKey] = at + record.Duration;
 
                 if (record.Flags != 0xC0)
-                    track.Events.Add(new MidiOutEvent(at, 2,
+                    track.Events.Add(new MidiOutEvent(at, eventOrder++,
                         [(byte)(0x90 | channel), (byte)outputKey, record.Velocity]));
             }
         }
