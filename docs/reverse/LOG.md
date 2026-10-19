@@ -205,3 +205,12 @@
 - GitHub Actions run [39223684171](https://github.com/pikachu364/glosa/actions/runs/39223684171) は Windows・Ubuntu・macOS の全 job で成功。参照 MIDI と変換出力のノートイベント構成およびチャンネル割当を、トラック番号を正規化したうえで比較できる状態になった。
 - FACTS.md F-030 と NEXT_STEPS.md T-006/T-007 を更新。チャンネル割当の照合は完了扱いにし、`/F` の実行比較と同音高重複時の Note-off 所有関係は未完了として残す。
 - リポジトリの main tree には SNG2S/SNG2GS の実行ファイルが見当たらないため、既存参照 MIDI だけでは `/F` オプション出力を直接生成して比較できない。参照実行環境なしにオプション動作を確定したとは扱わない。
+
+
+## 2026-10-19 — 同音高重複 Tie テストの CI 失敗を再確認
+
+- run [39224478408](https://github.com/pikachu364/glosa/actions/runs/39224478408) の Ubuntu job log と run jobs を GitHub から取得。Windows・Ubuntu・macOS の3 job が、ビルド成功後のテスト工程で失敗。972 件中 971 件成功。
+- `tests/Glosa.Tests/SngConverterTests.cs` の `TieRecordExtendsLatestEligibleNoteOffWhenSamePitchNotesOverlap` は `[240, 264]` を期待するが、実際は `[216, 288]`。テストと `SngConverter.cs` の候補選択・延長処理を再確認した。
+- Tie は開始 tick 以下の同音高 pending Note-off のうち最も遅いものを選び、同 tick なら後から追加されたものを選択する。選択後は Note-off を `Tie start + duration` に移す。
+- 期待値だけを変更することは保留。実際に読み取られたレコード位置・各 tick・選択された event index を追跡して不一致の根因を確定する必要がある。
+- この時点でコード修正も新しい CI run も行っておらず、修正完了とは扱わない。
