@@ -128,8 +128,8 @@ public class SngConverterTests
 
         Assert.Single(notes.Where(e => e.Data2 == 100));
         Assert.Single(notes.Where(e => e.Data2 == 0));
-        Assert.Equal(192, notes.Single(e => e.Data2 == 100).Ticks);
-        Assert.Equal(240, notes.Single(e => e.Data2 == 0).Ticks);
+        Assert.Equal(192L, notes.Single(e => e.Data2 == 100).Ticks);
+        Assert.Equal(240L, notes.Single(e => e.Data2 == 0).Ticks);
     }
 
     [Fact]
@@ -160,8 +160,8 @@ public class SngConverterTests
 
         Assert.Single(notes.Where(e => e.Data2 == 100));
         Assert.Single(notes.Where(e => e.Data2 == 0));
-        Assert.Equal(192, notes.Single(e => e.Data2 == 100).Ticks);
-        Assert.Equal(204, notes.Single(e => e.Data2 == 0).Ticks);
+        Assert.Equal(192L, notes.Single(e => e.Data2 == 100).Ticks);
+        Assert.Equal(204L, notes.Single(e => e.Data2 == 0).Ticks);
     }
 
     [Fact]
