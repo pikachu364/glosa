@@ -173,6 +173,29 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void TieRecordExtendsLatestEligibleNoteOffWhenSamePitchNotesOverlap()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+        int firstPart = 0x46 + 4 * 11 + 94 + 120;
+
+        // Two same-pitch notes have the same scheduled Note-off tick. The Tie
+        // record should extend the most recently emitted eligible Note-off,
+        // leaving the earlier Note-off unchanged.
+        WriteNoteRecord(sng, firstPart, 0, 60, 24, 48, 100);
+        WriteNoteRecord(sng, firstPart, 1, 60, 24, 24, 100);
+        WriteNoteRecord(sng, firstPart, 2, 60, 24, 24, 100, 0x80);
+        sng[firstPart + 182] = 0xFC;
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(firstPart + 112), 32);
+
+        MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
+        var notes = NoteEvents(sequence, 60);
+        var noteOffTicks = notes.Where(e => e.Data2 == 0).Select(e => e.Ticks).Order().ToArray();
+
+        Assert.Equal(new long[] { 240, 264 }, noteOffTicks);
+        Assert.Equal(2, notes.Count(e => e.Data2 == 100));
+    }
+
+    [Fact]
     public void BalladeV2MatchesSng2GsReferenceNoteEvents()
         => AssertReferenceNoteEvents(
             "v2/SHIZUME0.SNG",
