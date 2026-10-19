@@ -203,18 +203,25 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `FUN_1000_4CA4` は管理フラグ `(+6 & 0x03)==0x02` の write-mode 条件を満たし、かつ動的バッファ `0x08` または状態表先頭 byte の bit 0 が有効な場合、`管理構造体[0] - 管理構造体[2]` byte を `FUN_1000_59AC(handle, buffer, count)` で出力する。短い書き込みでは `+6` に `0x20` を立てて `0xFFFF` を返す。最後にバッファ位置とカウンタをリセットする。
 - `FUN_1000_470E` は `0x17CA` から `0x18E2` まで 8-byte stride で管理構造体を走査し、`(+6 & 0x83)!=0` の構造体に `FUN_1000_4CA4` を呼んで flush を試みる。これは複数ストリームの flush 集約経路。
 - `FUN_1000_5690` は引数が handle 上限 `0x1780` 未満なら DOS `INT 21h / AH=3Eh` を呼ぶ。成功時は `0x1782+handle` の byte を 0 にする。従ってこれは OS handle close であり、`FUN_1000_4CA4` のバッファ flush とは別処理。
-- `FUN_1000_4697` の `FUN_1000_49F8` は動的バッファ解放と管理構造体ポインタ／カウンタのクリアを行い、その後 `FUN_1000_5690` が OS handle を閉じる。通常の close sequence は少なくとも「`FUN_1000_4CA4` による flush 試行 → `FUN_1000_49F8` によるバッファ cleanup → `FUN_1000_5690` による OS handle close」という分離で読める。ただし `FUN_1000_4697` の上位 caller が先に flush 済みかは別途確認が必要。
+- `FUN_1000_4654` 自体が close wrapper。命令 `1000:4674` で `FUN_1000_4CA4` を呼んで flush を試し、`1000:4697` で `FUN_1000_49F8` による buffer cleanup、`1000:46A2` で `FUN_1000_5690` による OS handle close を行う。
 - `FUN_1000_5670` は read state のポインタ `[state]` と残量 `[state+2]` を使う buffered reader。残量を減らし、負になった時だけ `FUN_1000_47E2` を呼んで補充／読み取りを行う。したがって `FUN_1000_47E2` は byte 単位 API そのものではなく、バッファ境界で呼ばれる下位 read 経路。
 
-**未確定:** `FUN_1000_4697` の全 caller が flush を保証するか、特殊管理構造体の close 条件、および DOS close 失敗時の上位処理は未確定。
+**未確定:** `FUN_1000_4654` 内で flush が失敗した場合の戻り値を caller が確認するか、特殊管理構造体の close 条件、および DOS close 失敗時の上位処理は未確定。
 
 
 ### F-023 — close 経路の flush 順序と OS handle flag table
 
-- `FUN_1000_4697` の命令列では、`1000:4674` で先に `FUN_1000_4CA4` を呼び、その後 `1000:4697` で `FUN_1000_49F8`、続いて `FUN_1000_5690` を呼ぶ。従って、この close 経路は明示的に「flush 試行 → 動的 buffer cleanup → DOS handle close」の順序を取る。
+- `FUN_1000_4654` の命令列では、`1000:4674` で先に `FUN_1000_4CA4` を呼び、その後 `1000:4697` で `FUN_1000_49F8`、続いて `FUN_1000_5690` を呼ぶ。従って、この close 経路は明示的に「flush 試行 → 動的 buffer cleanup → DOS handle close」の順序を取る。
 - flush の戻り値は `DI` に保存されるが、cleanup と close の後、元の管理構造体 `+6` は `0` にされる。flush 失敗時も close 処理自体は進むため、上位側が flush エラーをどう扱うかは別途追跡が必要。
 - `FUN_1000_572A` は DOS `INT 21h` の open/create 系呼び出しを行い、成功した OS handle `h` に対して `0x1782+h` の flag byte を初期化して返す。`FUN_1000_59AC` は同じ table を参照し、bit `0x20` で write 前の seek-to-end (`AH=42h`) を行い、bit `0x80` で LF を CR/LF に変換する。
 - `FUN_1000_4CA4` は管理構造体の byte `+7` を OS handle として `FUN_1000_59AC` に渡す。よって管理構造体 `0x17CA+n*8` と OS handle flag table `0x1782+h` は、管理構造体 `+7` に格納された handle 値で接続される。これは index 同士が同じという意味ではなく、handle 値を介した対応である。
 - `FUN_1000_572A` の flag 初期化は、作成/append 等の open mode、DOS device 属性、text/binary 条件に応じて `0x01/0x10/0x20/0x40/0x80` 等を組み立てる。bit の全組合せの命名・意味は未確定だが、`0x20` と `0x80` の実使用箇所は確認できた。
 
-**未確定:** `FUN_1000_4697` が返す flush エラーを全 caller が確認するか、特殊管理構造体での handle 対応、open mode ごとの flag byte 完全な遷移表。
+**未確定:** `FUN_1000_4654` が返す flush エラーを全 caller が確認するか、特殊管理構造体での handle 対応、open mode ごとの flag byte 完全な遷移表。
+
+
+### F-024 — close 関数名と命令アドレスの訂正
+
+- 先行メモで `FUN_1000_4697` と記載した箇所は関数名ではなく命令アドレスだった。正しい関数は `FUN_1000_4654` であり、`1000:4697` はその内部で `FUN_1000_49F8` を呼ぶ命令位置。
+- `FUN_1000_4654` は有効な管理構造体に対し、まず `FUN_1000_4CA4` を呼び、その戻り値を保存したうえで `FUN_1000_49F8` と `FUN_1000_5690` を実行する。flush 戻り値は最終戻り値 `DI` に保持され得るが、後続の path/filename 操作の失敗で `0xFFFF` に変わることもある。`+6` flag byte は最後にゼロクリアされる。
+- 参照元一覧では close 呼び出し後に戻り値を明示的に検査しない箇所が複数ある（例 `1000:0571`, `06AF`, `0744`, `075E`, `077B`, `08E2`, `0F65`, `12E7`, `153E`, `1661`）。これは全 caller が無視する証明ではないが、少なくとも列挙された呼び出し位置では直後にエラー分岐が見られない。
