@@ -242,3 +242,6 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - text-processing loop で SUB (0x1A) を見つけると 0x02 をセットして処理を終了する。次回の FUN_1000_58CE は 0x02 が立っていると読み込みを行わず終了する。これはこの helper 内で確認できる EOF-like state の latch であり、すべての caller がどう扱うかは別途確認が必要。
 - DOS read 自体が返す byte 数 0 とエラー (0xFFFF) は FUN_1000_47E2 側で 0x10 / 0x20 に振り分けられる。よって 0x02 (text SUB による以後の read 停止) と 0x10/0x20 (buffered reader が検出する zero/error-like 結果) は観測された経路上で区別する。
 - 0x40 は FUN_1000_58CE の CR 処理で DOS device 用の分岐を選ぶ条件として使われる。正式な flag 名や全経路での意味は未確定。
+
+- 追加で flag byte 全体検索を実施。`0x02` の clear は `FUN_1000_56B0` (`1000:5722`) にあり、DOS seek (`INT 21h / AH=42h`) 成功後に `AND [handle+0x1782],0xFD` を実行する。したがって `0x02` は永久 latch ではなく、成功した seek により解除される。`FUN_1000_5690` の close 成功時には flag byte 全体が 0 にされる。
+- `0x04` は検索範囲内では `FUN_1000_58CE` の text read loop でセットされ、同関数の次の text-processing pass 冒頭で `AND ...,0xFB` によりクリアされる。現在の checked-in disassembly では、他の関数から `0x04` を直接読む/書く箇所は見つからなかった。これは解析テキストの全体検索結果であり、別バイナリ/別版にも一般化しない。
