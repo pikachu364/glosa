@@ -165,3 +165,6 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] `FUN_1000_40c8` の引数配置と DOS `INT 21h` 呼び出しを確認。`0x4201` と `CX=0, DX=value` の組み合わせから、v1 の13個の16-bit値が現在位置基準の相対 seek 距離であることを確認した。
 - [ ] seek 距離を runner.SNG の全10パートに適用し、各パートの終端候補と算出位置を照合する。相対 seek の役割を確定するまでは converter を変更しない。
+
+- [x] 全10パートの seek 後位置を検算し、最終65 byteが最終パートの読み取り位置とファイル末尾の関係で説明できることを確認（FACTS F-040）。
+- [ ] Note-off tick 残差（part 2/3/10）について、各パートのレコード duration と参照 MIDI の Note-off tick を個別に照合する。
