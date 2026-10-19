@@ -169,3 +169,11 @@
 - Tie レコードは Note-on を出さないだけでなく、直前のレコードだけを見ていると chord/interleaved note を取りこぼす。さらに、Tie start が元 Note-off より少し後に来るケースがある。
 - オフライン再生成で、同じ音高の pending Note-off から予定 tick が Tie start 以下で最も後のものを選び、Tie duration を加えて延長する規則を適用すると、v2/v3 の全 Note-on/off が各パート単位で参照 MIDI と一致した。v4 は Tie なしで既に一致。
 - これを C# 実装に反映し、合成テストを4件（連続 Tie、gate gap、他音高の interleave、同音高の候補なし）に拡張。実際の .NET 出力と CI はまだ確認待ち。
+
+## 2026-10-19 — 実 C# 変換出力の比較 CI と v1 layout failure
+
+- fixture branch の CI run [39216319421](https://github.com/pikachu364/glosa/actions/runs/39216319421) で、v2〜v4 の SNG2GS 参照 MIDI と実際の C# 変換出力を比較する統合テストが成功した。比較は全トラックを集約した Note-on/off の tick・音高・velocity・種別であり、トラック／チャンネル割当の一致は未検証。
+- v1 `runner.SNG` を同様に検証するテストは [CI run 39218961795](https://github.com/pikachu364/glosa/actions/runs/39218961795) で `Invalid or unsupported Ballade SNG layout.` により失敗。レイアウト判定で止まり、MIDI イベント比較は実行されなかった。
+- v1 の失敗テストは [commit b75612a](https://github.com/pikachu364/glosa/commit/b75612ae59fd1d71aeb299834d427dbaf98c1c54) で一時的に削除し、fixture branch の README と manifest に未対応状態を記録した。v1 のレイアウト候補を確定したわけではない。
+- `FACTS.md` に F-028、`HYPOTHESES.md` に H-009 を追加し、Tie の CI 検証状況と v1 の制約を明記した。`NEXT_STEPS.md` は v2〜v4 の集計比較を完了、トラック単位比較と v1 レイアウト解析を未完了として更新。
+- converter のレイアウト処理は変更していない。次は参照 MIDI のトラック／チャンネルごとの比較を追加し、v1 はブロック境界とサイズ表を独立に検証してからテストを戻す。
