@@ -267,3 +267,11 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - これはチェックイン済み MIDI に対するオフラインのイベント生成・照合結果であり、まだ修正後 C# バイナリを実行して出力 MIDI を比較した結果ではない。SNG2GS の版とオプションも未確認。
 
 **対応する実装変更:** Tie bit 付きレコードは新しい Note-on/off を出さない。同じ音高の pending Note-off から、予定 tick が Tie 開始 tick 以下で最も後のものを選び、Tie レコードの duration を使って延長する。合成回帰テストを追加した。CI と修正後の実出力比較は未確認。
+## F-028 — C# 実変換出力の CI 比較と v1 layout failure
+**状態:** GitHub Actions のテスト結果・失敗ログで確認
+
+- fixture branch の CI run [39216319421](https://github.com/pikachu364/glosa/actions/runs/39216319421) で、v2〜v4 の C# 変換出力と参照 MIDI の Note-on/off 集計比較テストが成功した。比較キーは tick、pitch、velocity、on/off 種別。トラック／チャンネルを集約した比較であり、トラック単位の一致は保証しない。
+- v1 `runner.SNG` の比較テストを追加した CI run [39218961795](https://github.com/pikachu364/glosa/actions/runs/39218961795) は `Invalid or unsupported Ballade SNG layout.` で失敗した。変換器のレイアウト判定段階で停止しており、v1 のイベント比較は実行されていない。
+- v1 テストはコミット [`b75612a`](https://github.com/pikachu364/glosa/commit/b75612ae59fd1d71aeb299834d427dbaf98c1c54) でいったん削除し、fixture README と manifest に未対応状況を記録した。
+
+**制約:** v2〜v4 の CI 成功は、トラック順・チャンネル・同音高重複時の Note-off 所有関係まで一致することを意味しない。v1 の +80 レイアウト候補は未確定のままで、実装へ反映する根拠にはまだ足りない。
