@@ -126,3 +126,10 @@
 - 直前の記録で `FUN_1000_4697` としたのは誤記。`1000:4697` は `FUN_1000_4654` 内の命令アドレスで、関数名は `FUN_1000_4654`。
 - close routine の参照元 10 箇所を確認。列挙された呼び出し位置では close の戻り値直後に条件分岐せず、次の処理へ進む。全 caller のエラー無視と一般化はせず、観測範囲に限定して記録。
 - FACTS F-024 を追加。converter は未変更。
+
+
+## 2026-10-19 — open mode と handle flag byte の対応表
+
+- `FUN_1000_4A92` の `r/w/a`、`+`、`b/t` parser と `FUN_1000_572A` の flag byte 組み立てを突合。DOS 属性 bit 0 由来の `0x10`、open mode bit `0x08` 由来の `0x20`、text/device 判定由来の `0x80`/`0x40` を記録。
+- `FUN_1000_58CE` の read-side も確認し、`0x80` が read/write 双方のテキスト処理、`0x02` が read-side EOF 状態に関係することを追記。すべての bit の完全な意味は未確定。
+- FACTS F-025 を追加。converter は未変更。
