@@ -555,3 +555,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - 作業ブランチ `docs/ballade-version-testdata` で controller state deduplication、v1 tick alignment、v1 RPN 初期化の抑制、および `BalladeV1MatchesSng2GsReferenceControllerAndProgramEvents` テストを追加した。
 
 **制約:** 観測は1つの v1 fixture と参照 MIDI に対するオフライン比較であり、すべての v1 ファイルへの一般化や SNG2S の実行時内部動作を直接証明するものではない。GitHub Actions run 39333267230 の成功確認後に検証状態を更新する。
+
+
+## F-053 — v1 の参照 MIDI tempo meta は現行の汎用 ReadTempi 候補と一致しない
+
+**状態:** v1 `runner.SNG` の conductor 候補領域、参照 `runner.MID` の SMF meta events、SNG2S の静的逆アセンブルを比較。tempo の v1 変換規則は未解決。
+
+- 参照 `runner.MID` の tempo meta は tick 0 = 500,000 µs/quarter、tick 8 = 869,000、tick 192 = 869,565。time-signature meta は tick 0 に 4/4（SMF payload `04 02 18 08`）。
+- 現行 `ReadTempi` が v1 conductor 領域に適用する sentinel 探索は file offset 761 を見つけ、offset 773 から step 37 / value 144、続いて step 37 / value 192 の列として読む。現行の後続版向け式ではそれぞれ 270 BPM / 360 BPM となり、参照 tempo meta と一致しない。
+- SNG2S の静的逆アセンブルでは起動時に 500,000 µs/quarter の tempo meta を書き、global 値 `0x7BA` が 120 以外の場合は `FUN_1000_618A` で `60,000,000 / tempo` を計算して別の tempo meta を出す経路がある。ただし参照 MIDI の tick 8 / tick 192 の両イベントと、v1 conductor 内の値列の対応はまだ特定できていない。
+- よって v1 の tempo/meta event は Note-on/off や controller/program/pitch-bend の一致とは別に未検証とし、汎用 `ReadTempi` の値を v1 の仕様と扱わない。
+
+**次の調査:** `0x7BA` の設定元、`FUN_1000_618A` / `FUN_1000_61EC` の caller state、v1 conductor data の tempo 候補を追い、参照 MIDI の tick 8 / 192 と対応付ける。静的根拠がそろうまで v1 tempo conversion を推測で変更しない。
