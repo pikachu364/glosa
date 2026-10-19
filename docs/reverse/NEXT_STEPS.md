@@ -115,5 +115,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] close routine の正しい関数名が `FUN_1000_4654` で、`1000:4697` は内部 call site であると訂正。複数 caller で戻り値直後の検査がないことを確認。
 
 - [x] open mode `r/w/a`, `+`, `b/t` と DOS handle flag byte の生成条件を整理（F-025）。
-- [ ] フラグ `0x02`/`0x04` の read-side 状態遷移を caller と合わせて確定し、mode ごとの状態表を完成。
+- [x] `FUN_1000_58CE` の read-side で `0x04` を read-buffer 先頭 LF 条件に応じてセットすること、`0x1A` 検出で `0x02` を latch して以後の read を止めることを確認（F-026）。
+- [ ] `0x02` の reset/clear 経路と、text-mode caller が `0x04` を読む箇所を全検索してフラグの全寿命を確定。
+- [ ] Tie/reference MIDI のイベント単位比較に戻り、余分な Note-on の発生条件を検証.
 - [ ] Tie/reference MIDI のイベント単位比較に戻り、余分な Note-on の発生条件を検証。
