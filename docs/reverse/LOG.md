@@ -191,3 +191,10 @@
 - `FACTS.md` の F-029 と `NEXT_STEPS.md` を更新し、トラック単位イベント構成の比較を完了扱いにした。
 - テストは各トラックの tick・on/off・pitch・velocity 構成を比較するが、トラック番号とチャンネル番号は正規化する。従って次の課題は、SNG2S マニュアル既定のトラック順と実参照 MIDI のトラック／チャンネル／SNG パート対応を個別に検証すること。同音高重複時の Note-off 所有関係も別途残る。
 - 変換器のソースコードは変更していない。
+
+
+## 2026-10-19 — SNG2GS の track/channel と SNG part の対応
+
+- fixture branch の SNG と参照 MIDI を Base64 経由で解析し、MIDI track chunk 順、トラック名、channel、Note-on/off を抽出。v2/v3 のパート順は 10→1、v4 は 10,16→11,9→1。ノートイベントを持つパートの channel は part-1 と一致した。
+- 参照 MIDI の channel 対応は現行 Glosa の channel 割当と一致する一方、Glosa は track を part 昇順に書くため、参照 MIDI の既定 track chunk 順とは異なる。/F オプション時の順序は未検証。
+- fixture branch commit `2ba756b` でイベント比較テストに channel 番号を含める変更を追加。CI run `39223684171` は更新時点で実行中。FACTS F-030 と NEXT_STEPS T-006 を更新。
