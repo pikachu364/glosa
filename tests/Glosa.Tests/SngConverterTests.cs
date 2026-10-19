@@ -222,6 +222,33 @@ public class SngConverterTests
                 .ToArray();
 
         Assert.Equal(NoteEvents(expected, referenceTickShift), NoteEvents(actual, 0));
+
+        // Preserve each MIDI track's note-event grouping while ignoring track
+        // numbers and channel assignments, which may differ between converters.
+        // This catches cross-track leakage that an aggregate comparison hides.
+        static string[] TrackNoteEvents(MidiSequence sequence, int tickShift)
+            => sequence.Events
+                .Where(e => e.Kind == MidiEventKind.Channel &&
+                    (((e.Status & 0xF0) == 0x90) || ((e.Status & 0xF0) == 0x80)))
+                .Select(e =>
+                {
+                    bool noteOn = (e.Status & 0xF0) == 0x90 && e.Data2 != 0;
+                    bool noteOff = (e.Status & 0xF0) == 0x80 ||
+                        ((e.Status & 0xF0) == 0x90 && e.Data2 == 0);
+                    if (!noteOn && !noteOff) return (Track: e.Track, Event: (string?)null);
+                    int velocity = noteOn ? e.Data2 : 0;
+                    return (Track: e.Track,
+                        Event: (string?)$"{e.Ticks + tickShift}:{(noteOn ? 1 : 0)}:{e.Data1}:{velocity}");
+                })
+                .Where(x => x.Event is not null)
+                .GroupBy(x => x.Track)
+                .Select(group => string.Join("|", group
+                    .Select(x => x.Event!)
+                    .OrderBy(x => x, StringComparer.Ordinal)))
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToArray();
+
+        Assert.Equal(TrackNoteEvents(expected, referenceTickShift), TrackNoteEvents(actual, 0));
     }
 
     private static string FindRepositoryRoot()
