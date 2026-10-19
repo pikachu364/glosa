@@ -131,22 +131,29 @@ public static class SngConverter
                 int data2 = record[3] & 0x7F;
                 if (status is 0xB0 or 0xC0 or 0xE0)
                 {
-                    // The v1 stream repeats unchanged controller states. SNG2GS's
-                    // reference MIDI emits only state changes, so suppress repeats.
-                    int stateKey = status == 0xB0 ? (status << 8) | data1 : status;
-                    int stateValue = status == 0xC0 ? data1 :
-                        status == 0xE0 ? data1 | (data2 << 7) : data2;
-                    if (!controllerStates.TryGetValue(stateKey, out int previousValue) ||
-                        previousValue != stateValue)
+                    bool emit = true;
+                    int eventTick = tick;
+                    if (layout.IsLegacyV1)
                     {
-                        controllerStates[stateKey] = stateValue;
+                        // The v1 stream repeats unchanged controller states. SNG2GS's
+                        // reference MIDI emits only state changes, so suppress repeats.
+                        int stateKey = status == 0xB0 ? (status << 8) | data1 : status;
+                        int stateValue = status == 0xC0 ? data1 :
+                            status == 0xE0 ? data1 | (data2 << 7) : data2;
+                        if (controllerStates.TryGetValue(stateKey, out int previousValue) &&
+                            previousValue == stateValue)
+                            emit = false;
+                        else
+                            controllerStates[stateKey] = stateValue;
 
-                        // v1's initial state messages are emitted at tick 8; subsequent
-                        // events follow the accumulated stream time with a 191-tick lead-in.
-                        // Stored ticks are adjusted because the SMF writer adds barLength.
-                        int eventTick = layout.IsLegacyV1
-                            ? (tick == 0 ? 8 - barLength : tick - 1)
-                            : tick;
+                        // v1 initial state messages are emitted at tick 8; later events
+                        // use accumulated stream time with a 191-tick lead-in. Stored ticks
+                        // are adjusted because the SMF writer adds barLength.
+                        eventTick = tick == 0 ? 8 - barLength : tick - 1;
+                    }
+
+                    if (emit)
+                    {
                         if (status is 0xB0 or 0xE0)
                             track.Events.Add(new MidiOutEvent(eventTick, 0,
                                 [(byte)(status | channel), (byte)data1, (byte)data2]));
