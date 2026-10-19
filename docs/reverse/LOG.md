@@ -391,3 +391,10 @@
 
 - GitHub Actions run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) の完了を確認。Ubuntu/macOS/Windows の CI はすべて成功。
 - FACTS F-052 の CI 状態を「確認待ち」から成功に更新。tempo/meta event と track chunk 順、13 seek 値の個別の意味、実再生は引き続き未完了。
+
+
+## 2026-10-20 — v1 参照 MIDI の物理 track chunk 順を確認
+
+- `v1/sng2gs/runner.MID` は12個の MTrk chunk を持つ。タイトル文字列を含む track、名前なし track、part 10→2 の Note-on track 9本、空の Keyboard/part 1 track の構成を確認した。
+- Note-on track は channel 9→1 の降順で、part は channel+1 に一致。現在の Glosa writer の conductor + part 追加順とは物理 track 順が一致しない可能性があるため、直ちに並べ替えはせず F-054 と T-002/T-006 に残課題を記録した。
+- v1 controller/program/pitch-bend 比較テストは CI run 39333267230 で Ubuntu/macOS/Windows 全て成功。tempo/meta 変換と track chunk order はまだ完了扱いにしない。
