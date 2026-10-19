@@ -120,7 +120,7 @@ public class SngConverterTests
     }
 
     [Fact]
-    public void TieRecordCanExtendAcrossA smallGateGap()
+    public void TieRecordCanExtendAcrossASmallGateGap()
     {
         byte[] sng = CreateMinimalSong("3.00", 10);
         int firstPart = 0x46 + 4 * 11 + 94 + 120;
