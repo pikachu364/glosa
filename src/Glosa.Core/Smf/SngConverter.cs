@@ -49,7 +49,8 @@ public static class SngConverter
             int nameLength = 0;
             while (nameLength < 12 && data[start + 81 + nameLength] != 0) nameLength++;
             var track = new Track(data.Slice(start + 81, nameLength).ToArray(), channel);
-            int tick = 0, lastKey = -1, lastOff = -1, lastOffTick = -1;
+            int tick = 0;
+            var pendingNoteOffs = new Dictionary<int, List<(int Tick, int EventIndex)>>();
             int safeUsed = Math.Min(used, Math.Max(0, end - stream));
             for (int pos = 0; pos + 8 <= safeUsed; pos += 8)
             {
@@ -60,16 +61,49 @@ public static class SngConverter
                 {
                     int at = Math.Max(0, tick + nudge);
                     int key = Math.Clamp(record[0] + shift, 0, 127);
-                    if ((record[7] & 0x80) != 0 && key == lastKey && lastOff >= 0 && lastOffTick == at)
+                    if ((record[7] & 0x80) != 0)
                     {
-                        track.Events[lastOff] = track.Events[lastOff] with { Tick = at + record[1] };
-                        lastOffTick = at + record[1];
+                        // A Tie record never starts a new note. It extends the latest
+                        // same-key Note-off that was scheduled no later than this start.
+                        // The SNG scheduler can place the Tie start slightly after the
+                        // previous gate end, and other pitches may be interleaved.
+                        if (pendingNoteOffs.TryGetValue(key, out var candidates))
+                        {
+                            int candidate = -1, candidateTick = int.MinValue;
+                            for (int i = 0; i < candidates.Count; i++)
+                            {
+                                var item = candidates[i];
+                                if (item.Tick <= at &&
+                                    (item.Tick > candidateTick ||
+                                     (item.Tick == candidateTick &&
+                                      (candidate < 0 || item.EventIndex > candidates[candidate].EventIndex))))
+                                {
+                                    candidate = i;
+                                    candidateTick = item.Tick;
+                                }
+                            }
+
+                            if (candidate >= 0)
+                            {
+                                int eventIndex = candidates[candidate].EventIndex;
+                                candidates.RemoveAt(candidate);
+                                if (candidates.Count == 0) pendingNoteOffs.Remove(key);
+                                int extendedOffTick = at + record[1];
+                                track.Events[eventIndex] = track.Events[eventIndex] with { Tick = extendedOffTick };
+                                if (!pendingNoteOffs.TryGetValue(key, out var updated))
+                                    pendingNoteOffs[key] = updated = [];
+                                updated.Add((extendedOffTick, eventIndex));
+                            }
+                        }
                     }
                     else
                     {
                         track.Events.Add(new MidiOutEvent(at, 2, [(byte)(0x90 | channel), (byte)key, record[4]]));
                         track.Events.Add(new MidiOutEvent(at + record[1], 1, [(byte)(0x90 | channel), (byte)key, 0]));
-                        lastKey = key; lastOff = track.Events.Count - 1; lastOffTick = at + record[1];
+                        int eventIndex = track.Events.Count - 1;
+                        if (!pendingNoteOffs.TryGetValue(key, out var candidates))
+                            pendingNoteOffs[key] = candidates = [];
+                        candidates.Add((at + record[1], eventIndex));
                     }
                 }
                 tick += step;
