@@ -542,3 +542,16 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `.DEF` がないことで音色名などの表示に影響する問題と、MIDI の音色指定や実際の再生品質に関する問題は分けて扱う。
 - Glosa の SNG 対応では、`.DEF` 生成を現時点の必須要件にしない。SNG 解析で得られる音源種別等の情報は、必要性が確認された場合に利用できるようにする余地を残す。
 - **実装方針:** 既存計画・コードは変更しない。`.DEF` 対応は必要性が確認できるまで保留とし、この項目は低優先度の調査メモとして扱う。
+
+
+## F-052 — v1 controller/program/pitch-bend stream: state deduplication and tick alignment
+
+**状態:** `runner.SNG` の controller stream と参照 `runner.MID` のデータ比較、および作業ブランチ上の converter/test 変更。SNG2S 実行時トレースではない。CI は確認待ち。
+
+- v1 の各パートで `partStart+145+noteLength` から4-byte record stream を読むと、`B0` controller、`C0` program change、`E0` pitch bend に相当する候補が合計1,966件得られる。値が直前の状態と同じイベントを status 種別ごとに抑制すると1,595件になる。
+- 同じ status/channel・データ値・tick を使って参照 `runner.MID` の channel events と照合したところ、参照側の controller/program/pitch-bend 1,595件と全件一致し、欠落・余分・差分は0だった。
+- この fixture では、source tick が0の初期状態イベントは MIDI tick 8、それ以降のイベントは累積 source tick +191 に対応する。converter は SMF 出力時に bar length 192 を加えるため、v1 専用経路では内部 tick をこの写像に合わせて調整する。
+- v1 の参照 MIDI には converter が v2〜v4 用に追加していた RPN 初期化イベント（CC 101/100/6）がないため、v1 ではそれらを出力しない。v2〜v4 の既存動作は変更しない。
+- 作業ブランチ `docs/ballade-version-testdata` で controller state deduplication、v1 tick alignment、v1 RPN 初期化の抑制、および `BalladeV1MatchesSng2GsReferenceControllerAndProgramEvents` テストを追加した。
+
+**制約:** 観測は1つの v1 fixture と参照 MIDI に対するオフライン比較であり、すべての v1 ファイルへの一般化や SNG2S の実行時内部動作を直接証明するものではない。GitHub Actions run 39333267230 の成功確認後に検証状態を更新する。
