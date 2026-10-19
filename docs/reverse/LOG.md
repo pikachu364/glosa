@@ -183,3 +183,11 @@
 - 全トラックを集約した Note-on/off 比較ではトラック間のイベント移動を見逃すため、fixture branch のテストを拡張。各トラックのイベント構成を tick・on/off・pitch・velocity で比較し、トラック番号／チャンネル番号を正規化してトラックごとのイベント集合を照合する。
 - テスト変更 commit [`65ace59`](https://github.com/pikachu364/glosa/commit/65ace594fc829e81e6824c871915448074f7f424)。CI run [39220897447](https://github.com/pikachu364/glosa/actions/runs/39220897447) と [39220904556](https://github.com/pikachu364/glosa/actions/runs/39220904556) は更新時点で実行中。
 - `FACTS.md` に F-029、`NEXT_STEPS.md` に CI結果確認とチャンネル割当／同音高重複の別検証を追記。現時点ではテスト結果未確定であり、converter の実装変更は行っていない。
+
+
+## 2026-10-19 — トラック単位比較 CI 成功
+
+- fixture branch のトラック単位 Note-on/off 比較テストを実行した CI run [39220897447](https://github.com/pikachu364/glosa/actions/runs/39220897447) と [39220904556](https://github.com/pikachu364/glosa/actions/runs/39220904556) が、Linux・macOS・Windows の全 job で成功した。
+- `FACTS.md` の F-029 と `NEXT_STEPS.md` を更新し、トラック単位イベント構成の比較を完了扱いにした。
+- テストは各トラックの tick・on/off・pitch・velocity 構成を比較するが、トラック番号とチャンネル番号は正規化する。従って次の課題は、SNG2S マニュアル既定のトラック順と実参照 MIDI のトラック／チャンネル／SNG パート対応を個別に検証すること。同音高重複時の Note-off 所有関係も別途残る。
+- 変換器のソースコードは変更していない。
