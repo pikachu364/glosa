@@ -375,7 +375,7 @@
 
 - `runner.SNG` の各パートで note stream 直後の4-byte streamを走査し、B0 controller / C0 program change / E0 pitch bend 候補1,966件を抽出した。status 種別と controller number ごとに連続する同一状態を抑制すると1,595件となり、参照 `runner.MID` の同種イベント1,595件と tick/status/data1/data2 の全件一致を確認した。
 - tick の対応は、source tick 0 の初期状態イベントが MIDI tick 8、それ以降が source tick +191。v1 専用 converter にこの時刻変換と状態重複抑制を実装し、v1 では参照に存在しない RPN 初期化イベントを出さないようにした。v2〜v4 の controller 経路は維持する。
-- `BalladeV1MatchesSng2GsReferenceControllerAndProgramEvents` テストを追加した。CI run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) は記録時点で pending のため、テスト成功とはまだ扱わない。
+- `BalladeV1MatchesSng2GsReferenceControllerAndProgramEvents` テストを追加した。CI run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) は Ubuntu/macOS/Windows で成功し、新しい v1 controller/program/pitch-bend 回帰テストも CI を通過した。
 - この一致は fixture のオフライン比較に基づき、SNG2S 実行時トレースではない。tempo/meta event、SMF track chunk 順、実再生・聴感確認は継続課題。
 
 
@@ -385,3 +385,9 @@
 - v1 conductor の sentinel（file offset 761）後を現行 `ReadTempi` と同じ方法で読むと step 37 / value 144、step 37 / value 192 ... となり、現行の tempo 変換式では参照 tempo と一致しない。
 - SNG2S の静的命令列には初期 500,000 tempo meta と、`0x7BA` が120以外のとき `FUN_1000_618A` で `60,000,000 / tempo` を計算して tempo meta を出す経路がある。ただし tick 8 / 192 の参照イベントと SNG のどのフィールドが対応するかは未確定。
 - FACTS F-053、HYPOTHESES H-012、NEXT_STEPS T-003 を更新。根拠が不足するため tempo conversion のコードは推測で変更せず、tempo/meta は未検証のままとする。
+
+
+## 2026-10-20 — v1 controller 比較テストの CI 完了
+
+- GitHub Actions run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) の完了を確認。Ubuntu/macOS/Windows の CI はすべて成功。
+- FACTS F-052 の CI 状態を「確認待ち」から成功に更新。tempo/meta event と track chunk 順、13 seek 値の個別の意味、実再生は引き続き未完了。
