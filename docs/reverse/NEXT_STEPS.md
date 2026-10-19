@@ -93,3 +93,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] `FUN_1000_47E2` の read 側、`FUN_1000_48A2` の write 側、`FUN_1000_49F8` の確保バッファ cleanup、`FUN_1000_4B8A` の特別固定領域設定を確認。
 - [ ] `0x17CA+n*8` の各管理構造体を初期化・open・read・write・close する呼び出し元を一覧化し、`0x01/0x02/0x08/0x10/0x20/0x40` の横断状態表を完成させる。
+
+
+- [x] open wrapper FUN_1000_4740 → FUN_1000_4A92 の接続と参照元を列挙。
+- [x] special wrapper FUN_1000_4768 の FUN_1000_4B8A → FUN_1000_4D12 → FUN_1000_4C0E 順序を確認。
+- [ ] FUN_1000_5687 を含む関数境界と引数を確定し、FUN_1000_47E2 / FUN_1000_48A2 が呼び分けられる条件を追う。
+- [ ] FUN_1000_4697 の FUN_1000_49F8 呼び出し前後を追い、cleanup が handle/stream close のどの段階に相当するかを確認。
+- [ ] 管理構造体の実インデックスを呼び出し元から逆算し、各フラグの遷移表をストリーム単位で完成する。
