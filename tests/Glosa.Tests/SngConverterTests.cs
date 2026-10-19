@@ -101,6 +101,70 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void TieRecordExtendsMatchingContiguousNoteWithoutStartingANewNote()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+        int firstPart = 0x46 + 4 * 11 + 94 + 120;
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(firstPart + 112), 24);
+
+        // First note: key 60, duration 24, step 24. The Tie starts exactly
+        // at the original Note-off and should extend that Note-off to tick 48.
+        sng[firstPart + 158] = 60;
+        sng[firstPart + 159] = 24;
+        sng[firstPart + 160] = 24;
+        sng[firstPart + 162] = 100;
+        sng[firstPart + 166] = 60;
+        sng[firstPart + 167] = 24;
+        sng[firstPart + 168] = 24;
+        sng[firstPart + 170] = 100;
+        sng[firstPart + 173] = 0x80;
+        sng[firstPart + 174] = 0xFC;
+
+        MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
+        var notes = sequence.Events
+            .Where(e => e.Track == 1 && e.Kind == MidiEventKind.Channel &&
+                        e.Status == 0x90 && e.Data1 == 60)
+            .ToArray();
+
+        Assert.Single(notes.Where(e => e.Data2 == 100));
+        Assert.Single(notes.Where(e => e.Data2 == 0));
+        Assert.Equal(192, notes.Single(e => e.Data2 == 100).Ticks);
+        Assert.Equal(240, notes.Single(e => e.Data2 == 0).Ticks);
+    }
+
+    [Fact]
+    public void UnmatchedTieRecordDoesNotCreateANewNote()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+        int firstPart = 0x46 + 4 * 11 + 94 + 120;
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(firstPart + 112), 24);
+
+        // The first note ends at source tick 12, but the Tie starts at tick 24.
+        // Since it is not contiguous, the Tie must not emit a second note.
+        sng[firstPart + 158] = 60;
+        sng[firstPart + 159] = 12;
+        sng[firstPart + 160] = 24;
+        sng[firstPart + 162] = 100;
+        sng[firstPart + 166] = 60;
+        sng[firstPart + 167] = 24;
+        sng[firstPart + 168] = 24;
+        sng[firstPart + 170] = 100;
+        sng[firstPart + 173] = 0x80;
+        sng[firstPart + 174] = 0xFC;
+
+        MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
+        var notes = sequence.Events
+            .Where(e => e.Track == 1 && e.Kind == MidiEventKind.Channel &&
+                        e.Status == 0x90 && e.Data1 == 60)
+            .ToArray();
+
+        Assert.Single(notes.Where(e => e.Data2 == 100));
+        Assert.Single(notes.Where(e => e.Data2 == 0));
+        Assert.Equal(192, notes.Single(e => e.Data2 == 100).Ticks);
+        Assert.Equal(204, notes.Single(e => e.Data2 == 0).Ticks);
+    }
+
+    [Fact]
     public void ConvertsTempoSliderValuesAndTempoChanges()
     {
         byte[] sng = CreateMinimalSong("3.00", 10);
