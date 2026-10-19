@@ -415,3 +415,13 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - 全10パートで計算後の位置は次パート開始候補 `start + tableSize + 80 + 65` と一致した。差分は全パートで 0 byte。
 - part 10 の計算後位置は 85,897 byte で、`runner.SNG` のファイル長と完全一致した。したがって、算出境界 byte 85,832 から末尾に残る65 byteは、最終パートの次の情報バッファ開始位置（`+65`）として説明でき、単なる未説明の trailing data という扱いは撤回する。
 - これは `tableEnd + 2` を基準にした先頭位置、サイズ表の最初の値による初期位置、後続10個のサイズ値に `+80` を加える候補、`+65` からの情報バッファ読み取り、`+145` からのノート列、13回の相対 seek が一連の読み取り位置として整合する証拠である。ただし Note-off の時刻差（part 2/3/10）と各 seek 距離の個別のデータ上の意味は残る。
+
+
+## F-041 — v1 part 10 の同 tick・同音高ノートで Note-off が1 tickずれる例
+
+**状態:** `runner.SNG` の part 10 note record と参照 `runner.MID` の MIDI イベントを静的に照合。生成元プログラムの実行時トレースではない。
+
+- part 10 の record file offset `76607` と `76615` に、pitch 69 / velocity 21 / duration 1 の通常レコードがある。両方の Note-on tick は 1728 で、Tie flag は立っていない（byte 7 は `0x00`）。
+- 参照 MIDI の同チャンネル・pitch 69 には Note-on が tick 1728 に2件あり、Note-off は tick 1728 と tick 1729 に1件ずつある。一方、duration=1 を単純に加えるモデルでは両方の Note-off が tick 1729 になる。
+- 同様の組み合わせが tick 1740、1752、1764 など12-tick間隔で繰り返される。part 10 は Tie record がないため、この例は Tie 延長の所有規則だけでは説明できない。
+- これは SNG2S の Note-off scheduling または同 tick の同音高ノート処理に追加規則があることを示す観測だが、どのノートの Note-off が早まるか、その理由は未確定。converter は変更しない。
