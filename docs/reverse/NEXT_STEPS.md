@@ -178,3 +178,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] タイマー表の照合キーを caller から追跡し、velocity ではなく Note-on status/channel byte と pitch の組であることを確認。
 - [ ] `FUN_1000_3A3F` の残り値比較と、参照 MIDI の同 pitch 重複 Note-off の対応を record 単位で照合する。
+
+- [x] v1 の Note-off タイマー処理を `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的命令列に沿ってオフライン再現し、参照 MIDI の全 Note-off 3,295件と差分0を確認。
+- [ ] この規則を converter の v1 経路に反映する前に、既存の converter の note/tie/event abstraction とテスト設計を照合し、v2/v3 の既存一致を退行させない実装計画を作る。
+- [ ] v1 の13個の16-bit値群（`partStart+119`..`+143`）の意味、およびファイル末尾65 bytes は未解明。Note-off 完全一致とは別に継続調査。
