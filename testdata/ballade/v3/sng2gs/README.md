@@ -1,8 +1,10 @@
 # SNG2GS conversion result — Ballade v3
 
-- Input: [`../START__0.SNG`](../START__0.SNG)
-- Output: `START__0.MID` (37,171 bytes; present)
-- Converter: SNG2GS
-- Converter version and options: unknown; document when provenance is recovered
+This directory is reserved for the MIDI output converted from [`../START__0.SNG`](../START__0.SNG) using SNG2GS.
 
-The reference MIDI is checked in and has been used for aggregate Note-on/off comparison. The saved MIDI contains 5,362 Note-ons and 5,362 Note-offs.
+- Input: `START__0.SNG`
+- Output: `START__0.MID`
+- Converter: SNG2GS
+- Converter version and options: to be documented
+
+The converted `START__0.MID` file still needs to be added.
