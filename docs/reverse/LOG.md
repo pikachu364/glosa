@@ -230,3 +230,11 @@
 - 修正後 fixture は、1件目 duration=48/step=24 → Note-off tick 48、2件目は開始 tick 24 + duration 24 → Note-off tick 48。Tie は累積 step により tick 48 で開始し、同 tick の候補のうち後から追加された2件目を tick 72 に延長する。
 - SMF 出力の基準 tick 192 を含めた Note-off は 240 と 264。これで修正後の期待値が fixture の算術と一致することを説明できる。
 - この確認は合成 fixture の期待値を裏付けるもの。実 MIDI の Note-off 所有関係は T-001 / T-007 で継続する。
+
+
+## 2026-10-19 — Windows CI 再実行成功と v2 Tie 候補走査
+
+- run [39228366606](https://github.com/pikachu364/glosa/actions/runs/39228366606) の Windows job は初回に `SequencerTests.KeepsEventsRoughlyOnSchedule` だけ失敗したが、失敗 job の再実行で Windows・Ubuntu・macOS の全 job が成功。失敗したタイミングテストのコードや許容範囲は変更していない。
+- 次の調査として T-001 を進め、v2 `SHIZUME0.SNG` と SNG2GS 参照 MIDI のバイナリを直接走査。通常ノート 2,713 件、Tie 1,070 件、参照 MIDI の Note-on/off 各 2,713 件を確認。
+- v2 の Tie 1,070 件は同音高の候補なし 0、候補1件 153、候補複数 917。複数候補がある場合も最新 tick はすべて一意で、同 tick の候補が競合する実例は見つからなかった。参照 MIDI のトラック内イベント走査でも同音高 Note-on の重なりは 0 件。
+- したがって v2 実データは合成テストの「同 tick で同音高候補が複数」の所有関係を決定できる証拠にはならない。FACTS F-032 と NEXT_STEPS T-001 を更新。v3 はレイアウト候補の検証に失敗したため今回の集計対象に含めず、レコード境界の確認後に再調査する。
