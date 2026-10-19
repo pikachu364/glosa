@@ -104,10 +104,12 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] `FUN_1000_5670` を特定し、残量カウンタが尽きた時に `FUN_1000_47E2` を呼ぶ buffered reader と確認。
 - [x] `FUN_1000_4CA4` の write-buffer flush 条件、`FUN_1000_470E` の全管理構造体走査、`FUN_1000_5690` の DOS close (`AH=3Eh`) を区別。
-- [ ] `FUN_1000_4697` の上位 caller を確認し、close 前 flush の保証有無を検証。
+- [ ] `FUN_1000_4654` の flush 戻り値を caller が確認する条件を検証。
 - [ ] `FUN_1000_59AC` の各 handle フラグと `FUN_1000_572A` の handle 登録・フラグ初期化をつなぎ、handle と管理構造体の対応を確定。
 
 
-- [x] `FUN_1000_4697` の命令列で、`FUN_1000_4CA4` → `FUN_1000_49F8` → `FUN_1000_5690` の close 順序を確認。flush 失敗時の戻り値処理は未確定。
+- [x] `FUN_1000_4654` の命令列で、`FUN_1000_4CA4` → `FUN_1000_49F8` → `FUN_1000_5690` の close 順序を確認。flush 失敗時の戻り値処理は未確定。
 - [x] `FUN_1000_572A` の OS handle flag table 初期化と、`FUN_1000_4CA4` が管理構造体 `+7` の handle を `FUN_1000_59AC` に渡す接続を確認。
-- [ ] open mode ごとの `0x1782+h` flag byte 遷移表を完成し、`FUN_1000_4697` の全 caller が flush エラーを処理するか確認。
+- [ ] open mode ごとの `0x1782+h` flag byte 遷移表を完成し、`FUN_1000_4654` の全 caller が flush エラーを処理するか確認。
+
+- [x] close routine の正しい関数名が `FUN_1000_4654` で、`1000:4697` は内部 call site であると訂正。複数 caller で戻り値直後の検査がないことを確認。
