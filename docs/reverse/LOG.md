@@ -147,3 +147,10 @@
 - `FUN_1000_56B0` (`1000:5722`) で DOS seek (`AH=42h`) 成功後に handle flag `0x02` を clear する命令を確認。`0x02` は text SUB (`0x1A`) 後の read 停止状態だが、成功した seek で解除可能。
 - `0x04` は `FUN_1000_58CE` の text loop でセットされ、同関数の次の text loop 開始時に clear。checked-in disassembly 全文の直接検索では外部参照を確認できず、これ以上の意味付けは保留。
 - close (`FUN_1000_5690`) 成功時は `0x1782+h` flag byte 全体をゼロクリア。FACTS F-026 / NEXT_STEPS を更新。converter 未変更。
+
+
+## 2026-10-19 — Tie 検証の fixture 状況を確認
+
+- repository の recursive tree と `testdata/ballade/README.md` / `manifest.json` を確認。SNG fixture は v1 `runner.SNG`、v2 `SHIZUME0.SNG`、v3 `START__0.SNG`、v4 `BOURREE0.SNG` の4件。参照 `.mid` は現行 tree に存在しない。
+- `tests/Glosa.Tests/SngConverterTests.cs` は最小 SNG、tempo、壊れた layout を検証するが、Tie bit による Note-off 延長や同音重複の比較テストはない。したがって現状の repo 内容だけでは reference MIDI への event-by-event 検証を再現できない。
+- NEXT_STEPS に参照 MIDI の出典/版/オプションを伴う test fixture の準備と、fixture 入手後の SNG raw record ↔ MIDI event 突合を追記。変換コードは変更していない。
