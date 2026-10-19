@@ -29,16 +29,17 @@ The exact SNG2GS version/options and the Glosa build used for the saved outputs 
 ## Validation status
 
 - **Tie handling:** The converter suppresses Tie Note-ons and extends the latest pending same-key Note-off whose scheduled tick is at or before the Tie start. Synthetic regression tests cover contiguous ties, a small gate gap, interleaved pitches, a Tie with no prior same-pitch note, and same-tick overlapping notes.
-- **Ballade 1.00:** A v1-specific layout path now handles the old 80-byte part-info layout. The converter's Note-on/off signatures match `v1/sng2gs/runner.MID` for all 3,295 Note-on and 3,295 Note-off events. A focused regression test also checks the same-tick sequence at tick 1728, channel 9, pitch 69.
+- **Ballade 1.00:** A v1-specific layout path handles the old 80-byte part-info layout. The converter's Note-on/off signatures match `v1/sng2gs/runner.MID` for all 3,295 Note-on and 3,295 Note-off events. A focused regression test checks the same-tick sequence at tick 1728, channel 9, pitch 69. A controller/program/pitch-bend comparison test and v1-specific state/timing normalization were added; CI verification is pending.
 - **Ballade 2.00 / 3.00 / 4.00:** Reference MIDI note-event regression tests compare the actual C# converter output, including tick, channel, pitch, velocity and event type.
 - **CI:** Run [39252039302](https://github.com/pikachu364/glosa/actions/runs/39252039302) passed build and tests on Ubuntu, macOS, and Windows.
-- **Scope:** These compatibility tests focus on Note-on/off events. They do not establish full equivalence of controller events, tempo/meta events, or physical MIDI track-chunk ordering. The v1 timer behavior is an offline model derived from static disassembly, not a runtime trace of SNG2S.
+- **Scope:** Note-on/off events are CI-verified. Controller/program/pitch-bend events have an offline data comparison showing 1,595 reference events matched after repeated-state suppression and tick alignment; the new regression test is pending CI. Tempo/meta events and physical MIDI track-chunk ordering remain unverified. The v1 timer and controller models are offline models, not runtime traces of SNG2S.
 
 ## Future work
 
 - Identify the individual meanings of the 13 v1 relative-seek values; their cumulative positions already match each next part-info buffer and EOF.
 - Record the reference MIDI generator version/options if the original generation environment can be established.
-- Extend comparisons to controller events, tempo/meta events, and physical track order where reference evidence is available.
+- [x] Extend the v1 comparison to controller/program/pitch-bend events; the regression test is added and awaiting CI confirmation.
+- Extend comparisons to tempo/meta events and physical track order where reference evidence is available.
 - Implement automatic version identification only when the file format provides a reliable discriminator.
 ## Manual playback check (pending)
 
