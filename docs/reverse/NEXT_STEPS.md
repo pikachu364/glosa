@@ -8,8 +8,8 @@
 
 - [x] v2/v3 の Note-on 数が非 Tie レコード数と一致することを確認した。
 - [x] トラック/チャンネルを無視したイベント比較で、v2 の160 ticks補正後と v3 の補正なしでは参照 MIDI の Note-on/off がすべて Glosa 側に含まれることを確認した。
-- [x] v2 の SNG 通常ノート数/Tie 数と参照 MIDI の Note-on/off 件数を照合（通常ノート 2,713、Tie 1,070、参照 Note-on/off 各 2,713）。同音高の最新 Tie 候補は全件で一意だった。詳細は FACTS F-032。
-- [ ] v2 の参照 MIDI では同音高 Note-on の重なりを検出しなかった。Tie 開始 tick と gate 終了 tick の関係、同 tick の候補が複数あるケースを v3 と合成 fixture で引き続き調べる。
+- [x] v2/v3 の SNG 通常ノート数/Tie 数と参照 MIDI の Note-on/off 件数を照合（v2: 通常 2,713 / Tie 1,070、v3: 通常 5,362 / Tie 357）。参照 Note-on/off 数もそれぞれ一致し、同音高の最新 Tie 候補は両方で一意だった。詳細は FACTS F-032。
+- [ ] v2/v3 の参照 MIDI では同音高 Note-on の重なり、および最新 tick が同値となる Tie 候補を検出しなかった。Tie 開始 tick と gate 終了 tick の関係をイベント単位で照合し、同 tick の候補が複数ある合成 fixture の規則が実データから裏付けられるか引き続き調べる。
 - [ ] FIFO/LIFO を正解と仮定せず、Note-off の所有ノートと例外を特定する。
 
 **完了条件:** イベント規則のオフライン照合は完了。CI と修正後の実出力比較を確認してクローズする。
