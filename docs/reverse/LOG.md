@@ -177,3 +177,9 @@
 - v1 の失敗テストは [commit b75612a](https://github.com/pikachu364/glosa/commit/b75612ae59fd1d71aeb299834d427dbaf98c1c54) で一時的に削除し、fixture branch の README と manifest に未対応状態を記録した。v1 のレイアウト候補を確定したわけではない。
 - `FACTS.md` に F-028、`HYPOTHESES.md` に H-009 を追加し、Tie の CI 検証状況と v1 の制約を明記した。`NEXT_STEPS.md` は v2〜v4 の集計比較を完了、トラック単位比較と v1 レイアウト解析を未完了として更新。
 - converter のレイアウト処理は変更していない。次は参照 MIDI のトラック／チャンネルごとの比較を追加し、v1 はブロック境界とサイズ表を独立に検証してからテストを戻す。
+
+## 2026-10-19 — トラック単位の MIDI 比較テスト追加
+
+- 全トラックを集約した Note-on/off 比較ではトラック間のイベント移動を見逃すため、fixture branch のテストを拡張。各トラックのイベント構成を tick・on/off・pitch・velocity で比較し、トラック番号／チャンネル番号を正規化してトラックごとのイベント集合を照合する。
+- テスト変更 commit [`65ace59`](https://github.com/pikachu364/glosa/commit/65ace594fc829e81e6824c871915448074f7f424)。CI run [39220897447](https://github.com/pikachu364/glosa/actions/runs/39220897447) と [39220904556](https://github.com/pikachu364/glosa/actions/runs/39220904556) は更新時点で実行中。
+- `FACTS.md` に F-029、`NEXT_STEPS.md` に CI結果確認とチャンネル割当／同音高重複の別検証を追記。現時点ではテスト結果未確定であり、converter の実装変更は行っていない。
