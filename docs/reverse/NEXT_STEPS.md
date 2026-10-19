@@ -19,15 +19,16 @@
 **優先度:** 高
 
 - [x] `runner.SNG` の header end = tableEnd + 2 と part size = entries[p] + 80 の候補を全10パートで検査。SNG2S の旧版 read 順から、情報バッファ +65、note length +115、controller length +117、record 列 +145 が対応することを確認（FACTS F-038）。以前の +161 record-start と +119 を追加列長とする解釈は撤回。
-- [x] 現行 converter で `v1/runner.SNG` を変換する統合テストを実行。`Invalid or unsupported Ballade SNG layout.` で失敗し、現行レイアウト探索では未対応と確認した。
-- [x] 未対応の v1 統合テストを CI から一時除外し、fixture README / manifest に制約を記録した。これは v1 対応完了を意味しない。
+- [x] 初期実装では `Invalid or unsupported Ballade SNG layout.` となった。この制約は後続の v1 専用経路で解消済み（F-045）。ここは履歴として残し、現在の対応状況とは区別する。
+- [x] 初期調査時に未対応テストを一時除外した。後続で v1 専用変換・参照イベント比較テストを追加し、3 OS CI 成功を確認済み（F-045）。
 - [x] SNG2S の `FUN_1000_272a` で旧版と後続版のヘッダ項目参照が分岐し、版3でパート数が16になることを確認（FACTS F-034）。これは版別処理の存在を示すが、サイズ表や v1 の具体的オフセット確定には至っていない。
 - [x] SNG2S が各パートの 0x50-byte 情報バッファを扱い、旧版クラスと後続版でフィールド参照位置（`0x32` / `0x23`）を切り替えることを確認（FACTS F-035）。
 - [x] `FUN_1000_272a` の open/read 経路を追跡し、このファイルは `0x8000` 指定で開かれ、テキスト用 CR/LF・Ctrl-Z 変換が有効でないことを確認。さらに旧版は 80-byte 読込後に追加 byte を読まず、後続版は 1 byte 追加で読むため、固定読込幅が 80 / 81 byte となる（FACTS F-036）。
 - [x] 初期静的検査で `+161` を列開始とする容量候補を確認した（FACTS F-037）が、これは F-038 の read順／Note-on照合で撤回済み。`+119` は列長ではなく13個の16-bit値群の先頭。算出終端後の65 byteも未解明。
-- [x] `+145` record start で参照 MIDI の全 Note-on 3,295件を pitch/velocity/tick（source +192）まで照合し、差分0を確認（FACTS F-038）。
-- [ ] `+119`〜`+143` の13個の16-bit値と SNG2S seek 列の意味を解き、サイズ表 entry の正式な仕様とパート間境界を確定する。
-- [ ] 算出パート終端の後ろに残る65 byteの役割を特定するか、未解明領域として境界条件に明記する。
+- [x] `+145` record start で参照 MIDI の全 Note-on 3,295件を pitch/velocity/tick（source +192）まで照合し、差分0を確認（F-038）。後続のタイマー競合モデルで Note-off 3,295件も差分0（F-044）。
+- [x] 13個の値が DOS の現在位置基準相対 seek 距離であり、累積位置が全パートで次情報バッファ候補 `+65`、最終パートで EOF に一致することを確認（F-039/F-040）。
+- [ ] 13個の seek 値それぞれを、後段で参照されるデータ／バッファへ個別に対応付ける。正式なフィールド仕様は未確定。
+- [x] 末尾65 byteは未説明の余剰データではなく、最終パート後の次情報バッファ開始候補が EOF に一致する位置関係として説明済み（F-040）。
 - [x] SNG2GS 参照 MIDI とイベント単位で照合。v1 専用経路で Note-on 3,295件と Note-off 3,295件を channel/part・pitch・velocity・tick で照合し、差分0を確認（FACTS F-038/F-044）。コントローラー・tempo/meta・MIDI track chunk 順の完全一致は未検証。
 - [x] v1 専用レイアウト分岐を v2〜v4 と分離し、fixture の参照 Note-on/off 比較テストを追加。作業ブランチ `docs/ballade-version-testdata` の CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) は Ubuntu・macOS・Windows の全 job が成功。
 
@@ -144,8 +145,8 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] チャンネル番号をイベント署名に追加し、run `39223684171` で Linux・Windows・macOS の全 job 成功を確認。
 - [x] v2/v3 の参照 MIDI と修正後 C# 出力を統合テストで再比較（v2 は参照側に +160 tick 補正）。v2〜v4 は集計・トラック単位の比較が CI で成功。
 - [x] トラックごとのイベント構成とチャンネル割当を参照 MIDI と比較し、CI 成功を確認。
-- [ ] 同音高重複時の Note-off 所有関係を個別に検証する。
-- [x] v1 の参照 MIDI 比較テストは、現行 converter が layout 判定で拒否したため除外した。
+- [ ] v2/v3 Tie のイベント署名一致とは別に、参照 MIDI の重複同音高 Note-off がどの Note-on に対応するかを意味論として特定する。v1 タイマー競合モデルのオフライン一致は F-044 に記録済み。
+- [x] 初期段階では v1 の参照 MIDI 比較テストを一時除外した。後続コミットで v1 専用経路と参照イベント比較テストを追加し、この制約は解消済み（F-045）。
 - [x] v1 の参照 MIDI を使ったレイアウト/Note-on/off イベント検証は作業ブランチで実装・CI 確認済み。13個の seek 値それぞれの意味、controller/tempo/meta、track chunk 順は引き続き未解決。
 
 **完了条件:** CI 結果と参照 MIDI 比較結果を記録し、残差があれば具体的なイベント例を残す。
