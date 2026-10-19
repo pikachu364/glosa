@@ -40,3 +40,21 @@ The exact SNG2GS version/options and the Glosa build used for the saved outputs 
 - Record the reference MIDI generator version/options if the original generation environment can be established.
 - Extend comparisons to controller events, tempo/meta events, and physical track order where reference evidence is available.
 - Implement automatic version identification only when the file format provides a reliable discriminator.
+## Manual playback check (pending)
+
+This check complements CI; it has **not yet been performed**. Do not mark it passed until a person has listened to the generated files.
+
+1. Generate a fresh MIDI from each available SNG fixture using the current Glosa build. Do not use the saved `glosa-test-convert` files as current output; they are pre-fix fixtures.
+2. Play the fresh Glosa MIDI and the corresponding `sng2gs/*.MID` reference with the same player and the same sound bank/synthesizer settings.
+3. Check for audible silence, abrupt early termination, obvious missing passages, stuck notes, or gross timing differences. Compare instrument timbre separately because it depends on the selected sound source.
+4. Record the player/version, sound bank or synthesizer, operating system, Glosa build/commit, files played, and observations for each version.
+5. If a difference is heard, inspect event-level differences (including controllers, tempo/meta events and track order) before concluding that the converter is wrong.
+
+| Sample | Glosa input | Reference MIDI | Result |
+|---|---|---|---|
+| v1 | `v1/runner.SNG` | `v1/sng2gs/runner.MID` | Pending: fresh Glosa output and listening check |
+| v2 | `v2/SHIZUME0.SNG` | `v2/sng2gs/SHIZUME0.MID` | Pending: fresh Glosa output and listening check |
+| v3 | `v3/START__0.SNG` | `v3/sng2gs/START__0.MID` | Pending: fresh Glosa output and listening check |
+| v4 | `v4/BOURREE0.SNG` | `v4/sng2gs/BOURREE0.MID` | Pending: fresh Glosa output and listening check |
+
+A listening check is a manual sanity check, not a substitute for automated event comparisons. If the original SNG2GS runtime is available, listening to its direct playback as well is useful, but the comparison must still document the sound source and settings.
