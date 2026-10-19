@@ -140,3 +140,17 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] v1 の参照 MIDI を使ったレイアウト/イベント検証は T-002 で継続する。
 
 **完了条件:** CI 結果と参照 MIDI 比較結果を記録し、残差があれば具体的なイベント例を残す。
+
+
+## T-008 — 同音高重複 Tie テストの失敗原因を確定する
+**優先度:** 最優先
+
+- [x] run [39224478408](https://github.com/pikachu364/glosa/actions/runs/39224478408) のログを確認。Windows・Ubuntu・macOS で同じテストが失敗し、ビルドは成功。
+- [x] テスト fixture と Tie の候補 Note-off 選択コードを確認。
+- [ ] テストの各レコードについて、実際にパーサーが読む byte offset・duration・step・flag を列挙する。
+- [ ] 生成された各 Note-on/off の source tick、Tie 対象 EventIndex、Tie 適用前後の tick を追跡し、`[216, 288]` が発生する理由を説明する。
+- [ ] Tie 規則を既存の参照 MIDI / SNG イベント照合と矛盾しない形で確定する。根拠なしに期待値だけを変更しない。
+- [ ] 必要な実装またはテスト修正を commit し、新しい Actions run で Windows・Ubuntu・macOS のすべてが成功することを確認する。
+- [ ] 結果を FACTS.md / LOG.md に記録し、T-001 / T-007 の未完了項目を整合させる。
+
+**完了条件:** 原因がイベント時刻と選択対象で説明でき、修正後 CI の3 OS 成功が確認できること。
