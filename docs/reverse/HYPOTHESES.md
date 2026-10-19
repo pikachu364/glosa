@@ -112,3 +112,12 @@ v1 part 10 の同 tick・同音高ノートで Note-off が tick 1728 と 1729 �
 `FUN_1000_3406` の呼び出し元分岐と `FUN_1000_3A3F` / `FUN_1000_3A10` をモデル化したところ、v1 参照 MIDI の Note-off 3,295件がすべて `(channel, pitch, tick)` で一致した。キー衝突時の即時 Note-off、duration 比較、`0x40` の新規登録抑止、`0xC0` の即時 Note-off 抑止、期限切れイベントを含めたモデルで差分は0。
 
 これは静的逆アセンブルからのオフライン再現による強い裏付けだが、実行時トレースではない。converter への移植時には v2/v3 の Tie 処理と既存テストを維持する必要がある。
+
+
+## H-012 — v1 の tempo meta は後続版と異なる変換経路を持つ可能性
+
+**状態:** v1 参照 MIDI と汎用 `ReadTempi` の出力候補が不一致。v1 専用 tempo 規則は未確定。
+
+v1 `runner.MID` は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 µs/quarter の tempo meta を持つ。一方、v1 conductor 領域に対する現行 sentinel parser は step/value = 37/144, 37/192 ... と読むため、現行の後続版向け式では参照と一致しない。SNG2S の起動時 tempo 出力と `0x7BA` を参照する経路は逆アセンブル上確認できるが、参照 MIDI の各 tempo event と SNG 内フィールドの対応は未確定。
+
+**確認に必要なこと:** `0x7BA` の設定元、`FUN_1000_618A` / `FUN_1000_61EC` と conductor data の関係を追跡し、tick 8 / 192 の tempo event を説明する。根拠がそろうまでは v1 tempo conversion を推測で変更しない。
