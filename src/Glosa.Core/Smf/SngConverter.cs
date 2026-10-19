@@ -41,72 +41,82 @@ public static class SngConverter
         for (int part = 1; part <= layout.Parts; part++)
         {
             int start = layout.Starts[part], end = Math.Min(data.Length, start + layout.Sizes[part]);
-            if (start + 158 > data.Length) break;
-            int used = U16(data, start + 112), controllerBytes = U16(data, start + 114);
-            int stream = start + 158, controllers = stream + used;
+            int streamOffset = layout.IsLegacyV1 ? 145 : 158;
+            if (start + streamOffset > data.Length) break;
+            int used = U16(data, start + (layout.IsLegacyV1 ? 115 : 112));
+            int controllerBytes = U16(data, start + (layout.IsLegacyV1 ? 117 : 114));
+            int stream = start + streamOffset, controllers = stream + used;
             int channel = part - 1, module = data[start + 94];
             int shift = module is 2 or 5 ? 0 : transpose;
+            int nameOffset = layout.IsLegacyV1 ? start + 69 : start + 81;
             int nameLength = 0;
-            while (nameLength < 12 && data[start + 81 + nameLength] != 0) nameLength++;
-            var track = new Track(data.Slice(start + 81, nameLength).ToArray(), channel);
+            while (nameLength < 12 && nameOffset + nameLength < data.Length && data[nameOffset + nameLength] != 0) nameLength++;
+            var track = new Track(data.Slice(nameOffset, nameLength).ToArray(), channel);
             int tick = 0;
-            var pendingNoteOffs = new Dictionary<int, List<(int Tick, int EventIndex)>>();
             int safeUsed = Math.Min(used, Math.Max(0, end - stream));
-            for (int pos = 0; pos + 8 <= safeUsed; pos += 8)
+            if (layout.IsLegacyV1)
             {
-                var record = data.Slice(stream + pos, 8);
-                if (record[0] == 0xFC) break;
-                int step = record[2], nudge = (sbyte)record[3];
-                if (record[1] != 0)
+                AddLegacyV1Notes(data, stream, safeUsed, channel, shift, track);
+            }
+            else
+            {
+                var pendingNoteOffs = new Dictionary<int, List<(int Tick, int EventIndex)>>();
+                for (int pos = 0; pos + 8 <= safeUsed; pos += 8)
                 {
-                    int at = Math.Max(0, tick + nudge);
-                    int key = Math.Clamp(record[0] + shift, 0, 127);
-                    if ((record[7] & 0x80) != 0)
+                    var record = data.Slice(stream + pos, 8);
+                    if (record[0] == 0xFC) break;
+                    int step = record[2], nudge = (sbyte)record[3];
+                    if (record[1] != 0)
                     {
-                        // A Tie record never starts a new note. It extends the latest
-                        // same-key Note-off that was scheduled no later than this start.
-                        // The SNG scheduler can place the Tie start slightly after the
-                        // previous gate end, and other pitches may be interleaved.
-                        if (pendingNoteOffs.TryGetValue(key, out var candidates))
+                        int at = Math.Max(0, tick + nudge);
+                        int key = Math.Clamp(record[0] + shift, 0, 127);
+                        if ((record[7] & 0x80) != 0)
                         {
-                            int candidate = -1, candidateTick = int.MinValue;
-                            for (int i = 0; i < candidates.Count; i++)
+                            // A Tie record never starts a new note. It extends the latest
+                            // same-key Note-off that was scheduled no later than this start.
+                            // The SNG scheduler can place the Tie start slightly after the
+                            // previous gate end, and other pitches may be interleaved.
+                            if (pendingNoteOffs.TryGetValue(key, out var candidates))
                             {
-                                var item = candidates[i];
-                                if (item.Tick <= at &&
-                                    (item.Tick > candidateTick ||
-                                     (item.Tick == candidateTick &&
-                                      (candidate < 0 || item.EventIndex > candidates[candidate].EventIndex))))
+                                int candidate = -1, candidateTick = int.MinValue;
+                                for (int i = 0; i < candidates.Count; i++)
                                 {
-                                    candidate = i;
-                                    candidateTick = item.Tick;
+                                    var item = candidates[i];
+                                    if (item.Tick <= at &&
+                                        (item.Tick > candidateTick ||
+                                         (item.Tick == candidateTick &&
+                                          (candidate < 0 || item.EventIndex > candidates[candidate].EventIndex))))
+                                    {
+                                        candidate = i;
+                                        candidateTick = item.Tick;
+                                    }
+                                }
+
+                                if (candidate >= 0)
+                                {
+                                    int eventIndex = candidates[candidate].EventIndex;
+                                    candidates.RemoveAt(candidate);
+                                    if (candidates.Count == 0) pendingNoteOffs.Remove(key);
+                                    int extendedOffTick = at + record[1];
+                                    track.Events[eventIndex] = track.Events[eventIndex] with { Tick = extendedOffTick };
+                                    if (!pendingNoteOffs.TryGetValue(key, out var updated))
+                                        pendingNoteOffs[key] = updated = [];
+                                    updated.Add((extendedOffTick, eventIndex));
                                 }
                             }
-
-                            if (candidate >= 0)
-                            {
-                                int eventIndex = candidates[candidate].EventIndex;
-                                candidates.RemoveAt(candidate);
-                                if (candidates.Count == 0) pendingNoteOffs.Remove(key);
-                                int extendedOffTick = at + record[1];
-                                track.Events[eventIndex] = track.Events[eventIndex] with { Tick = extendedOffTick };
-                                if (!pendingNoteOffs.TryGetValue(key, out var updated))
-                                    pendingNoteOffs[key] = updated = [];
-                                updated.Add((extendedOffTick, eventIndex));
-                            }
+                        }
+                        else
+                        {
+                            track.Events.Add(new MidiOutEvent(at, 2, [(byte)(0x90 | channel), (byte)key, record[4]]));
+                            track.Events.Add(new MidiOutEvent(at + record[1], 1, [(byte)(0x90 | channel), (byte)key, 0]));
+                            int eventIndex = track.Events.Count - 1;
+                            if (!pendingNoteOffs.TryGetValue(key, out var candidates))
+                                pendingNoteOffs[key] = candidates = [];
+                            candidates.Add((at + record[1], eventIndex));
                         }
                     }
-                    else
-                    {
-                        track.Events.Add(new MidiOutEvent(at, 2, [(byte)(0x90 | channel), (byte)key, record[4]]));
-                        track.Events.Add(new MidiOutEvent(at + record[1], 1, [(byte)(0x90 | channel), (byte)key, 0]));
-                        int eventIndex = track.Events.Count - 1;
-                        if (!pendingNoteOffs.TryGetValue(key, out var candidates))
-                            pendingNoteOffs[key] = candidates = [];
-                        candidates.Add((at + record[1], eventIndex));
-                    }
+                    tick += step;
                 }
-                tick += step;
             }
 
             tick = 0;
@@ -173,6 +183,77 @@ public static class SngConverter
         return output.ToArray();
     }
 
+    private static void AddLegacyV1Notes(
+        ReadOnlySpan<byte> data, int stream, int used, int channel, int shift, Track track)
+    {
+        var records = new List<LegacyNoteRecord>();
+        int tick = 0;
+        for (int pos = 0; pos + 8 <= used; pos += 8)
+        {
+            var record = data.Slice(stream + pos, 8);
+            if (record[0] == 0xFC) break;
+            byte flags = (byte)(record[7] & 0xC0);
+            if (record[1] != 0 && flags != 0x80)
+                records.Add(new LegacyNoteRecord(
+                    Math.Max(0, tick + (sbyte)record[3]), pos,
+                    record[0], record[1], record[4], flags));
+            tick += record[2];
+        }
+
+        records.Sort((a, b) =>
+        {
+            int byTick = a.Tick.CompareTo(b.Tick);
+            return byTick != 0 ? byTick : a.Offset.CompareTo(b.Offset);
+        });
+
+        // SNG2S keeps one active timer per channel/pitch. A collision can emit an
+        // immediate Note-off; duration comparison decides whether to replace the timer.
+        // Flags 0x40 and 0xC0 have distinct registration/output behavior in the old path.
+        var timers = new Dictionary<int, int>();
+        int index = 0;
+        while (index < records.Count || timers.Count != 0)
+        {
+            int nextRecord = index < records.Count ? records[index].Tick : int.MaxValue;
+            int nextExpiry = timers.Count != 0 ? timers.Values.Min() : int.MaxValue;
+            int at = Math.Min(nextRecord, nextExpiry);
+            if (at == int.MaxValue) break;
+
+            foreach (var timer in timers.Where(item => item.Value <= at).ToArray())
+            {
+                int outputKey = Math.Clamp(timer.Key + shift, 0, 127);
+                track.Events.Add(new MidiOutEvent(timer.Value, 1,
+                    [(byte)(0x90 | channel), (byte)outputKey, 0]));
+                timers.Remove(timer.Key);
+            }
+
+            while (index < records.Count && records[index].Tick == at)
+            {
+                var record = records[index++];
+                int rawKey = record.Key;
+                int outputKey = Math.Clamp(rawKey + shift, 0, 127);
+                bool hasTimer = timers.TryGetValue(rawKey, out int expiry);
+                if (hasTimer)
+                {
+                    if (record.Flags != 0xC0)
+                        track.Events.Add(new MidiOutEvent(at, 1,
+                            [(byte)(0x90 | channel), (byte)outputKey, 0]));
+
+                    if (expiry - at < record.Duration)
+                        timers.Remove(rawKey);
+                    else
+                        continue;
+                }
+
+                if (record.Flags != 0x40)
+                    timers[rawKey] = at + record.Duration;
+
+                if (record.Flags != 0xC0)
+                    track.Events.Add(new MidiOutEvent(at, 2,
+                        [(byte)(0x90 | channel), (byte)outputKey, record.Velocity]));
+            }
+        }
+    }
+
     private static List<TempoPoint> ReadTempi(ReadOnlySpan<byte> data, int start, int end)
     {
         var result = new List<TempoPoint>();
@@ -199,6 +280,7 @@ public static class SngConverter
         layout = default;
         if (data.Length < 0x100) return false;
         string version = Encoding.ASCII.GetString(data.Slice(18, 4));
+        bool legacyV1 = version == "1.00";
         int parts = version switch { "1.00" or "2.00" or "3.00" => 10, "4.00" => 16, _ => 0 };
         if (parts == 0) return false;
         int tableEnd = 0x46 + 4 * (parts + 1);
@@ -210,6 +292,44 @@ public static class SngConverter
             if (size > int.MaxValue) return false;
             entries[i] = (int)size;
         }
+
+        if (legacyV1)
+        {
+            int headerEnd = tableEnd + 2;
+            var starts = new int[parts + 1];
+            var sizes = new int[parts + 1];
+            starts[0] = headerEnd;
+            sizes[0] = entries[0];
+            long offset = (long)headerEnd + entries[0];
+            for (int p = 1; p <= parts; p++)
+            {
+                long size = (long)entries[p] + 80;
+                if (offset < 0 || size < 145 || size > int.MaxValue ||
+                    offset + size + 65 > data.Length)
+                    return false;
+
+                int partStart = (int)offset;
+                int used = U16(data, partStart + 115);
+                int controllers = U16(data, partStart + 117);
+                if (used % 8 != 0 || controllers % 4 != 0 ||
+                    used > size - 145 || controllers > size - 145 - used)
+                    return false;
+
+                int seekDistance = 0;
+                for (int i = 0; i < 13; i++)
+                    seekDistance += U16(data, partStart + 119 + 2 * i);
+                if ((long)used + controllers + seekDistance != entries[p])
+                    return false;
+
+                starts[p] = partStart;
+                sizes[p] = (int)size;
+                offset += size;
+            }
+
+            layout = new Layout(parts, starts, sizes, true);
+            return true;
+        }
+
         foreach (int headerEnd in new[] { tableEnd + 94, tableEnd + 2, tableEnd })
         {
             if (headerEnd <= 0 || headerEnd >= data.Length) continue;
@@ -226,7 +346,7 @@ public static class SngConverter
                 if (used % 8 != 0 || ctl % 4 != 0 || (long)used + ctl + idx > capacity) { ok = false; break; }
                 offset += size;
             }
-            if (ok) { layout = new Layout(parts, starts, sizes); return true; }
+            if (ok) { layout = new Layout(parts, starts, sizes, false); return true; }
         }
         return false;
     }
@@ -250,8 +370,9 @@ public static class SngConverter
         output.Write(body); output.Write([0, 0xFF, 0x2F, 0]);
     }
 
-    private readonly record struct Layout(int Parts, int[] Starts, int[] Sizes);
+    private readonly record struct Layout(int Parts, int[] Starts, int[] Sizes, bool IsLegacyV1);
     private readonly record struct TempoPoint(int Tick, int Microseconds);
+    private readonly record struct LegacyNoteRecord(int Tick, int Offset, byte Key, byte Duration, byte Velocity, byte Flags);
     private readonly record struct MidiOutEvent(int Tick, int Order, byte[] Bytes);
     private sealed class Track(byte[] name, int channel)
     {
