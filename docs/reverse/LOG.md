@@ -162,3 +162,10 @@
 - SNG 生レコード集計で v2 は 3,783 ノートレコード中 Tie bit 1,070件、非 Tie 2,713件。v3 は 5,719件中 Tie bit 357件、非 Tie 5,362件。v4 は Tie bit 付きノートレコードなし。非 Tie 件数が参照 Note-on 数と一致した。
 - この根拠に基づき、Tie レコードが延長条件を満たさない場合に通常ノートとして出力される現行挙動を修正。Tie bit 付きレコードは新規 Note-on/off を出さず、同じ音高かつ前 Note-off と開始 tick が連続する場合だけ前 Note-off を延長する。合成回帰テスト2件を追加。CI 実行と修正後の実 MIDI 再比較は未完了。
 - 注意: イベント比較はトラック/チャンネルを無視した集計で、同音高重複の Note-off 所有関係は未解決。v2 の160 ticks差と SNG2GS の版/オプションも未解決。
+
+
+## 2026-10-19 — Tie Note-off 対応規則の絞り込み
+- SNG2GS MIDI の各ノートトラックを、SNG パートの非 Tie レコードの `(tick,key,velocity)` で対応付けた。v2 の参照イベントは source tick +128、v3 は source tick +192 で整合する。Glosa 出力との比較では v2 に160 ticks差がある。
+- Tie レコードは Note-on を出さないだけでなく、直前のレコードだけを見ていると chord/interleaved note を取りこぼす。さらに、Tie start が元 Note-off より少し後に来るケースがある。
+- オフライン再生成で、同じ音高の pending Note-off から予定 tick が Tie start 以下で最も後のものを選び、Tie duration を加えて延長する規則を適用すると、v2/v3 の全 Note-on/off が各パート単位で参照 MIDI と一致した。v4 は Tie なしで既に一致。
+- これを C# 実装に反映し、合成テストを4件（連続 Tie、gate gap、他音高の interleave、同音高の候補なし）に拡張。実際の .NET 出力と CI はまだ確認待ち。
