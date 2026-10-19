@@ -167,18 +167,18 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] seek 距離を runner.SNG の全10パートに適用し、各パートの終端候補と算出位置を照合する。相対 seek の役割を確定するまでは converter を変更しない。
 
 - [x] 全10パートの seek 後位置を検算し、最終65 byteが最終パートの読み取り位置とファイル末尾の関係で説明できることを確認（FACTS F-040）。
-- [ ] Note-off tick 残差（part 2/3/10）について、各パートのレコード duration と参照 MIDI の Note-off tick を個別に照合する。
+- [x] Note-off tick 残差（part 2/3/10）をタイマー競合モデルで説明し、参照 MIDI 全3,295件との一致を確認（FACTS F-044）。
 
-- [ ] v1 part 10 の同 tick・同音高ノート（例: pitch 69、tick 1728、duration 1 が2件）について、参照 MIDI が Note-off を tick 1728/1729 に分ける規則を SNG2S のスケジューラ処理から追う。
-- [ ] part 2 / 3 の Note-off 残差を、Note-on が一致する具体的なレコード・参照 Note-off と対応付けて説明する。
+- [x] v1 part 10 の同 tick・同音高ノート（pitch 69、tick 1728、duration 1）を含む Note-off の差をタイマー競合規則で再現（FACTS F-044）。
+- [x] part 2 / 3 の Note-off 残差を同じタイマー規則で再現し、全パートの差分0を確認（FACTS F-044）。
 
 - [x] `FUN_1000_3A10` / `FUN_1000_3A3F` / `FUN_1000_3406` の静的命令列を確認し、同じ識別値を持つ既存タイマーと新しい長さを照合する経路、および期限切れ時の処理を記録。
-- [ ] v1 part 10 の同 tick・同音高レコードに対し、`FUN_1000_3A3F` の実際の入力 `AX/DX` とタイマー表の各値を対応付け、参照 MIDI の tick 1728/1729 の Note-off を説明する。
-- [ ] part 2 / 3 の Note-off 残差にも同じタイマー競合処理が当てはまるか検証する。
+- [x] `FUN_1000_3A3F` の入力キー・残り値比較・登録抑止をモデル化し、tick 1728/1729 の例を含む参照 Note-off 全件との一致を確認。
+- [x] part 2 / 3 を含む全10パートで同じタイマー競合処理を照合。
 
 - [x] タイマー表の照合キーを caller から追跡し、velocity ではなく Note-on status/channel byte と pitch の組であることを確認。
-- [ ] `FUN_1000_3A3F` の残り値比較と、参照 MIDI の同 pitch 重複 Note-off の対応を record 単位で照合する。
+- [x] 残り値比較と同 pitch 重複 Note-off の対応を record 単位でモデル化し、差分0を確認。
 
 - [x] v1 の Note-off タイマー処理を `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的命令列に沿ってオフライン再現し、参照 MIDI の全 Note-off 3,295件と差分0を確認。
 - [ ] この規則を converter の v1 経路に反映する前に、既存の converter の note/tie/event abstraction とテスト設計を照合し、v2/v3 の既存一致を退行させない実装計画を作る。
-- [ ] v1 の13個の16-bit値群（`partStart+119`..`+143`）の意味、およびファイル末尾65 bytes は未解明。Note-off 完全一致とは別に継続調査。
+- [ ] v1 の13個の16-bit seek 距離それぞれの個別の意味を調査する。累積値が各パートの次情報バッファ位置／EOFに一致することは確認済み（FACTS F-039/F-040）。
