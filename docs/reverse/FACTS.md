@@ -233,3 +233,12 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `FUN_1000_572A` は handle ごとの flag byte を、通常の成功経路で `local_6 | bvar5 | 0x01` として `0x1782+h` に格納する。`local_6` は初期状態で text 処理を示す `0x80` になり得て、DOS device 判定によって `0x40` が加わる。DOS 属性の bit 0 が立っていると `0x10`、open mode bit `0x08` が立っていると `0x20` が加わる。
 - `FUN_1000_59AC` の write path は `0x20` で seek-to-end を試み、`0x80` で LF→CR/LF 変換を行う。read path の `FUN_1000_58CE` も `0x80` を使ってテキスト変換を行い、`0x02` を EOF 状態として扱う。`0x40` は DOS device 向けの read/write 分岐に関係する。
 - 以上から、フラグの一部は open mode、DOS 属性、device 種別から生成され、read/write helper が共有する状態 byte であることが分かる。ただし全 bit の完全な名前付けや全遷移を確定したわけではない。
+
+
+### F-026 — read-side text flag と EOF-like state の具体的遷移
+
+- FUN_1000_58CE (1000:58CE–59AA) は DOS INT 21h / AH=3Fh で handle から最大 param_3 bytes を読み込む。handle 範囲外、要求長 0、または handle flag 0x02 が既に立っている場合は DOS read を行わず、共通の終了処理へ進む。
+- DOS read 成功後、handle flag 0x80 が立っている場合だけ text-processing loop に入る。loop 開始時に 0x04 をクリアし、読み込んだ先頭 byte が LF (0x0A) なら 0x04 をセットする。その後の loop は CR/LF の組み合わせを確認・調整する。したがって 0x04 は少なくともこの read invocation 内で「読み込みバッファ先頭が LF だった」条件を記録するが、より広い用途は未確定。
+- text-processing loop で SUB (0x1A) を見つけると 0x02 をセットして処理を終了する。次回の FUN_1000_58CE は 0x02 が立っていると読み込みを行わず終了する。これはこの helper 内で確認できる EOF-like state の latch であり、すべての caller がどう扱うかは別途確認が必要。
+- DOS read 自体が返す byte 数 0 とエラー (0xFFFF) は FUN_1000_47E2 側で 0x10 / 0x20 に振り分けられる。よって 0x02 (text SUB による以後の read 停止) と 0x10/0x20 (buffered reader が検出する zero/error-like 結果) は観測された経路上で区別する。
+- 0x40 は FUN_1000_58CE の CR 処理で DOS device 用の分岐を選ぶ条件として使われる。正式な flag 名や全経路での意味は未確定。
