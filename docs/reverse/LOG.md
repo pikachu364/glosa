@@ -154,3 +154,11 @@
 - repository の recursive tree と `testdata/ballade/README.md` / `manifest.json` を確認。SNG fixture は v1 `runner.SNG`、v2 `SHIZUME0.SNG`、v3 `START__0.SNG`、v4 `BOURREE0.SNG` の4件。参照 `.mid` は現行 tree に存在しない。
 - `tests/Glosa.Tests/SngConverterTests.cs` は最小 SNG、tempo、壊れた layout を検証するが、Tie bit による Note-off 延長や同音重複の比較テストはない。したがって現状の repo 内容だけでは reference MIDI への event-by-event 検証を再現できない。
 - NEXT_STEPS に参照 MIDI の出典/版/オプションを伴う test fixture の準備と、fixture 入手後の SNG raw record ↔ MIDI event 突合を追記。変換コードは変更していない。
+
+
+## 2026-10-19 — 参照 MIDI 比較と Tie 修正
+- ユーザー提示の `docs/ballade-version-testdata` ブランチに、v1 SNG2GS MIDI、v2〜v4 の SNG2GS MIDI と Glosa MIDI が実在することを確認。各ディレクトリの README は MIDI が未追加と書かれており、実ファイルと説明が不整合。
+- MIDI の Note-on/off を tick/key/velocity/type で比較。v2 は Glosa の tick を160 ticks補正し、v3/v4 は補正なしで比較。v2 は参照2,713件に対し Glosa 3,657件、v3 は参照5,362件に対し Glosa 5,489件、v4 は両方1,721件。v2/v3 では参照イベントがすべて Glosa 側にも存在し、Glosa 側にそれぞれ追加ノート944件/127件と対応する Note-off が存在した（トラック/チャンネルを無視した比較）。
+- SNG 生レコード集計で v2 は 3,783 ノートレコード中 Tie bit 1,070件、非 Tie 2,713件。v3 は 5,719件中 Tie bit 357件、非 Tie 5,362件。v4 は Tie bit 付きノートレコードなし。非 Tie 件数が参照 Note-on 数と一致した。
+- この根拠に基づき、Tie レコードが延長条件を満たさない場合に通常ノートとして出力される現行挙動を修正。Tie bit 付きレコードは新規 Note-on/off を出さず、同じ音高かつ前 Note-off と開始 tick が連続する場合だけ前 Note-off を延長する。合成回帰テスト2件を追加。CI 実行と修正後の実 MIDI 再比較は未完了。
+- 注意: イベント比較はトラック/チャンネルを無視した集計で、同音高重複の Note-off 所有関係は未解決。v2 の160 ticks差と SNG2GS の版/オプションも未解決。
