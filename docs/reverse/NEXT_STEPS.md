@@ -28,8 +28,8 @@
 - [x] `+145` record start で参照 MIDI の全 Note-on 3,295件を pitch/velocity/tick（source +192）まで照合し、差分0を確認（FACTS F-038）。
 - [ ] `+119`〜`+143` の13個の16-bit値と SNG2S seek 列の意味を解き、サイズ表 entry の正式な仕様とパート間境界を確定する。
 - [ ] 算出パート終端の後ろに残る65 byteの役割を特定するか、未解明領域として境界条件に明記する。
-- [ ] SNG2GS 参照 MIDI とイベント単位で照合する。現状、channel 5 と channel 6 の2パートで Note-on が各2件多く、時刻・音高・velocity の対応も未完了。
-- [ ] v1 専用レイアウト分岐を v2〜v4 と安全に分けられる根拠を確認する。
+- [x] SNG2GS 参照 MIDI とイベント単位で照合。v1 専用経路で Note-on 3,295件と Note-off 3,295件を channel/part・pitch・velocity・tick で照合し、差分0を確認（FACTS F-038/F-044）。コントローラー・tempo/meta・MIDI track chunk 順の完全一致は未検証。
+- [x] v1 専用レイアウト分岐を v2〜v4 と分離し、fixture の参照 Note-on/off 比較テストを追加。作業ブランチ `docs/ballade-version-testdata` の CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) は Ubuntu・macOS・Windows の全 job が成功。
 
 **完了条件:** 候補がソース解析または参照 MIDI と一致する。整合性だけを根拠に実装へ反映しない。
 
@@ -146,7 +146,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] トラックごとのイベント構成とチャンネル割当を参照 MIDI と比較し、CI 成功を確認。
 - [ ] 同音高重複時の Note-off 所有関係を個別に検証する。
 - [x] v1 の参照 MIDI 比較テストは、現行 converter が layout 判定で拒否したため除外した。
-- [ ] v1 の参照 MIDI を使ったレイアウト/イベント検証は T-002 で継続する。
+- [x] v1 の参照 MIDI を使ったレイアウト/Note-on/off イベント検証は作業ブランチで実装・CI 確認済み。13個の seek 値それぞれの意味、controller/tempo/meta、track chunk 順は引き続き未解決。
 
 **完了条件:** CI 結果と参照 MIDI 比較結果を記録し、残差があれば具体的なイベント例を残す。
 
@@ -181,4 +181,4 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] v1 の Note-off タイマー処理を `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的命令列に沿ってオフライン再現し、参照 MIDI の全 Note-off 3,295件と差分0を確認。
 - [ ] この規則を converter の v1 経路に反映する前に、既存の converter の note/tie/event abstraction とテスト設計を照合し、v2/v3 の既存一致を退行させない実装計画を作る。
-- [ ] v1 の13個の16-bit seek 距離それぞれの個別の意味を調査する。累積値が各パートの次情報バッファ位置／EOFに一致することは確認済み（FACTS F-039/F-040）。
+- [ ] v1 の13個の16-bit seek 距離それぞれの個別の意味を調査する。累積値が各パートの次情報バッファ位置／EOFに一致することは確認済み（FACTS F-039/F-040）。この意味論の調査は継続。
