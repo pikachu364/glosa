@@ -567,3 +567,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - よって v1 の tempo/meta event は Note-on/off や controller/program/pitch-bend の一致とは別に未検証とし、汎用 `ReadTempi` の値を v1 の仕様と扱わない。
 
 **次の調査:** `0x7BA` の設定元、`FUN_1000_618A` / `FUN_1000_61EC` の caller state、v1 conductor data の tempo 候補を追い、参照 MIDI の tick 8 / 192 と対応付ける。静的根拠がそろうまで v1 tempo conversion を推測で変更しない。
+
+
+## F-054 — v1 reference MIDI physical track-chunk order includes title/conductor and reverse part order
+
+**状態:** `v1/sng2gs/runner.MID` の SMF chunk 順を直接解析。Glosa 出力との物理 chunk 順比較・互換実装は未完了。
+
+- 参照 MIDI は 12 個の `MTrk` chunk を持つ。index 0 はタイトル文字列を含む track、index 1 は名前のない track、index 2〜10 は Note-on を持つパート、index 11 は Note-on のない `Keyboard` track。
+- Note-on を持つ track の順は channel 9 / part 10（Rhythm、928件）、channel 8 / part 9（Per.、480件）、channel 7 / part 8（Bass、61件）、channel 6 / part 7（Backing、688件）、channel 5 / part 6（Chord2、146件）、channel 4 / part 5（Chord1、234件）、channel 3 / part 4（Mero.3、110件）、channel 2 / part 3（Mero.2、175件）、channel 1 / part 2（Mero.1、473件）。末尾 track は channel 0 / part 1（Keyboard）で Note-on は0件。
+- これは SNG part のチャンネル対応が part-1 であることと、参照 MIDI の physical track 順が part 昇順ではなく降順であることを裏付ける。現在の Glosa writer は conductor track 1本と `tracks` の追加順で chunk を書くため、参照 MIDI のタイトル track、独立 conductor track、part 10→1 の並びと一致するとは限らない。
+- track name は旧コードページ由来の文字列を含むため、単純な ASCII 文字列比較は正しい互換性検証にならない可能性がある。
+
+**次の調査:** index 0 / 1 / 11 の各 track の meta event と役割をバイト列で確定し、タイトル文字列の encoding、part 1 の空 track を含む正確な順序をテストにする。実装変更前に v2/v3/v4 の track order も比較する。
