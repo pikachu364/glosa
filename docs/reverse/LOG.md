@@ -242,3 +242,11 @@
 - Tie 開始 tick と選択された Note-off tick は、v2 で 1,021/1,070 件が一致し、49 件に 4〜33 ticks の gap。v3 では 353/357 件が一致し、4 件に 1〜3 ticks の gap。候補なしは両方 0 件。
 - Tie 延長を含むオフライン再構成から作った Note-on/off 署名を参照 MIDI と比較し、v2 5,426 件・v3 10,724 件で差分 0 件。参照 MIDI のトラック内で同音高 Note-on が前の Note-off より先に重なる例も両バージョンで 0 件。
 - 実データでは最新候補の同 tick 競合がなく、合成 fixture の「同 tick に同音高 Note-off 候補が複数」の tie-break 規則は未確定のまま。FACTS F-032 と NEXT_STEPS T-001 を更新。次は v4 に同じ検査を広げるか、SNG2GS の生成条件を特定して意味論の根拠を増やす。
+
+
+## 2026-10-19 — v1 レイアウト候補の実データ整合性を確認
+
+- v1 `runner.SNG` のサイズ表と各パートを直接走査し、header end = tableEnd + 2、part size = entries[p] + 80、名前 +80、長さフィールド +115/+117/+119、レコード列 +161 の候補が全10パートで容量条件を満たすことを確認。
+- この候補は現行 converter の v2〜v4 向けフィールド位置とは異なり、HYPOTHESES H-001 と NEXT_STEPS T-002 に記録。容量整合性だけでは正式レイアウトと確定しないため、変換コードは変更していない。
+- v1 SNG2GS MIDI の Note-on 数を part-1 の MIDI channel と照合したところ、9つの発音パート中7つは非 Tie レコード数と一致。channel 5 と channel 6 は参照 MIDI 側が各2件多く、全 Note-on の tick/pitch/velocity 対応もまだ一致していない。
+- 次は v1 の特殊フラグ・終端 marker と4件の差を調べ、レイアウト候補とイベント解釈を分けて検証する。現時点では v1 対応実装を追加しない。
