@@ -181,7 +181,7 @@ public class SngConverterTests
         // Two same-pitch notes have the same scheduled Note-off tick. The Tie
         // record should extend the most recently emitted eligible Note-off,
         // leaving the earlier Note-off unchanged.
-        WriteNoteRecord(sng, firstPart, 0, 60, 24, 48, 100);
+        WriteNoteRecord(sng, firstPart, 0, 60, 48, 24, 100);
         WriteNoteRecord(sng, firstPart, 1, 60, 24, 24, 100);
         WriteNoteRecord(sng, firstPart, 2, 60, 24, 24, 100, 0x80);
         sng[firstPart + 182] = 0xFC;
