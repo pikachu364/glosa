@@ -353,3 +353,11 @@
 - 同一 status/channel + pitch の既存タイマーを検索し、残り値と新 duration を比較。期限切れ、衝突時の即時 Note-off、`0x40` の新規登録抑止、`0xC0` の即時 Note-off 抑止を含めた。
 - Note-on 3,295件に加え、Note-off 3,295件も全10パートで `(channel, pitch, tick)` の差分0。これは静的逆アセンブルからのオフライン再現で、元 EXE の実行時トレースではない。
 - FACTS F-044、NEXT_STEPS、HYPOTHESES H-011 を更新。コンバーターはまだ変更していない。
+
+
+## 2026-10-19 — v1 converter 経路と参照回帰テストを追加
+
+- `SngConverter` に v1 専用 layout を追加。`tableEnd+2`、part size `entry+80`、info buffer field offsets `+115/+117`、record stream `+145`、name `+69` を使用し、13個の seek 値の累積検証を行う。
+- v1 Note-off を `FUN_1000_3406` / `FUN_1000_3A3F` / `FUN_1000_3A10` の静的モデルに沿って生成する専用経路を追加。v2/v3/v4 の既存経路は維持。
+- `BalladeV1MatchesSng2GsReferenceNoteEvents` 回帰テストを追加し、`runner.SNG` と `runner.MID` の Note-on/off を比較する。
+- コードは work branch `docs/ballade-version-testdata` にコミット済み。CI run [39251768760](https://github.com/pikachu364/glosa/actions/runs/39251768760) は確認時点で進行中で、成功／失敗はまだ確定していない。
