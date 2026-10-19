@@ -198,3 +198,10 @@
 - fixture branch の SNG と参照 MIDI を Base64 経由で解析し、MIDI track chunk 順、トラック名、channel、Note-on/off を抽出。v2/v3 のパート順は 10→1、v4 は 10,16→11,9→1。ノートイベントを持つパートの channel は part-1 と一致した。
 - 参照 MIDI の channel 対応は現行 Glosa の channel 割当と一致する一方、Glosa は track を part 昇順に書くため、参照 MIDI の既定 track chunk 順とは異なる。/F オプション時の順序は未検証。
 - fixture branch commit `2ba756b` でイベント比較テストに channel 番号を含める変更を追加。CI run `39223684171` は更新時点で実行中。FACTS F-030 と NEXT_STEPS T-006 を更新。
+
+## 2026-10-19 — チャンネル比較 CI 成功
+
+- fixture branch commit [2ba756b](https://github.com/pikachu364/glosa/commit/2ba756b10e138e1093b13507605205de66c899b0) で、トラックごとのノートイベント署名に MIDI channel を含めた。
+- GitHub Actions run [39223684171](https://github.com/pikachu364/glosa/actions/runs/39223684171) は Windows・Ubuntu・macOS の全 job で成功。参照 MIDI と変換出力のノートイベント構成およびチャンネル割当を、トラック番号を正規化したうえで比較できる状態になった。
+- FACTS.md F-030 と NEXT_STEPS.md T-006/T-007 を更新。チャンネル割当の照合は完了扱いにし、`/F` の実行比較と同音高重複時の Note-off 所有関係は未完了として残す。
+- リポジトリの main tree には SNG2S/SNG2GS の実行ファイルが見当たらないため、既存参照 MIDI だけでは `/F` オプション出力を直接生成して比較できない。参照実行環境なしにオプション動作を確定したとは扱わない。
