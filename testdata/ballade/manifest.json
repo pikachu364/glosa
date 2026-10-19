@@ -1,33 +1,73 @@
 {
-  "description": "Original Roland/Boss Ballade SNG test fixtures for version-specific converter compatibility testing.",
+  "description": "Ballade SNG inputs and saved SNG2GS/Glosa MIDI outputs for converter compatibility testing.",
+  "referenceMidiGenerator": {
+    "name": "SNG2GS",
+    "version": "unknown",
+    "options": "unknown"
+  },
   "samples": [
     {
       "file": "v1/runner.SNG",
       "balladeVersion": "1.00",
       "sizeBytes": 85897,
       "sha256": "e61b8b0315a3752dfa3d3546d5a436df0d4b0421201183c21ce4bf1780556e15",
-      "verification": "File copied to repository testdata; SHA-256 recorded; converter validation pending."
+      "referenceMidi": {
+        "file": "v1/sng2gs/runner.MID",
+        "sizeBytes": 40398
+      },
+      "glosaMidi": null,
+      "verification": "SNG fixture hash recorded; SNG2GS reference MIDI is present; Glosa conversion and v1 layout validation pending."
     },
     {
       "file": "v2/SHIZUME0.SNG",
       "balladeVersion": "2.00",
       "sizeBytes": 75597,
       "sha256": "eb6e1eb5bd1aeb36acb7b53a89fb8409b09e7d3988a45847309da105622272ee",
-      "verification": "File copied to repository testdata; SHA-256 recorded; converter validation pending."
+      "referenceMidi": {
+        "file": "v2/sng2gs/SHIZUME0.MID",
+        "sizeBytes": 30262
+      },
+      "glosaMidi": {
+        "file": "v2/glosa-test-convert/SHIZUME0.mid",
+        "sizeBytes": 45380,
+        "noteOns": 3657,
+        "noteOffs": 3657
+      },
+      "verification": "Aggregate event comparison: SNG2GS has 2713 Note-ons; previous Glosa output has 3657. Reference events are contained in Glosa after accounting for a 160-tick offset, ignoring track/channel."
     },
     {
       "file": "v3/START__0.SNG",
       "balladeVersion": "3.00",
       "sizeBytes": 82391,
       "sha256": "b4b719cec15139e411c94c34b05ca698e9432b9ccad308a808f08a648256cbe4",
-      "verification": "File copied to repository testdata; SHA-256 recorded; conversion generated START__0.mid (48923 bytes); MIDI read-back/playback validation pending."
+      "referenceMidi": {
+        "file": "v3/sng2gs/START__0.MID",
+        "sizeBytes": 37171
+      },
+      "glosaMidi": {
+        "file": "v3/glosa-test-convert/START__0.mid",
+        "sizeBytes": 48923,
+        "noteOns": 5489,
+        "noteOffs": 5489
+      },
+      "verification": "Aggregate event comparison: SNG2GS has 5362 Note-ons; previous Glosa output has 5489. Reference events are contained in Glosa without tick adjustment, ignoring track/channel."
     },
     {
       "file": "v4/BOURREE0.SNG",
       "balladeVersion": "4.00",
       "sizeBytes": 49517,
       "sha256": "a1eb69b4735b809e35c9c368776e9dae621e30405dc5a9c717133654c5f7b715",
-      "verification": "File copied to repository testdata; SHA-256 recorded; converter validation pending."
+      "referenceMidi": {
+        "file": "v4/sng2gs/BOURREE0.MID",
+        "sizeBytes": 19623
+      },
+      "glosaMidi": {
+        "file": "v4/glosa-test-convert/BOURREE0.mid",
+        "sizeBytes": 20726,
+        "noteOns": 1721,
+        "noteOffs": 1721
+      },
+      "verification": "Aggregate Note-on/off event comparison matches SNG2GS without tick adjustment, ignoring track/channel."
     }
   ]
 }
