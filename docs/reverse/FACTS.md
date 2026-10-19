@@ -546,7 +546,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 ## F-052 — v1 controller/program/pitch-bend stream: state deduplication and tick alignment
 
-**状態:** `runner.SNG` の controller stream と参照 `runner.MID` のデータ比較、および作業ブランチ上の converter/test 変更。SNG2S 実行時トレースではない。CI は確認待ち。
+**状態:** `runner.SNG` の controller stream と参照 `runner.MID` のデータ比較、および作業ブランチ上の converter/test。GitHub Actions run 39333267230 は Ubuntu/macOS/Windows で成功。SNG2S 実行時トレースではない。
 
 - v1 の各パートで `partStart+145+noteLength` から4-byte record stream を読むと、`B0` controller、`C0` program change、`E0` pitch bend に相当する候補が合計1,966件得られる。値が直前の状態と同じイベントを status 種別ごとに抑制すると1,595件になる。
 - 同じ status/channel・データ値・tick を使って参照 `runner.MID` の channel events と照合したところ、参照側の controller/program/pitch-bend 1,595件と全件一致し、欠落・余分・差分は0だった。
@@ -554,7 +554,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - v1 の参照 MIDI には converter が v2〜v4 用に追加していた RPN 初期化イベント（CC 101/100/6）がないため、v1 ではそれらを出力しない。v2〜v4 の既存動作は変更しない。
 - 作業ブランチ `docs/ballade-version-testdata` で controller state deduplication、v1 tick alignment、v1 RPN 初期化の抑制、および `BalladeV1MatchesSng2GsReferenceControllerAndProgramEvents` テストを追加した。
 
-**制約:** 観測は1つの v1 fixture と参照 MIDI に対するオフライン比較であり、すべての v1 ファイルへの一般化や SNG2S の実行時内部動作を直接証明するものではない。GitHub Actions run 39333267230 の成功確認後に検証状態を更新する。
+**制約:** 観測は1つの v1 fixture と参照 MIDI に対するオフライン比較であり、すべての v1 ファイルへの一般化や SNG2S の実行時内部動作を直接証明するものではない。GitHub Actions run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) は成功済み。
 
 
 ## F-053 — v1 の参照 MIDI tempo meta は現行の汎用 ReadTempi 候補と一致しない
