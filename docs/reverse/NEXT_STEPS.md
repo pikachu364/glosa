@@ -123,7 +123,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] 参照 MIDI の所在を `docs/ballade-version-testdata` ブランチで確認し、v2/v3/v4 の Note-on/off を比較した。
 - [x] Tie bit の Note-on 抑制と pending Note-off 延長規則を、v2/v3 の全パートの参照イベントでオフライン照合した。
 - [x] v2〜v4 の C# 変換出力と参照 MIDI の集計 Note-on/off 比較テストが CI で成功した（F-028）。
-- [ ] トラックごとのイベント構成を比較する CI テストを実行し、差分があれば調査する。新しいテストは fixture branch commit `65ace59` に追加済み。
+- [x] トラックごとのイベント構成を比較する CI テストを実行。fixture branch commit `65ace59` のテストは Linux/macOS/Windows で成功（CI runs `39220897447`, `39220904556`）。
 - [ ] チャンネル割当と同音高重複時の Note-off 対応を検証する。現在のトラック単位比較はトラック番号・チャンネル番号を正規化するため、それら自体の一致は保証しない。
 
 ## T-007 — Tie 修正の CI と実 MIDI 回帰を確認する
