@@ -207,3 +207,14 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `FUN_1000_5670` は read state のポインタ `[state]` と残量 `[state+2]` を使う buffered reader。残量を減らし、負になった時だけ `FUN_1000_47E2` を呼んで補充／読み取りを行う。したがって `FUN_1000_47E2` は byte 単位 API そのものではなく、バッファ境界で呼ばれる下位 read 経路。
 
 **未確定:** `FUN_1000_4697` の全 caller が flush を保証するか、特殊管理構造体の close 条件、および DOS close 失敗時の上位処理は未確定。
+
+
+### F-023 — close 経路の flush 順序と OS handle flag table
+
+- `FUN_1000_4697` の命令列では、`1000:4674` で先に `FUN_1000_4CA4` を呼び、その後 `1000:4697` で `FUN_1000_49F8`、続いて `FUN_1000_5690` を呼ぶ。従って、この close 経路は明示的に「flush 試行 → 動的 buffer cleanup → DOS handle close」の順序を取る。
+- flush の戻り値は `DI` に保存されるが、cleanup と close の後、元の管理構造体 `+6` は `0` にされる。flush 失敗時も close 処理自体は進むため、上位側が flush エラーをどう扱うかは別途追跡が必要。
+- `FUN_1000_572A` は DOS `INT 21h` の open/create 系呼び出しを行い、成功した OS handle `h` に対して `0x1782+h` の flag byte を初期化して返す。`FUN_1000_59AC` は同じ table を参照し、bit `0x20` で write 前の seek-to-end (`AH=42h`) を行い、bit `0x80` で LF を CR/LF に変換する。
+- `FUN_1000_4CA4` は管理構造体の byte `+7` を OS handle として `FUN_1000_59AC` に渡す。よって管理構造体 `0x17CA+n*8` と OS handle flag table `0x1782+h` は、管理構造体 `+7` に格納された handle 値で接続される。これは index 同士が同じという意味ではなく、handle 値を介した対応である。
+- `FUN_1000_572A` の flag 初期化は、作成/append 等の open mode、DOS device 属性、text/binary 条件に応じて `0x01/0x10/0x20/0x40/0x80` 等を組み立てる。bit の全組合せの命名・意味は未確定だが、`0x20` と `0x80` の実使用箇所は確認できた。
+
+**未確定:** `FUN_1000_4697` が返す flush エラーを全 caller が確認するか、特殊管理構造体での handle 対応、open mode ごとの flag byte 完全な遷移表。
