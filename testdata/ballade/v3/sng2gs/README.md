@@ -1,10 +1,8 @@
 # SNG2GS conversion result — Ballade v3
 
-This directory is reserved for the MIDI output converted from [`../START__0.SNG`](../START__0.SNG) using SNG2GS.
-
-- Input: `START__0.SNG`
-- Output: `START__0.MID`
+- Input: [`../START__0.SNG`](../START__0.SNG)
+- Output: `START__0.MID` (37,171 bytes; present)
 - Converter: SNG2GS
-- Converter version and options: to be documented
+- Converter version and options: unknown; document when provenance is recovered
 
-The converted `START__0.MID` file still needs to be added.
+The reference MIDI is checked in and contains 5,362 Note-ons and 5,362 Note-offs. The offline Tie event model matches its note events per track without a tick adjustment.
