@@ -133,3 +133,10 @@
 - `FUN_1000_4A92` の `r/w/a`、`+`、`b/t` parser と `FUN_1000_572A` の flag byte 組み立てを突合。DOS 属性 bit 0 由来の `0x10`、open mode bit `0x08` 由来の `0x20`、text/device 判定由来の `0x80`/`0x40` を記録。
 - `FUN_1000_58CE` の read-side も確認し、`0x80` が read/write 双方のテキスト処理、`0x02` が read-side EOF 状態に関係することを追記。すべての bit の完全な意味は未確定。
 - FACTS F-025 を追加。converter は未変更。
+
+
+## 2026-10-19 — read-side text flag と EOF-like state
+
+- `FUN_1000_58CE` の命令列を再確認。text flag `0x80` が立つ場合にのみ CR/LF processing loop に入り、loop 冒頭で `0x04` をクリア、読み込みバッファ先頭が LF の場合に `0x04` をセットする。
+- text loop 内で SUB (`0x1A`) を検出すると `0x02` をセットして終了し、次の read 呼び出しは `0x02` を見て DOS read をスキップする。`FUN_1000_47E2` の zero/error-like result に対応する `0x10/0x20` とは別経路として記録。
+- FACTS F-026 と NEXT_STEPS を更新。`0x02` の reset/clear caller と `0x04` の reader/caller を全検索するのが次の作業。変換コードは未変更。
