@@ -250,3 +250,11 @@
 - この候補は現行 converter の v2〜v4 向けフィールド位置とは異なり、HYPOTHESES H-001 と NEXT_STEPS T-002 に記録。容量整合性だけでは正式レイアウトと確定しないため、変換コードは変更していない。
 - v1 SNG2GS MIDI の Note-on 数を part-1 の MIDI channel と照合したところ、9つの発音パート中7つは非 Tie レコード数と一致。channel 5 と channel 6 は参照 MIDI 側が各2件多く、全 Note-on の tick/pitch/velocity 対応もまだ一致していない。
 - 次は v1 の特殊フラグ・終端 marker と4件の差を調べ、レイアウト候補とイベント解釈を分けて検証する。現時点では v1 対応実装を追加しない。
+
+
+## 2026-10-19 — SNG2S のレコード終端判定を逆アセンブルで確認
+
+- `testdata/ballade/sng2gs/sng2gs解析データ.txt` の `FUN_1000_1668` を確認。各パートのレコード列は 8 byte ごとに走査され、先頭 byte が `0xFC` なら終了。byte +4 が非ゼロならそのパートを有効として扱う。
+- 現行 converter の record stride / 終端 marker はこの処理と一致。byte +4 は有効パート判定にも使われるため、v1 の byte +4 を一律に velocity と解釈する根拠にはならない。
+- `sng2s33.lzh` が対象ブランチに存在することを確認。今回の解析は既存の逆アセンブル資料に基づき、LZH 内の説明書本文を直接確認したものではない。v1 の4音差分は未解決で、変換コードは変更していない。
+- FACTS F-033 を追加。直近の docs-only CI run [39230371014](https://github.com/pikachu364/glosa/actions/runs/39230371014) は全体成功。
