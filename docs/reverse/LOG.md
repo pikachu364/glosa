@@ -345,3 +345,11 @@
 
 
 - 追加で `FUN_1000_3B2F` と呼び出し元 1000:37E4–37FD を接続して確認。`AL` は Note-on status + channel、`AH` は pitch、`DL` はレコード長として渡される。`FUN_1000_3A10` が AL/AH を保存し、`FUN_1000_3A3F` が AX と保存 word を比較するため、timer lookup key は channel/status + pitch で velocity を含まない。FACTS F-043 に記録。
+
+
+## 2026-10-19 — v1 Note-off タイマー規則のオフライン再現が差分0
+
+- `runner.SNG` の record stream と参照 `runner.MID` を比較し、タイマー処理を静的命令列に沿ってモデル化。
+- 同一 status/channel + pitch の既存タイマーを検索し、残り値と新 duration を比較。期限切れ、衝突時の即時 Note-off、`0x40` の新規登録抑止、`0xC0` の即時 Note-off 抑止を含めた。
+- Note-on 3,295件に加え、Note-off 3,295件も全10パートで `(channel, pitch, tick)` の差分0。これは静的逆アセンブルからのオフライン再現で、元 EXE の実行時トレースではない。
+- FACTS F-044、NEXT_STEPS、HYPOTHESES H-011 を更新。コンバーターはまだ変更していない。
