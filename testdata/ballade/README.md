@@ -15,27 +15,28 @@ The version labels are the reported versions of these samples; they do not yet i
 
 ## MIDI outputs present
 
-| Version | SNG2GS output | Glosa output | Saved-output observation |
+| Version | SNG2GS output | Saved Glosa output | Saved-output observation |
 |---|---|---|---|
-| v1 | `v1/sng2gs/runner.MID` (40,398 bytes) | Not present | Current converter rejects this SNG layout; v1 layout investigation is pending |
-| v2 | `v2/sng2gs/SHIZUME0.MID` (30,262 bytes) | `v2/glosa-test-convert/SHIZUME0.mid` (45,380 bytes) | Old Glosa output has 944 additional note pairs; reference timing differs by 160 ticks |
-| v3 | `v3/sng2gs/START__0.MID` (37,171 bytes) | `v3/glosa-test-convert/START__0.mid` (48,923 bytes) | Old Glosa output has 127 additional note pairs |
-| v4 | `v4/sng2gs/BOURREE0.MID` (19,623 bytes) | `v4/glosa-test-convert/BOURREE0.mid` (20,726 bytes) | Aggregate Note-on/off events match |
+| v1 | `v1/sng2gs/runner.MID` (40,398 bytes) | Not present | Current C# converter output is validated in an integration test; a generated MIDI file is not checked in |
+| v2 | `v2/sng2gs/SHIZUME0.MID` (30,262 bytes) | `v2/glosa-test-convert/SHIZUME0.mid` (45,380 bytes) | Pre-fix Glosa output has 944 additional note pairs; reference timing differs by 160 ticks |
+| v3 | `v3/sng2gs/START__0.MID` (37,171 bytes) | `v3/glosa-test-convert/START__0.mid` (48,923 bytes) | Pre-fix Glosa output has 127 additional note pairs |
+| v4 | `v4/sng2gs/BOURREE0.MID` (19,623 bytes) | `v4/glosa-test-convert/BOURREE0.mid` (20,726 bytes) | Saved aggregate Note-on/off events match |
 
-The saved Glosa outputs are pre-fix fixtures. An offline event-generation model using the refined Tie rule matches all v2/v3 reference Note-on/off events per track (v2 reference ticks are shifted by +160 for comparison; v3 needs no shift). The actual post-fix C# converter output is checked by CI.
+The saved Glosa outputs are pre-fix fixtures. The actual converter output is compared against SNG2GS reference MIDI by automated tests. v2 reference ticks are shifted by +160 for comparison; v1, v3, and v4 use no tick shift.
 
 The exact SNG2GS version/options and the Glosa build used for the saved outputs have not been recorded. See `manifest.json` and `docs/reverse/FACTS.md`.
 
 ## Validation status
 
-- **Tie handling:** The converter now suppresses Tie Note-ons and extends the latest pending same-key Note-off whose scheduled tick is at or before the Tie start. Four synthetic regression tests cover contiguous ties, a small gate gap, interleaved pitches, and a Tie with no prior same-pitch note.
-- **Ballade 1.00:** The reference MIDI exists, but the current converter rejects `runner.SNG` as an unsupported layout. The attempted integration test confirmed this limitation and was removed from the passing compatibility suite until the layout is independently established.
-- **Ballade 2.00 / 3.00:** The offline event-generation model matches the reference MIDI per track; CI and compiled output comparison are pending.
-- **Ballade 4.00:** Saved aggregate Note-on/off events match.
+- **Tie handling:** The converter suppresses Tie Note-ons and extends the latest pending same-key Note-off whose scheduled tick is at or before the Tie start. Synthetic regression tests cover contiguous ties, a small gate gap, interleaved pitches, a Tie with no prior same-pitch note, and same-tick overlapping notes.
+- **Ballade 1.00:** A v1-specific layout path now handles the old 80-byte part-info layout. The converter's Note-on/off signatures match `v1/sng2gs/runner.MID` for all 3,295 Note-on and 3,295 Note-off events. A focused regression test also checks the same-tick sequence at tick 1728, channel 9, pitch 69.
+- **Ballade 2.00 / 3.00 / 4.00:** Reference MIDI note-event regression tests compare the actual C# converter output, including tick, channel, pitch, velocity and event type.
+- **CI:** Run [39252039302](https://github.com/pikachu364/glosa/actions/runs/39252039302) passed build and tests on Ubuntu, macOS, and Windows.
+- **Scope:** These compatibility tests focus on Note-on/off events. They do not establish full equivalence of controller events, tempo/meta events, or physical MIDI track-chunk ordering. The v1 timer behavior is an offline model derived from static disassembly, not a runtime trace of SNG2S.
 
 ## Future work
 
-- Keep CI comparison for v2-v4 and investigate any failures.
-- Reverse engineer the v1 block layout from `runner.SNG` and its SNG2GS reference before adding a v1 conversion test.
-- Record converter versions/options and explain any residual differences.
+- Identify the individual meanings of the 13 v1 relative-seek values; their cumulative positions already match each next part-info buffer and EOF.
+- Record the reference MIDI generator version/options if the original generation environment can be established.
+- Extend comparisons to controller events, tempo/meta events, and physical track order where reference evidence is available.
 - Implement automatic version identification only when the file format provides a reliable discriminator.
