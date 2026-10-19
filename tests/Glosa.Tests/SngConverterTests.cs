@@ -236,7 +236,7 @@ public class SngConverterTests
         int tableEnd = table + 4 * (parts + 1);
         int firstBlock = tableEnd + 94;
         const int conductorSize = 120;
-        const int partEntrySize = 100;
+        const int partEntrySize = 110;
         int partBlockSize = partEntrySize + 81;
         byte[] data = new byte[firstBlock + conductorSize + parts * partBlockSize];
 
