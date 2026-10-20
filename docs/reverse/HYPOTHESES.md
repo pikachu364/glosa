@@ -123,7 +123,7 @@ v1 runner.MID は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 �
 **新たに確認した静的根拠（2026-10-21）:**
 
 - FUN_1000_272a は local_6c byte の内部 buffer を確保し、DOS read (0x3F00) でデータを読み込む。読込前の seek (0x4201) は local_4 + local_6 を使う。その buffer pointer が 0x21E0 にコピーされるため、0x21E0 は SNG 絶対オフセットではなく、ファイル読込後の内部バッファを指す。
-- FUN_1000_3406 は 0x21E0 の4-byteレコードを走査し、第2 word を raw * 0x2962 / 0x40 で正規化、1〜480に制限して 0x7BA を更新する。レコードの first word / second word の完全な意味と累積 tick の対応はまだ確定していない。
+- FUN_1000_3406 は 0x21E0 の4-byteレコードを走査し、第2 word を ((raw * 0x2962) & 0xFFFF) / 0x40 で正規化、1〜480に制限して 0x7BA を更新する。レコードの first word / second word の完全な意味と累積 tick の対応はまだ確定していない。
 - 起動時の tempo meta 経路は 0x7BA != 0x78 の条件で FUN_1000_618A による 60,000,000 / 0x7BA の整数除算を行い、FF 51 03 を出力する。この初期出力と 0x21E0 レコード消費時の更新を、参照 MIDI の tick 0 / 8 / 192 に対応付ける根拠は未確定。
 - 0x21DC は time-signature 経路、0x21E4 は別レコード列から 0x7DE / FUN_1000_3B78 へ接続する（FACTS F-055）。
 
