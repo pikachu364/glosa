@@ -35,7 +35,7 @@
 - [x] 参照 MIDI の物理 track layout を記録するテストを追加。12 track、track-name chunk index、Note-on track の順序/channel/件数、Note-on のない part-1/Keyboard track を検証する（F-054/F-056）。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功。
 - [ ] 現行 Glosa 出力と参照の物理 chunk 順を比較する。タイトル/conductor track と Exclusive/SysEx track の役割・生成元が未確定のため、part track の並べ替えだけを先行させない。
 - [x] 参照 track 1 に Text meta `Exclusive` と tick 0/4/8/8 の SysEx 4件があることを確認し、payload を回帰テストへ記録。CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) で3 OS成功（FACTS F-057）。
-- [ ] SysEx 4件の SNG 側生成元を追い、SNG2S の `/X1`、`/X2`、`/XD` オプションとの関係を確認する。生成元を特定するまでは payload を converter にハードコードしない。
+- [ ] SysEx 4件の SNG 側生成元を追い、SNG2S の `/X1`、`/X2`、`/XD` オプションとの関係を確認する。生成元を特定するまでは payload を converter にハードコードしない。 元 SNG で payload と共通先頭列 `41 10 16 12` の literal byte sequence は見つからなかったが、これは生成元を確定する証拠ではない（H-013）。
 - [x] v1 専用レイアウト分岐を v2〜v4 と分離し、fixture の参照 Note-on/off 比較テストを追加。作業ブランチ `docs/ballade-version-testdata` の CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) は Ubuntu・macOS・Windows の全 job が成功。
 
 **完了条件:** 候補がソース解析または参照 MIDI と一致する。整合性だけを根拠に実装へ反映しない。
