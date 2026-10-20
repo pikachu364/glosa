@@ -285,6 +285,31 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void BalladeV1ReferenceExclusiveTrackSysExEventsAreRecorded()
+    {
+        string root = FindRepositoryRoot();
+        byte[] reference = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "sng2gs", "runner.MID"));
+        MidiSequence sequence = SmfReader.Read(reference);
+
+        var sysex = sequence.Events
+            .Where(e => e.Track == 1 && e.Kind == MidiEventKind.SysEx)
+            .Select(e => (Tick: e.Ticks, Hex: Convert.ToHexString(sequence.GetData(e))))
+            .OrderBy(e => e.Tick)
+            .ThenBy(e => e.Hex, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(
+            new (long Tick, string Hex)[]
+            {
+                (0, "4110161210000100050664F7"),
+                (4, "4110161252000100050622F7"),
+                (8, "411016121000164B0FF7"),
+                (8, "411016125200104B53F7"),
+            },
+            sysex);
+    }
+
+    [Fact]
     public void BalladeV1MatchesSng2GsReferenceNoteEvents()
         => AssertReferenceNoteEvents(
             "v1/runner.SNG",
