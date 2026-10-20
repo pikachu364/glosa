@@ -123,11 +123,11 @@ v1 runner.MID は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 �
 **新たに確認した静的根拠（2026-10-21）:**
 
 - FUN_1000_272a は local_6c byte の内部 buffer を確保し、DOS read (0x3F00) でデータを読み込む。読込前の seek (0x4201) は local_4 + local_6 を使う。その buffer pointer が 0x21E0 にコピーされるため、0x21E0 は SNG 絶対オフセットではなく、ファイル読込後の内部バッファを指す。
-- FUN_1000_3406 は 0x21E0 の4-byteレコードを走査し、第2 word を ((raw * 0x2962) & 0xFFFF) / 0x40 で正規化、1〜480に制限して 0x7BA を更新する。レコードの first word / second word の完全な意味と累積 tick の対応はまだ確定していない。
+- runner.SNG の 0x21E0 source は offset 0x0303、length 352 bytes と確認できた。先頭 records は (48,37), (144,37), (192,37) の反復。FUN_1000_3406 は first word を 0x10AA = first_word - 1 として countdown に使い、second word を ((raw * 0x2962) & 0xFFFF) / 0x40 で正規化して 0x7BA を更新する。raw 37 は 69 BPM 相当で 869,565 µs/quarter となるが、countdown が MIDI tick にどう換算されるかは未確定。
 - 起動時の tempo meta 経路は 0x7BA != 0x78 の条件で FUN_1000_618A による 60,000,000 / 0x7BA の整数除算を行い、FF 51 03 を出力する。この初期出力と 0x21E0 レコード消費時の更新を、参照 MIDI の tick 0 / 8 / 192 に対応付ける根拠は未確定。
 - 0x21DC は time-signature 経路、0x21E4 は別レコード列から 0x7DE / FUN_1000_3B78 へ接続する（FACTS F-055）。
 
-**次に必要な確認:** FUN_1000_272a の 0x1Bxx 版別メタデータが local_4 / local_6 / local_6c に入る条件を追い、v1 SNG の seek / length 項目へ結び付ける。その後、0x21E0 の各 record、消費タイミング、累積 tick、正規化後の tempo 値を表にして参照 MIDI と照合する。根拠がそろうまでは converter の tempo conversion を変更しない。
+**次に必要な確認:** 0x10AA countdown の呼び出し周期と MIDI delta-time の生成を追い、record (48,37)/(144,37)/(192,37) が tick 8 / 192 に対応するかを検証する。tick 8 の 869,000 µs/quarter の出所も独立して探す。根拠がそろうまでは converter の tempo conversion を変更しない。
 
 **実装上の暫定対処（2026-10-20）:** v1 に汎用 ReadTempi を適用しないガードを維持する。これは誤った候補を避けるもので、tick 8 / 192 の参照 tempo change を再現するものではない（F-056）。
 
