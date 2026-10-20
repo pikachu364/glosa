@@ -209,6 +209,38 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void BalladeV1ReferenceTempoMetaEventsAreRecorded()
+    {
+        string root = FindRepositoryRoot();
+        byte[] reference = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "sng2gs", "runner.MID"));
+        MidiSequence sequence = SmfReader.Read(reference);
+
+        Assert.Equal(
+            new (long Tick, int Microseconds)[]
+            {
+                (0, 500_000),
+                (8, 869_000),
+                (192, 869_565),
+            },
+            TempoEvents(sequence));
+    }
+
+    [Fact]
+    public void BalladeV1DoesNotApplyGenericTempoParserToLegacyRecords()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+        MidiSequence actual = SmfReader.Read(SngConverter.ToSmf(sng));
+
+        // The reference has additional tempo changes, but their v1 SNG field
+        // mapping is not yet proven. Do not emit the known-wrong generic 270/360
+        // BPM candidates while that investigation remains open.
+        Assert.Equal(
+            new (long Tick, int Microseconds)[] { (0, 500_000) },
+            TempoEvents(actual));
+    }
+
+    [Fact]
     public void BalladeV1MatchesSng2GsReferenceNoteEvents()
         => AssertReferenceNoteEvents(
             "v1/runner.SNG",
@@ -426,6 +458,19 @@ public class SngConverterTests
             if (data.AsSpan(i, expected.Length).SequenceEqual(expected))
                 return true;
         return false;
+    }
+
+    private static (long Tick, int Microseconds)[] TempoEvents(MidiSequence sequence)
+    {
+        var result = new List<(long Tick, int Microseconds)>();
+        foreach (MidiEvent e in sequence.Events)
+        {
+            if (e.Kind != MidiEventKind.Meta || e.MetaType != MetaType.Tempo) continue;
+            ReadOnlySpan<byte> data = sequence.GetData(e);
+            if (data.Length != 3) throw new InvalidDataException("Malformed tempo meta event.");
+            result.Add((e.Ticks, (data[0] << 16) | (data[1] << 8) | data[2]));
+        }
+        return result.ToArray();
     }
 
     private static byte[] TempoEvent(int microsecondsPerQuarter)
