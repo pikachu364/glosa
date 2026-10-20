@@ -403,7 +403,7 @@
 ## 2026-10-20 — SNG2S conductor metadata buffer consumersを追跡
 
 - FUN_1000_272a の初期化処理で、3つの内部 far-pointer 0x21DC / 0x21E0 / 0x21E4 に別々の確保済みバッファを設定することを確認。
-- FUN_1000_3406 の命令列で 0x21DC が FF 58 04 time-signature meta、0x21E0 が FF 51 03 tempo meta の出力経路に接続することを確認。tempo stream の値は value * 0x2962 / 0x40 で1〜480に制限され、60,000,000 / value から microseconds-per-quarter を作る。
+- FUN_1000_3406 の命令列で 0x21DC が FF 58 04 time-signature meta、0x21E0 が FF 51 03 tempo meta の出力経路に接続することを確認。tempo stream の値は ((value * 0x2962) & 0xFFFF) / 0x40 で1〜480に制限され、60,000,000 / value から microseconds-per-quarter を作る。
 - 0x21E4 は別レコード列から 0x7DE を更新して FUN_1000_3B78 を呼ぶ。出力イベントの意味は未確定として断定しない。
 - これらは内部ポインタであり、SNG ファイル内の直接オフセットではない。SNG reader が各 buffer をどこから埋めるか、v1 参照 tempo の tick 8 / 192 とどのレコードが対応するかは未解決。converter の tempo 式は変更していない。
 - 作業ブランチの現行 head 650c5fa44982b9f82ce58ea005d4f7e831c4a4d9 に紐づく CI run 39334626186 は成功を返した。これは当該 head の CI 状態であり、今回の追加テストコミットの CI 結果ではない。
@@ -441,5 +441,5 @@
 
 - ユーザーが解析資料を pikachu364/glosa-private-data/testdata/ballade/sng2gs/sng2gs解析データ.txt に移したため、該当ファイルを直接参照して調査を再開した。
 - FUN_1000_272a で local_6c byte の buffer を確保し、seek (FUN_1000_40C8(0x4201, ..., local_4 + local_6, 0)) の後に DOS read (FUN_1000_40C8(0x3F00, ..., local_6c, buffer)) で充填し、その pointer を 0x21E0 に設定することを確認。0x21E0 が SNG 内絶対オフセットではないことを再確認した。
-- FUN_1000_3406 の 0x21E0 走査で第2 word を raw * 0x2962 / 0x40 で正規化し、1〜480に制限した値で 0x7BA を更新することを確認した。初期 FF 51 出力経路は 0x7BA != 0x78 の条件から FUN_1000_618A を呼び、60,000,000 / 0x7BA の整数除算を行う。
+- FUN_1000_3406 の 0x21E0 走査で第2 word を ((raw * 0x2962) & 0xFFFF) / 0x40 で正規化し、1〜480に制限した値で 0x7BA を更新することを確認した。初期 FF 51 出力経路は 0x7BA != 0x78 の条件から FUN_1000_618A を呼び、60,000,000 / 0x7BA の整数除算を行う。
 - 未解決: 0x1Bxx メタデータから local_4 / local_6 / local_6c への版別対応、レコード消費時の累積 tick、参照 MIDI tick 8 / 192 との対応。推測実装は行わず、FACTS F-058 / H-012 / T-003 を更新した。
