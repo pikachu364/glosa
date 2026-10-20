@@ -428,4 +428,4 @@
 
 - runner.MID の track index 1 は Text meta `Exclusive` と4件の SysEx を持つことを raw SMF parse で確認。イベント tick は 0 / 4 / 8 / 8、payload は FACTS F-057 に記録した。
 - SNG2S のマニュアルに `/X1` / `/X2` / `/XD` があるため、reference SysEx と option の関係、元 SNG の生成元を追う。既存資料だけでは mapping を確定できないため converter には payload を追加しない。
-- reference track 1 の4件を固定する回帰テストを作業ブランチへ追加（commit `cefcac720b993871534ce655a12494462d9f99e5`）。CI 結果は未確認。
+- reference track 1 の4件を固定する回帰テストを作業ブランチへ追加（commit `cefcac720b993871534ce655a12494462d9f99e5`）。初回 CI は `SmfReader.GetData()` が SysEx の `F0` を含む表現を返す点で期待値がずれたため失敗。期待値を reader の実際の表現に合わせて修正（commit `335b23e0aef2763f1eaadd949a7a9804267a4f28`）し、CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) で Ubuntu/macOS/Windows の build/test が成功。
