@@ -415,3 +415,10 @@
 - v1 では汎用パーサーを呼ばず、根拠のない tempo change を出力しない暫定ガードを実装。テストで参照 MIDI の tempo meta（tick 0/8/192）を固定し、現 converter が既定 tempo のみを出力することを検証する。
 - これは互換性の完成ではない。参照 MIDI の tick 8 / 192 の tempo change は未実装であり、`0x21E0` バッファの充填元と `0x7BA` の設定元を追う必要がある。実行時トレース・実再生は未実施。
 - コードコミット `ca99066649e5a5341e820486fd526c4d5ed4ac31`、テストコミット `cf77ba8736e36aa68bc9caa14d122136fc0a7b48`。この時点で CI 結果は未確認。
+
+
+## 2026-10-20 — v1 reference MIDI の物理 track layout テストを追加
+
+- runner.MID の SMF reader 出力を使い、12 track、track-name meta を持つ chunk index、Note-on を持つ track の物理順・channel・件数、空の part-1/Keyboard track を回帰テストに記録した。
+- このテストは reference fixture 自体の構造を固定するもので、Glosa の出力が同じ物理 chunk 順になったことを意味しない。現 converter は conductor + part 昇順で書き出し、参照は title/conductor を含む先頭 track、別の Exclusive/SysEx track、part 10→2、part 1 の順である。実装前に track 1 の SysEx 内容と SNG 側の出所を確認する。
+- テストコミット b03cebb06a27c9efe509447d8bb369c8fa89c499。CI 結果は未確認。
