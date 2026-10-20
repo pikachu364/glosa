@@ -640,3 +640,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `FUN_1000_33D4` は `0x7BA` を初期値 `0x2962` から設定し、`FUN_1000_3406` を呼ぶ。コンバータの初期 FF 51 出力はその後の `0x7BA` を参照する。レコード消費カウンタと出力 delta-time の間の完全な関係は未確定。
 
 **根拠:** [sng2gs解析データ.txt](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) の `FUN_1000_272a`, `FUN_1000_33D4`, `FUN_1000_3406`、および `testdata/ballade/v1/runner.SNG` の offset `0x00B5`, `0x0303`, `0x0487`。
+
+
+## F-061 — tempo countdown と出力 delta-time loop
+
+**状態:** 静的逆アセンブルで制御フローを確認。countdown と delta-time accumulator が同じ scheduler 呼出し内で更新されることは確認できたが、参照 MIDI の tempo tick との対応は未確定。
+
+- エントリ関数 1000:044B は初期 tempo meta を出力した後、0x7B0 = 999、0x7AC = 1 を設定し、FUN_1000_3406 → FUN_1000_08EC を 0x7AC == 0 まで反復する。
+- FUN_1000_3406 は通常経路で pending delta-time accumulator 0xF9A:0xF9C を 1 加算する（1000:3416–341B）。FUN_1000_08EC は MIDI イベントを処理するとき FUN_1000_16E6(0xF9A, 0xF9C) で delta-time を出力し、同 accumulator をクリアする。従って 0x10AA countdown は独立した MIDI tick field ではなく、少なくともこの出力 scheduler の反復に結び付いたカウンタとして扱う必要がある。
+- FUN_1000_3406 は 0x10AA != 0 の経路で 0x10AA をデクリメントし、0 になると 0x21E0 の次レコードを読み込む。次レコードの first word が N なら 0x10AA = N - 1 に設定される。
+- ただし FUN_1000_3406 には 0xF96 != 0 の場合に別経路へ進む分岐があり、0x7AC は別のイベント列の終端でクリアされる。したがって単純な「first word = MIDI tick」や「全呼出しが必ず delta-time +1」とする解釈は不適切。実際の record update 時点を tick 0 / 8 / 192 に割り当てるには、例外経路も含めた呼出し状態の追跡が必要。
+
+**根拠:** 解析資料の FUN_1000_3406 (1000:3416–3533)、エントリループ (1000:0524–0545)、FUN_1000_08EC の delta-time flush path。静的解析のみ。
