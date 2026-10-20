@@ -612,4 +612,4 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - track index 1 は Track Name meta ではなく Text meta `Exclusive` を持ち、tick 0 / 4 / 8 / 8 に4件の SysEx がある。
 - payload（SMF の F0 イベントに続く長さフィールド内のデータ）は順に `41 10 16 12 10 00 01 00 05 06 64 F7`、`41 10 16 12 52 00 01 00 05 06 22 F7`、`41 10 16 12 10 00 16 4B 0F F7`、`41 10 16 12 52 00 10 4B 53 F7`。
 - SNG2S マニュアルは /X1（Conductor track）、/X2（Track 2）、/XD（SysEx 無効化）を記載する。参照ファイルの track 1 が SysEx 用であることは実データで確認できたが、これら4件の SNG 側の生成元、/X オプションとの対応、Glosa で再現すべき互換範囲は未確定。
-- 作業ブランチに上記4件を固定する回帰テストを追加。これは参照 MIDI の事実を固定するテストであり、converter が SysEx を生成できることを意味しない。テストコミット `cefcac720b993871534ce655a12494462d9f99e5`。CI 結果は未確認。
+- 作業ブランチに上記4件を固定する回帰テストを追加。これは参照 MIDI の事実を固定するテストであり、converter が SysEx を生成できることを意味しない。テストコミット `cefcac720b993871534ce655a12494462d9f99e5` は `F0` ステータスも含めるよう期待値を修正（commit `335b23e0aef2763f1eaadd949a7a9804267a4f28`）。CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) で Ubuntu/macOS/Windows の全 build/test job が成功。
