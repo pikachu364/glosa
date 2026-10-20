@@ -7,7 +7,8 @@
 2. [HYPOTHESES.md](HYPOTHESES.md) — 有力候補・未確定事項
 3. [NEXT_STEPS.md](NEXT_STEPS.md) — 次の調査と完了条件
 4. [LOG.md](LOG.md) — 日付順の調査履歴
-5. [旧・詳細引き継ぎ](../DEVELOPMENT_HANDOFF.md) — 詳細な経緯と過去のメモ
+5. [MIDI_CONVERTER_VALIDATION.md](MIDI_CONVERTER_VALIDATION.md) — Sng2gs と Glosa の MIDI 比較ツールの仕様・進捗
+6. [旧・詳細引き継ぎ](../DEVELOPMENT_HANDOFF.md) — 詳細な経緯と過去のメモ
 
 ## 記録ルール
 - **確認済み**: 根拠となるソース、オフセット、データ比較を記す。
