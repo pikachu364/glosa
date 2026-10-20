@@ -422,3 +422,10 @@
 - runner.MID の SMF reader 出力を使い、12 track、track-name meta を持つ chunk index、Note-on を持つ track の物理順・channel・件数、空の part-1/Keyboard track を回帰テストに記録した。
 - このテストは reference fixture 自体の構造を固定するもので、Glosa の出力が同じ物理 chunk 順になったことを意味しない。現 converter は conductor + part 昇順で書き出し、参照は title/conductor を含む先頭 track、別の Exclusive/SysEx track、part 10→2、part 1 の順である。実装前に track 1 の SysEx 内容と SNG 側の出所を確認する。
 - テストコミット b03cebb06a27c9efe509447d8bb369c8fa89c499。最新 branch HEAD の CI run 39400722489 で3 OSの build/test 成功を確認。
+
+
+## 2026-10-20 — v1 reference Exclusive track の SysEx を記録
+
+- runner.MID の track index 1 は Text meta `Exclusive` と4件の SysEx を持つことを raw SMF parse で確認。イベント tick は 0 / 4 / 8 / 8、payload は FACTS F-057 に記録した。
+- SNG2S のマニュアルに `/X1` / `/X2` / `/XD` があるため、reference SysEx と option の関係、元 SNG の生成元を追う。既存資料だけでは mapping を確定できないため converter には payload を追加しない。
+- reference track 1 の4件を固定する回帰テストを作業ブランチへ追加（commit `cefcac720b993871534ce655a12494462d9f99e5`）。CI 結果は未確認。
