@@ -120,4 +120,6 @@ v1 part 10 の同 tick・同音高ノートで Note-off が tick 1728 と 1729 �
 
 v1 `runner.MID` は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 µs/quarter の tempo meta を持つ。一方、v1 conductor 領域に対する現行 sentinel parser は step/value = 37/144, 37/192 ... と読むため、現行の後続版向け式では参照と一致しない。SNG2S の起動時 tempo 出力と `0x7BA` を参照する経路は逆アセンブル上確認できるが、参照 MIDI の各 tempo event と SNG 内フィールドの対応は未確定。
 
-**確認に必要なこと:** `0x7BA` の設定元、`FUN_1000_618A` / `FUN_1000_61EC` と conductor data の関係を追跡し、tick 8 / 192 の tempo event を説明する。根拠がそろうまでは v1 tempo conversion を推測で変更しない。
+**追加で確認できたこと:** `FUN_1000_3406` は内部 far-pointer `0x21DC` のレコード列から `FF 58` time-signature meta を、`0x21E0` の列から `FF 51` tempo meta を出力する。別の `0x21E4` 列も読み込んで `0x7DE` を更新し `FUN_1000_3B78` を呼ぶが、そのイベント上の意味はまだ未確定（FACTS F-055）。これらは内部バッファポインタであり、SNG ファイルの絶対オフセットではない。
+
+**確認に必要なこと:** `0x21DC` / `0x21E0` / `0x21E4` の各バッファを SNG 読込・変換側の充填元まで逆引きし、特に参照 MIDI の tick 8 / 192 の tempo event と `0x7BA` の設定元を対応付ける。根拠がそろうまでは v1 tempo conversion を推測で変更しない。
