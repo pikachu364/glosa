@@ -1,54 +1,46 @@
-# MIDI Compare (local validation tool)
+# MIDI Compare
 
-A Windows-friendly CLI for comparing MIDI produced by two independent converters, such as Sng2gs and a development build of Glosa.
+Windows 10 / 11 で、Sng2gs が出力した MIDI と開発中の Glosa が出力した MIDI をローカル比較するツールです。
 
-The tool reads only the two MIDI files supplied by the user. It does not invoke Sng2gs, open SNG files, or upload data. JSON reports omit input paths, track names, and text-like MIDI metadata.
+Sng2gs による変換は自分で行います。このツールは SNG を読み込まず、外部送信もしません。
 
-## Requirements
-- Windows 10 / 11
-- Python 3.10 or newer
-- The dependency in `requirements.txt`
+## 必要なもの
+- Python 3.10 以降
+- `mido` パッケージ
 
-## Setup (PowerShell)
+## セットアップ（PowerShell）
 
-From the repository root:
+リポジトリのルートで実行：
 
 ~~~powershell
 py -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r tools\midi-compare\requirements.txt
 ~~~
 
-## Run
-
-Convert the same local SNG with each converter yourself, then compare the two MIDI files:
+## 比較
 
 ~~~powershell
-.\.venv\Scripts\python.exe tools\midi-compare\midi_compare.py "D:\private\reference.mid" "D:\private\glosa-output.mid"
+.\.venv\Scripts\python.exe tools\midi-compare\midi_compare.py "D:\local\reference.mid" "D:\local\glosa.mid"
 ~~~
 
-Save a report (the report does not include input file paths):
+JSON レポートも保存する場合：
 
 ~~~powershell
-.\.venv\Scripts\python.exe tools\midi-compare\midi_compare.py "D:\private\reference.mid" "D:\private\glosa-output.mid" --json ".\comparison-report.json"
+.\.venv\Scripts\python.exe tools\midi-compare\midi_compare.py "D:\local\reference.mid" "D:\local\glosa.mid" --json ".\comparison-report.json"
 ~~~
 
-Exit codes:
-- `0`: PASS (normalized event signatures match)
-- `1`: FAIL (differences found)
-- `2`: input, parsing, or report-writing error
+## 比較する項目
+- 音高、チャンネル、ベロシティ、開始位置、音符の長さ
+- テンポ、プログラムチェンジ、コントロールチェンジ、ピッチベンドなどの MIDI イベント
+- SysEx の内容（内部でハッシュ比較。内容そのものは表示・保存しない）
+- MIDI の PPQ が異なる場合の位置正規化
 
-## What is compared
-- Notes paired FIFO within each track/channel/pitch: channel, pitch, velocity, onset and duration
-- Other MIDI events: type, normalized musical position and supported data fields
-- Tempo, common controller/program/pitch-bend events
+トラック名・曲名などのテキストメタデータ、トラック順、トラック数は合否判定から除外します。変換器ごとにトラック構成が異なる場合があるためです。
 
-Positions are normalized to quarter-note units so files with different ticks-per-beat values can be compared. Track order and track names are not used in the final event signature.
+## 結果
+- `PASS`: 比較対象のイベントが一致
+- `FAIL`: 差分あり
+- 終了コード `0`: PASS、`1`: FAIL、`2`: 入力・解析・レポートエラー
 
-## Important limitations
-- This is an initial comparison tool, not proof that either converter is correct.
-- It does not render or listen to audio and cannot verify sound-module-specific timbre.
-- Note-on/off pairing uses FIFO within each track/channel/pitch. If a format relies on another overlapping-note convention, inspect the warning counts and treat results as provisional.
-- MIDI type 2 is rejected because each track is an independent sequence.
-- SysEx payloads are not compared byte-for-byte in this first version; only their lengths are included.
-- The report omits track names and text-like metadata. Review local output before sharing a report.
-- Do not commit copyrighted or private MIDI/SNG files or reports that might reveal protected musical content. Keep real-world validation files on your PC.
+## 注意
+比較結果の PASS は、2つの MIDI が一致したことを示すだけで、両方が SNG 仕様に対して正しいことまでは保証しません。実際の SNG / MIDI は GitHub に追加せず、PC 内で検証してください。
