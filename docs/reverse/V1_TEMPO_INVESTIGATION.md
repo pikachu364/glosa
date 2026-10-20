@@ -15,6 +15,16 @@ testdata/ballade/v1/sng2gs/runner.MID の tempo meta を、SNG2S の入力読込
 - 0x21DC / 0x21E0 / 0x21E4 は SNG 内の絶対オフセットではなく、SNG2S 内部バッファの far-pointer。FUN_1000_272a は local_6c byte の buffer を確保し、seek position local_4 + local_6 から DOS read (0x3F00) で読み込んだ pointer を 0x21E0 に設定する。local_4 / local_6 / local_6c と v1 SNG 内の具体的フィールド対応は未確定。
 - FUN_1000_3406 は 0x21E0 の4-byteレコード第2 word を ((raw * 0x2962) & 0xFFFF) / 0x40 で正規化して1〜480に制限し、変化時に 0x7BA を更新する。起動時には 0x7BA != 0x78 の場合、FUN_1000_618A で 60,000,000 / 0x7BA の整数除算を行い FF 51 03 tempo meta を出力する。tick 8 / 192 の参照イベントとの対応は未確定。
 
+## runner.SNG 実データとの追加照合（2026-10-21）
+
+`FUN_1000_272a` の read sequence と `runner.SNG` の実バイト列を照合した。
+
+- 固定長の順次 read (25 + 35 + 10 + 44 + 1 + 66 bytes) の後、file offset は `0x00B5`。ここから `local_3a = 590 (0x24E)` bytes を読み、次に `local_6c = 352 (0x160)` bytes を読むため、`0x21DC` の source は `0x00B5`、`0x21E0` の source は `0x0303` となる。
+- その後 file pointer は `0x0463`。relative seek `local_4 + local_6 = 20 + 16 = 36` bytes で `0x0487` に移動し、`0x21E4` 用の別レコード列を読む。
+- `0x21E0` の先頭レコード列は `(48,37)`, `(144,37)`, `(192,37)` の反復で、終端は `(0x8702,0xFFFF)`。第2 word 37 は変換式で 69 BPM 相当、すなわち `869,565` µs/quarter になる。
+- `FUN_1000_3406` は record の first word を `0x10AA = first_word - 1` としてカウントダウンに使い、record pointer `0x10AC` を4進める。よって 48 / 144 / 192 を MIDI tick そのものと扱うのは誤り。tick 8 / 192 との対応には別途、カウントダウン周期と出力 delta-time の関係を解明する必要がある。
+- 数値 869,565 は参照 MIDI の tick 192 イベントと一致するが、それだけでは同じイベント由来とは証明できない。tick 8 の 869,000 の生成元も未特定。
+
 ## 次に追うデータフロー
 
 1. **レコードの意味を切り分ける:** FUN_1000_3406 が 0x21E0 の各4-byteレコードから first word / second word をどう消費し、カウンタ 0x10AA / offset 0x10AC が次レコードと tick をどう進めるか整理する。現状は第2 word の tempo 値正規化と 0x7BA 更新まで確認済み。
