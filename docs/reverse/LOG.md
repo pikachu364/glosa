@@ -407,3 +407,11 @@
 - 0x21E4 は別レコード列から 0x7DE を更新して FUN_1000_3B78 を呼ぶ。出力イベントの意味は未確定として断定しない。
 - これらは内部ポインタであり、SNG ファイル内の直接オフセットではない。SNG reader が各 buffer をどこから埋めるか、v1 参照 tempo の tick 8 / 192 とどのレコードが対応するかは未解決。converter の tempo 式は変更していない。
 - 作業ブランチの現行 head 650c5fa44982b9f82ce58ea005d4f7e831c4a4d9 に紐づく CI run 39334626186 は成功を返した。これは当該 head の CI 状態であり、今回の追加テストコミットの CI 結果ではない。
+
+
+## 2026-10-20 — v1 汎用 tempo parser の誤適用をガード
+
+- 現在の `docs/ballade-version-testdata` ブランチを確認し、v1 conductor に `ReadTempi` を使うと参照 `runner.MID` の tempo meta と一致しない問題（F-053）を再確認した。
+- v1 では汎用パーサーを呼ばず、根拠のない tempo change を出力しない暫定ガードを実装。テストで参照 MIDI の tempo meta（tick 0/8/192）を固定し、現 converter が既定 tempo のみを出力することを検証する。
+- これは互換性の完成ではない。参照 MIDI の tick 8 / 192 の tempo change は未実装であり、`0x21E0` バッファの充填元と `0x7BA` の設定元を追う必要がある。実行時トレース・実再生は未実施。
+- コードコミット `ca99066649e5a5341e820486fd526c4d5ed4ac31`、テストコミット `cf77ba8736e36aa68bc9caa14d122136fc0a7b48`。この時点で CI 結果は未確認。
