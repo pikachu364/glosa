@@ -127,10 +127,12 @@ v1 runner.MID は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 �
 - 起動時の tempo meta 経路は 0x7BA != 0x78 の条件で FUN_1000_618A による 60,000,000 / 0x7BA の整数除算を行い、FF 51 03 を出力する。この初期出力と 0x21E0 レコード消費時の更新を、参照 MIDI の tick 0 / 8 / 192 に対応付ける根拠は未確定。
 - 0x21DC は time-signature 経路、0x21E4 は別レコード列から 0x7DE / FUN_1000_3B78 へ接続する（FACTS F-055）。
 
-**次に必要な確認:** 0x10AA countdown の呼び出し周期と MIDI delta-time の生成を追い、record (48,37)/(144,37)/(192,37) が tick 8 / 192 に対応するかを検証する。tick 8 の 869,000 µs/quarter の出所も独立して探す。根拠がそろうまでは converter の tempo conversion を変更しない。
+**次に必要な確認:** 例外経路を含む scheduler loop の状態を追い、record (48,37)/(144,37)/(192,37) の更新時点で pending delta-time がいくつかを確定する。tick 8 / 192 への対応と tick 8 の 869,000 µs/quarter の出所を別々に検証する。根拠がそろうまでは converter の tempo conversion を変更しない。
 
 **実装上の暫定対処（2026-10-20）:** v1 に汎用 ReadTempi を適用しないガードを維持する。これは誤った候補を避けるもので、tick 8 / 192 の参照 tempo change を再現するものではない（F-056）。
 
+- 制御フローを追加確認: エントリ関数は初期 FF 51 出力後、FUN_1000_3406 と FUN_1000_08EC を反復する。FUN_1000_3406 の通常経路は 0xF9A:0xF9C pending delta-time accumulator を +1 し、FUN_1000_08EC はイベント出力時に FUN_1000_16E6 でこの delta-time を書き出して accumulator をクリアする。0x10AA countdown はこの scheduler ループ内で進むため、first word を MIDI tick と直読することはできない。
+- ただし 0xF96 != 0 の分岐や別イベント列の終端条件があるため、全呼出しが同一の時間単位を進めるとはまだ断定しない。record update が出力 delta-time のどの位置に現れるかは未解決.
 
 ## H-013 — v1 の Exclusive SysEx は SNG にそのまま格納されていない可能性
 
