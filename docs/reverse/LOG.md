@@ -429,3 +429,9 @@
 - runner.MID の track index 1 は Text meta `Exclusive` と4件の SysEx を持つことを raw SMF parse で確認。イベント tick は 0 / 4 / 8 / 8、payload は FACTS F-057 に記録した。
 - SNG2S のマニュアルに `/X1` / `/X2` / `/XD` があるため、reference SysEx と option の関係、元 SNG の生成元を追う。既存資料だけでは mapping を確定できないため converter には payload を追加しない。
 - reference track 1 の4件を固定する回帰テストを作業ブランチへ追加（commit `cefcac720b993871534ce655a12494462d9f99e5`）。初回 CI は `SmfReader.GetData()` が SysEx の `F0` を含む表現を返す点で期待値がずれたため失敗。期待値を reader の実際の表現に合わせて修正（commit `335b23e0aef2763f1eaadd949a7a9804267a4f28`）し、CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) で Ubuntu/macOS/Windows の build/test が成功。
+
+
+## 2026-10-20 — v1 SysEx payload の SNG 内 literal 検索
+
+- 元 `runner.SNG` 全体（85,897 bytes）を走査し、参照 MIDI track 1 の4つの SysEx payload および共通先頭列 `41 10 16 12` の literal byte sequence は見つからないことを確認。
+- この不在だけで SNG2S が SysEx を合成すると断定できない。SNG 内の別フィールドから組み立てる可能性も残るため、H-013 として仮説を登録し、/X1 /X2 /XD の分岐および SysEx 出力関数の静的解析を次の調査項目とした。
