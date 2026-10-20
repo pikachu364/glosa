@@ -602,3 +602,4 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - 作業ブランチ `docs/ballade-version-testdata` の `SngConverter` は、v1 に対してこの汎用パーサーを適用せず、根拠のない tempo change を出さないように変更した。回帰テストは参照 MIDI の3つの tempo meta と、現時点の converter が既定の 500,000 のみを出力することをそれぞれ固定する。
 - これは完全互換化ではない。参照 MIDI の tick 8 / 192 の tempo change は converter に未実装のままであり、正しい v1 record mapping が分かるまで未解決として扱う。
 - 変更コミット: `ca99066649e5a5341e820486fd526c4d5ed4ac31`（converter）、`cf77ba8736e36aa68bc9caa14d122136fc0a7b48`（tests）。両コミットの CI 結果は未確認。
+- 参照 MIDI の物理 track layout を記録する回帰テストも作業ブランチに追加した。12 track、track-name を持つ chunk index、Note-on を持つ track の順序・channel・件数、および末尾の part-1/Keyboard track が Note-on を持たないことを固定する。これは参照 fixture の構造テストであり、現行 Glosa 出力との物理 chunk 順一致を証明しない。テストコミット b03cebb06a27c9efe509447d8bb369c8fa89c499。CI 結果は未確認。
