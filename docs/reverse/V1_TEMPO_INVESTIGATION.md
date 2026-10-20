@@ -13,7 +13,7 @@ testdata/ballade/v1/sng2gs/runner.MID の tempo meta を、SNG2S の入力読込
 - v1 に対する汎用 ReadTempi の適用はガードされており、現在は誤った候補を出さず、既定 tempo 500,000 のみを出す。参照 MIDI の tick 8 / 192 の変更を再現できているわけではない。
 - 静的逆解析では FUN_1000_3406 が内部 far-pointer 0x21DC のレコード列から FF 58 time-signature meta、0x21E0 の列から tempo 値を処理する。0x21E4 は別の4-byte列として処理され、0x7DE を更新して FUN_1000_3B78 を呼ぶ。
 - 0x21DC / 0x21E0 / 0x21E4 は SNG 内の絶対オフセットではなく、SNG2S 内部バッファの far-pointer。FUN_1000_272a は local_6c byte の buffer を確保し、seek position local_4 + local_6 から DOS read (0x3F00) で読み込んだ pointer を 0x21E0 に設定する。local_4 / local_6 / local_6c と v1 SNG 内の具体的フィールド対応は未確定。
-- FUN_1000_3406 は 0x21E0 の4-byteレコード第2 word を raw * 0x2962 / 0x40 で正規化して1〜480に制限し、変化時に 0x7BA を更新する。起動時には 0x7BA != 0x78 の場合、FUN_1000_618A で 60,000,000 / 0x7BA の整数除算を行い FF 51 03 tempo meta を出力する。tick 8 / 192 の参照イベントとの対応は未確定。
+- FUN_1000_3406 は 0x21E0 の4-byteレコード第2 word を ((raw * 0x2962) & 0xFFFF) / 0x40 で正規化して1〜480に制限し、変化時に 0x7BA を更新する。起動時には 0x7BA != 0x78 の場合、FUN_1000_618A で 60,000,000 / 0x7BA の整数除算を行い FF 51 03 tempo meta を出力する。tick 8 / 192 の参照イベントとの対応は未確定。
 
 ## 次に追うデータフロー
 
