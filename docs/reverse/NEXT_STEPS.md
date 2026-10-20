@@ -50,7 +50,7 @@
 
 - [x] 静的解析で `FUN_1000_3406` が内部バッファ `0x21DC` から `FF 58` time-signature meta、`0x21E0` から `FF 51` tempo meta を出力することを確認（FACTS F-055）。`0x21E4` は別のレコード列として `0x7DE` と `FUN_1000_3B78` に接続するが、意味は未確定。
 - [x] `0x21E0` は内部 far-pointerであり、`FUN_1000_272a` が `local_6c` byte の buffer を確保し、seek (`0x4201`) 後に file read (`0x3F00`) で充填する経路を確認。seek position は `local_4 + local_6`（FACTS F-058）。
-- [x] `FUN_1000_3406` が `0x21E0` の4-byte recordsを消費し、第2 word を `raw * 0x2962 / 0x40` で正規化・1〜480に制限して `0x7BA` を更新することを確認（FACTS F-058）。
+- [x] `FUN_1000_3406` が `0x21E0` の4-byte recordsを消費し、第2 word を `((raw * 0x2962) & 0xFFFF) / 0x40` で正規化・1〜480に制限して `0x7BA` を更新することを確認（FACTS F-058）。
 - [ ] `FUN_1000_272a` の `0x1Bxx` 版別メタデータを追い、`local_4` / `local_6` / `local_6c` を v1 SNG の具体的フィールドへ対応付ける。
 - [ ] `0x21E0` の record words / 消費タイミング / 累積 tick / 正規化後 tempo を表にし、参照 `runner.MID` の tick 0 / 8 / 192 の tempo meta と対応付ける。`FUN_1000_618A` の初期 `FF 51` 出力経路と record 更新経路は別々に検証する（F-053 / F-055 / F-058 / H-012）。
 - [x] 作業ブランチで v1 に後続版向け `ReadTempi` を適用しないガードと回帰テストを追加。これにより誤った tempo 候補は出さないが、tick 8 / 192 の参照 tempo change は未実装。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功（FACTS F-056）。
