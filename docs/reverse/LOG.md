@@ -435,3 +435,11 @@
 
 - 元 `runner.SNG` 全体（85,897 bytes）を走査し、参照 MIDI track 1 の4つの SysEx payload および共通先頭列 `41 10 16 12` の literal byte sequence は見つからないことを確認。
 - この不在だけで SNG2S が SysEx を合成すると断定できない。SNG 内の別フィールドから組み立てる可能性も残るため、H-013 として仮説を登録し、/X1 /X2 /XD の分岐および SysEx 出力関数の静的解析を次の調査項目とした。
+
+
+## 2026-10-21 — v1 tempo buffer の充填経路を一段追跡
+
+- ユーザーが解析資料を pikachu364/glosa-private-data/testdata/ballade/sng2gs/sng2gs解析データ.txt に移したため、該当ファイルを直接参照して調査を再開した。
+- FUN_1000_272a で local_6c byte の buffer を確保し、seek (FUN_1000_40C8(0x4201, ..., local_4 + local_6, 0)) の後に DOS read (FUN_1000_40C8(0x3F00, ..., local_6c, buffer)) で充填し、その pointer を 0x21E0 に設定することを確認。0x21E0 が SNG 内絶対オフセットではないことを再確認した。
+- FUN_1000_3406 の 0x21E0 走査で第2 word を raw * 0x2962 / 0x40 で正規化し、1〜480に制限した値で 0x7BA を更新することを確認した。初期 FF 51 出力経路は 0x7BA != 0x78 の条件から FUN_1000_618A を呼び、60,000,000 / 0x7BA の整数除算を行う。
+- 未解決: 0x1Bxx メタデータから local_4 / local_6 / local_6c への版別対応、レコード消費時の累積 tick、参照 MIDI tick 8 / 192 との対応。推測実装は行わず、FACTS F-058 / H-012 / T-003 を更新した。
