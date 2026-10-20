@@ -603,3 +603,13 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - これは完全互換化ではない。参照 MIDI の tick 8 / 192 の tempo change は converter に未実装のままであり、正しい v1 record mapping が分かるまで未解決として扱う。
 - 変更コミット: `ca99066649e5a5341e820486fd526c4d5ed4ac31`（converter）、`cf77ba8736e36aa68bc9caa14d122136fc0a7b48`（tests）。後続の branch HEAD `28a668fe56485f03fb571c692717bdbb5162797c` に対する CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で、converter・テスト・README を含む HEAD の build/test が3 OSで成功。
 - 参照 MIDI の物理 track layout を記録する回帰テストも作業ブランチに追加した。12 track、track-name を持つ chunk index、Note-on を持つ track の順序・channel・件数、および末尾の part-1/Keyboard track が Note-on を持たないことを固定する。これは参照 fixture の構造テストであり、現行 Glosa 出力との物理 chunk 順一致を証明しない。テストコミット b03cebb06a27c9efe509447d8bb369c8fa89c499。最新 branch HEAD の CI run 39400722489 で3 OSの build/test 成功を確認。
+
+
+## F-057 — v1 reference MIDI の Exclusive track に4件の SysEx がある
+
+**状態:** `v1/sng2gs/runner.MID` の SMF track 1 をバイト列から解析し、参照構造テストを追加。SNG 内の生成元および Glosa での再現は未解決。
+
+- track index 1 は Track Name meta ではなく Text meta `Exclusive` を持ち、tick 0 / 4 / 8 / 8 に4件の SysEx がある。
+- payload（SMF の F0 イベントに続く長さフィールド内のデータ）は順に `41 10 16 12 10 00 01 00 05 06 64 F7`、`41 10 16 12 52 00 01 00 05 06 22 F7`、`41 10 16 12 10 00 16 4B 0F F7`、`41 10 16 12 52 00 10 4B 53 F7`。
+- SNG2S マニュアルは /X1（Conductor track）、/X2（Track 2）、/XD（SysEx 無効化）を記載する。参照ファイルの track 1 が SysEx 用であることは実データで確認できたが、これら4件の SNG 側の生成元、/X オプションとの対応、Glosa で再現すべき互換範囲は未確定。
+- 作業ブランチに上記4件を固定する回帰テストを追加。これは参照 MIDI の事実を固定するテストであり、converter が SysEx を生成できることを意味しない。テストコミット `cefcac720b993871534ce655a12494462d9f99e5`。CI 結果は未確認。
