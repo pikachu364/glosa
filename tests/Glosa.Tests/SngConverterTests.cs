@@ -241,6 +241,50 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void BalladeV1ReferencePhysicalTrackOrderIsRecorded()
+    {
+        string root = FindRepositoryRoot();
+        byte[] reference = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "sng2gs", "runner.MID"));
+        MidiSequence sequence = SmfReader.Read(reference);
+
+        Assert.Equal(12, sequence.TrackCount);
+        Assert.Equal(
+            new[] { 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 },
+            sequence.Events
+                .Where(e => e.Kind == MidiEventKind.Meta && e.MetaType == MetaType.TrackName)
+                .Select(e => e.Track)
+                .Distinct()
+                .Order()
+                .ToArray());
+
+        var noteTracks = sequence.Events
+            .Where(e => e.Kind == MidiEventKind.Channel &&
+                        (e.Status & 0xF0) == 0x90 && e.Data2 != 0)
+            .GroupBy(e => e.Track)
+            .OrderBy(g => g.Key)
+            .Select(g => (Track: g.Key, Channel: g.First().Channel, Count: g.Count()))
+            .ToArray();
+
+        Assert.Equal(
+            new (int Track, int Channel, int Count)[]
+            {
+                (2, 9, 928),
+                (3, 8, 480),
+                (4, 7, 61),
+                (5, 6, 688),
+                (6, 5, 146),
+                (7, 4, 234),
+                (8, 3, 110),
+                (9, 2, 175),
+                (10, 1, 473),
+            },
+            noteTracks);
+        Assert.DoesNotContain(sequence.Events, e =>
+            e.Track == 11 && e.Kind == MidiEventKind.Channel &&
+            (e.Status & 0xF0) == 0x90 && e.Data2 != 0);
+    }
+
+    [Fact]
     public void BalladeV1MatchesSng2GsReferenceNoteEvents()
         => AssertReferenceNoteEvents(
             "v1/runner.SNG",
