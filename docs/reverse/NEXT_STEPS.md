@@ -32,7 +32,7 @@
 - [x] SNG2GS 参照 MIDI とイベント単位で照合。v1 専用経路で Note-on 3,295件と Note-off 3,295件を channel/part・pitch・velocity・tick で照合し、差分0を確認（F-038/F-044）。
 - [x] controller/program/pitch-bend の比較で、1,966候補レコードから連続する同一状態を抑制すると参照 MIDI の1,595件と一致することを確認。v1 converter と回帰テストを追加し、CI run [39333267230](https://github.com/pikachu364/glosa/actions/runs/39333267230) が Ubuntu/macOS/Windows で成功（F-052）。
 - [ ] tempo/meta event の v1 変換規則は未解決（F-053）。
-- [x] 参照 MIDI の物理 track layout を記録するテストを追加。12 track、track-name chunk index、Note-on track の順序/channel/件数、Note-on のない part-1/Keyboard track を検証する（F-054/F-056）。CI 結果は未確認。
+- [x] 参照 MIDI の物理 track layout を記録するテストを追加。12 track、track-name chunk index、Note-on track の順序/channel/件数、Note-on のない part-1/Keyboard track を検証する（F-054/F-056）。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功。
 - [ ] 現行 Glosa 出力と参照の物理 chunk 順を比較する。タイトル/conductor track と Exclusive/SysEx track の役割・生成元が未確定のため、part track の並べ替えだけを先行させない。
 - [x] v1 専用レイアウト分岐を v2〜v4 と分離し、fixture の参照 Note-on/off 比較テストを追加。作業ブランチ `docs/ballade-version-testdata` の CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) は Ubuntu・macOS・Windows の全 job が成功。
 
@@ -49,7 +49,7 @@
 - [x] 静的解析で `FUN_1000_3406` が内部バッファ `0x21DC` から `FF 58` time-signature meta、`0x21E0` から `FF 51` tempo meta を出力することを確認（FACTS F-055）。`0x21E4` は別のレコード列として `0x7DE` と `FUN_1000_3B78` に接続するが、意味は未確定。
 - [ ] `0x21DC` / `0x21E0` / `0x21E4` は SNG 内絶対オフセットではなく内部 far-pointer。各バッファの充填元を SNG 読込側へ逆追跡する。
 - [ ] v1 `runner.MID` の tempo meta（tick 0 / 8 / 192）と、v1 conductor に現行 `ReadTempi` を適用した値列の不一致を解消する。`0x7BA` の設定元と内部 tempo buffer の各レコードを対応付ける（FACTS F-053 / F-055 / HYPOTHESES H-012）。
-- [x] 作業ブランチで v1 に後続版向け `ReadTempi` を適用しないガードと回帰テストを追加。これにより誤った tempo 候補は出さないが、tick 8 / 192 の参照 tempo change は未実装。CI 結果は未確認（FACTS F-056）。
+- [x] 作業ブランチで v1 に後続版向け `ReadTempi` を適用しないガードと回帰テストを追加。これにより誤った tempo 候補は出さないが、tick 8 / 192 の参照 tempo change は未実装。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功（FACTS F-056）。
 
 **完了条件:** 生成条件とオフセット差の説明が、根拠付きで記録される。
 
