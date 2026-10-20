@@ -579,3 +579,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - track name は旧コードページ由来の文字列を含むため、単純な ASCII 文字列比較は正しい互換性検証にならない可能性がある。
 
 **次の調査:** index 0 / 1 / 11 の各 track の meta event と役割をバイト列で確定し、タイトル文字列の encoding、part 1 の空 track を含む正確な順序をテストにする。実装変更前に v2/v3/v4 の track order も比較する。
+
+
+## F-055 — SNG2S conductor metadata buffers are dispatched separately
+**状態:** 静的逆解析で buffer consumers を確認。SNG field mapping は一部未解決。
+
+- FUN_1000_272a は、別々に確保した3つの内部バッファの far pointer を 0x21DC、0x21E0、0x21E4 に設定する（解析資料 sng2gs解析データ.txt、FUN_1000_272a 内の代入列）。
+- FUN_1000_3406 は 0x21DC の4-byteレコードを読み、値が変わると FF 58 04 の time-signature meta event を出力する。レコードの第3–4 byteから numerator と denominator power を構成する（1000:3471–34FA）。
+- 同関数は 0x21E0 の4-byteレコードから tempo 値を更新し、FF 51 03 の tempo meta event を出力する。内部値は value * 0x2962 / 0x40 によって範囲 1–480 に丸められ、tempo は整数演算の 60,000,000 / value から計算される（1000:350E–3583）。
+- 0x21E4 は別の4-byteレコード列として読み取られ、状態値 0x7DE を更新し、FUN_1000_3B78 を呼び出す（1000:35FF–3645）。この列の MIDI 意味と SNG 内フィールドへの対応は本調査だけでは確定しない。
+- これらのアドレスは SNG ファイル内の絶対オフセットではなく、SNG2S の内部 far-pointer 変数。各バッファの確保元と SNG からの充填処理をさらに追う必要がある。
+
+**制約:** この静的解析で conductor buffer の出力先は特定できるが、v1 runner.SNG の tempo meta tick 8 / 192 と内部レコードの対応はまだ証明できない。v1 の tempo conversion は推測で変更しない。
