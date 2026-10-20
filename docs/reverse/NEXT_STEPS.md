@@ -52,8 +52,9 @@
 - [x] `0x21E0` は内部 far-pointerであり、`FUN_1000_272a` が `local_6c` byte の buffer を確保し、seek (`0x4201`) 後に file read (`0x3F00`) で充填する経路を確認。seek position は `local_4 + local_6`（FACTS F-058）。
 - [x] `FUN_1000_3406` が `0x21E0` の4-byte recordsを消費し、第2 word を `((raw * 0x2962) & 0xFFFF) / 0x40` で正規化・1〜480に制限して `0x7BA` を更新することを確認（FACTS F-058）。
 - [x] `runner.SNG` の逐次 read を照合し、`0x21DC` source offset `0x00B5` / 590 bytes、`0x21E0` source offset `0x0303` / 352 bytes、`0x21E4` source offset `0x0487` を特定（FACTS F-060）。
-- [ ] `0x10AA` countdown の呼び出し周期と MIDI delta-time の関係を特定する。record first word 48 / 144 / 192 を MIDI tick と同一視しない。
-- [ ] `0x21E0` の record words / countdown 消費タイミング / 出力 delta-time / 正規化後 tempo を表にし、参照 `runner.MID` の tick 0 / 8 / 192 の tempo meta と対応付ける。tick 8 の 869,000 の出所を独立して特定する。`FUN_1000_618A` の初期 `FF 51` 出力経路と record 更新経路は別々に検証する（F-053 / F-055 / F-058 / H-012）。
+- [x] `FUN_1000_3406` の通常経路で `0xF9A:0xF9C` pending delta-time accumulator が +1 され、`FUN_1000_08EC` がイベント出力時に `FUN_1000_16E6` で flush する制御フローを確認（FACTS F-061）。
+- [ ] `0xF96 != 0` などの例外経路も含め、`0x10AA` countdown と pending delta-time の差分を追う。record first word 48 / 144 / 192 を MIDI tick と同一視しない。
+- [ ] `0x21E0` の record words / countdown 消費タイミング / pending delta-time の値 / 正規化後 tempo を表にし、参照 `runner.MID` の tick 0 / 8 / 192 の tempo meta と対応付ける。tick 8 の 869,000 の出所を独立して特定する。`FUN_1000_618A` の初期 `FF 51` 出力経路と record 更新経路は別々に検証する（F-053 / F-055 / F-058 / H-012）。
 - [x] 作業ブランチで v1 に後続版向け `ReadTempi` を適用しないガードと回帰テストを追加。これにより誤った tempo 候補は出さないが、tick 8 / 192 の参照 tempo change は未実装。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功（FACTS F-056）。
 
 **完了条件:** 生成条件とオフセット差の説明が、根拠付きで記録される。
