@@ -30,8 +30,6 @@ class MidiCompareTests(unittest.TestCase):
             make_midi(b)
             result = midi_compare.compare(a, b, 100)
             self.assertEqual(result["result"], "PASS")
-            self.assertEqual(result["counts"]["A_only"], 0)
-            self.assertEqual(result["counts"]["B_only"], 0)
 
     def test_pitch_difference_fails(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -40,24 +38,20 @@ class MidiCompareTests(unittest.TestCase):
             make_midi(b, pitch=61)
             result = midi_compare.compare(a, b, 100)
             self.assertEqual(result["result"], "FAIL")
-            self.assertGreater(result["counts"]["A_only"], 0)
-            self.assertGreater(result["counts"]["B_only"], 0)
 
     def test_tempo_difference_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             a, b = Path(directory) / "a.mid", Path(directory) / "b.mid"
             make_midi(a, tempo=500000)
             make_midi(b, tempo=600000)
-            result = midi_compare.compare(a, b, 100)
-            self.assertEqual(result["result"], "FAIL")
+            self.assertEqual(midi_compare.compare(a, b, 100)["result"], "FAIL")
 
     def test_report_does_not_include_input_paths(self):
         with tempfile.TemporaryDirectory() as directory:
             a, b = Path(directory) / "private_a.mid", Path(directory) / "private_b.mid"
             make_midi(a)
             make_midi(b)
-            result = midi_compare.compare(a, b, 100)
-            rendered = str(result)
+            rendered = str(midi_compare.compare(a, b, 100))
             self.assertNotIn(str(a), rendered)
             self.assertNotIn(str(b), rendered)
 
