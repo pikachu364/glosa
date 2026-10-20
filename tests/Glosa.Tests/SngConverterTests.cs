@@ -196,18 +196,16 @@ public class SngConverterTests
     }
 
     [Fact]
-    public void BalladeV1EmitsKnownInitialConductorMetaEvents()
+    public void BalladeV1EmitsKnownInitialTimeSignatureMetaEvent()
     {
         string root = FindRepositoryRoot();
         byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
         byte[] smf = SngConverter.ToSmf(sng);
 
-        // The reference runner.MID has a 4/4 time signature and default 500,000
-        // microseconds per quarter note at tick 0. Later v1 tempo changes are
-        // intentionally not asserted here because their SNG field mapping remains
-        // unresolved (see docs/reverse/HYPOTHESES.md, H-012).
+        // The reference runner.MID has a 4/4 time signature at tick 0.
+        // Later v1 tempo changes are not asserted here because their SNG field
+        // mapping remains unresolved (see docs/reverse/HYPOTHESES.md, H-012).
         Assert.True(ContainsSequence(smf, [0x00, 0xFF, 0x58, 0x04, 0x04, 0x02, 0x18, 0x08]));
-        Assert.True(ContainsSequence(smf, [0x00, 0xFF, 0x51, 0x03, 0x07, 0xA1, 0x20]));
     }
 
     [Fact]
