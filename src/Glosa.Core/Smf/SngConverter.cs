@@ -34,7 +34,13 @@ public static class SngConverter
             { barLength = len; numerator = num; denominator = den; }
         }
 
-        var tempi = ReadTempi(data, conductorStart, conductorEnd);
+        // The generic slider parser is validated only for later layouts. On v1 it
+        // interprets status-like conductor records as tempo values (see FACTS F-053),
+        // producing tempo events that disagree with runner.MID. Until the v1 buffer
+        // mapping is established, preserve the SMF default rather than invent changes.
+        var tempi = layout.IsLegacyV1
+            ? new List<TempoPoint>()
+            : ReadTempi(data, conductorStart, conductorEnd);
         int settings = 0x46 + 4 * (layout.Parts + 1);
         int transpose = settings + 11 <= data.Length ? (short)U16(data, settings + 9) : 0;
         var tracks = new List<Track>();
