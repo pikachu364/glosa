@@ -591,3 +591,14 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - これらのアドレスは SNG ファイル内の絶対オフセットではなく、SNG2S の内部 far-pointer 変数。各バッファの確保元と SNG からの充填処理をさらに追う必要がある。
 
 **制約:** この静的解析で conductor buffer の出力先は特定できるが、v1 runner.SNG の tempo meta tick 8 / 192 と内部レコードの対応はまだ証明できない。v1 の tempo conversion は推測で変更しない。
+
+
+## F-056 — v1 の未検証 tempo 候補を汎用パーサーから隔離
+
+**状態:** 作業ブランチのコード変更と回帰テストを追加。CI 結果はまだ確認できていない。正しい v1 tempo 変換は未解決。
+
+- `runner.MID` の conductor track には tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter の tempo meta がある。time signature は tick 0 の 4/4（payload `04 02 18 08`）。
+- v1 の `runner.SNG` では、汎用 `ReadTempi` が sentinel offset 761 の後を step/value = 37/144、37/192 と読む。後続版向けの式では 270/360 BPM 相当となり、参照 MIDI と一致しない（F-053）。
+- 作業ブランチ `docs/ballade-version-testdata` の `SngConverter` は、v1 に対してこの汎用パーサーを適用せず、根拠のない tempo change を出さないように変更した。回帰テストは参照 MIDI の3つの tempo meta と、現時点の converter が既定の 500,000 のみを出力することをそれぞれ固定する。
+- これは完全互換化ではない。参照 MIDI の tick 8 / 192 の tempo change は converter に未実装のままであり、正しい v1 record mapping が分かるまで未解決として扱う。
+- 変更コミット: `ca99066649e5a5341e820486fd526c4d5ed4ac31`（converter）、`cf77ba8736e36aa68bc9caa14d122136fc0a7b48`（tests）。両コミットの CI 結果は未確認。
