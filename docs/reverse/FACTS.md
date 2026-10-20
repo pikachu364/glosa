@@ -626,3 +626,17 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - FUN_1000_3406 は 0x21E0 を4-byte strideで走査する。第2 word は 0x2962 を使って ((raw * 0x2962) & 0xFFFF) / 0x40 に正規化され、1〜480へ制限される。変化がある場合は 0x7BA が更新される（解析資料 sng2gs解析データ.txt、1000:350E–3583）。
 - 初期 tempo meta の出力経路は 0x7BA != 0x78 の条件で FUN_1000_618A を呼び、60,000,000 / 0x7BA の整数除算結果から FF 51 03 を構成する（1000:04A4–04E3）。この経路と 0x21E0 レコード列の更新を参照 MIDI の tick 0 / 8 / 192 に結び付ける証拠はまだない。
 - 根拠資料: [sng2gs解析データ.txt](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)、関数 FUN_1000_272a / FUN_1000_3406 / FUN_1000_618A。
+
+
+## F-060 — v1 runner.SNG の tempo buffer 実位置とレコード消費カウンタ
+
+**状態:** 静的解析と runner.SNG のバイト列を照合。レコードの待ちカウントと raw tempo 値は確認できたが、MIDI tick との換算は未確定。
+
+- `FUN_1000_272a` はファイル先頭から固定長ブロックを順に読む。25 + 35 + 10 + 44 + 1 + 66 bytes の読み込み後に offset `0x00B5` となり、`local_3a = 590 (0x24E)` bytes の `0x21DC` 用 buffer を読む。その直後、offset `0x0303` から `local_6c = 352 (0x160)` bytes を `0x21E0` 用 buffer に読む。したがって runner.SNG では両開始位置を逐次 read と実ファイル内容から説明できる。
+- その read の後、file pointer は `0x0463`。relative seek `local_4 + local_6 = 20 + 16 = 36` bytes により `0x0487` へ移動し、`0x21E4` 用の別レコード列を読む。これは `0x21E0` の開始位置とは異なる。
+- runner.SNG の `0x0303` から始まる 4-byte records は先頭が `(48, 37)`, `(144, 37)`, 続いて `(192, 37)` の反復で、末尾に sentinel `(0x8702, 0xFFFF)` がある。これは raw byte の観測値であり、first word を MIDI tick と解釈する根拠ではない。
+- `FUN_1000_3406` は `0x10AA == 0` のとき次の4-byte recordを読み、first word を `0x10AA = first_word - 1` として保存し、record pointer `0x10AC` を4進める。以後の呼び出しでは `0x10AA` をデクリメントする。従って first word は少なくともこの処理では countdown/cadence 値として使われ、MIDI tick と同一視できない。
+- second word 37 は `((37 * 0x2962) & 0xFFFF) / 0x40 = 69` に正規化され、`60,000,000 / 69 = 869,565` µs/quarter を生む。参照 MIDI の tick 192 tempo と数値は一致するが、tick 192 で record が適用されること、また tick 8 の 869,000 の出所はまだ証明できない。
+- `FUN_1000_33D4` は `0x7BA` を初期値 `0x2962` から設定し、`FUN_1000_3406` を呼ぶ。コンバータの初期 FF 51 出力はその後の `0x7BA` を参照する。レコード消費カウンタと出力 delta-time の間の完全な関係は未確定。
+
+**根拠:** [sng2gs解析データ.txt](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) の `FUN_1000_272a`, `FUN_1000_33D4`, `FUN_1000_3406`、および `testdata/ballade/v1/runner.SNG` の offset `0x00B5`, `0x0303`, `0x0487`。
