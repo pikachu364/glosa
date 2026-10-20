@@ -443,3 +443,12 @@
 - FUN_1000_272a で local_6c byte の buffer を確保し、seek (FUN_1000_40C8(0x4201, ..., local_4 + local_6, 0)) の後に DOS read (FUN_1000_40C8(0x3F00, ..., local_6c, buffer)) で充填し、その pointer を 0x21E0 に設定することを確認。0x21E0 が SNG 内絶対オフセットではないことを再確認した。
 - FUN_1000_3406 の 0x21E0 走査で第2 word を ((raw * 0x2962) & 0xFFFF) / 0x40 で正規化し、1〜480に制限した値で 0x7BA を更新することを確認した。初期 FF 51 出力経路は 0x7BA != 0x78 の条件から FUN_1000_618A を呼び、60,000,000 / 0x7BA の整数除算を行う。
 - 未解決: 0x1Bxx メタデータから local_4 / local_6 / local_6c への版別対応、レコード消費時の累積 tick、参照 MIDI tick 8 / 192 との対応。推測実装は行わず、FACTS F-058 / H-012 / T-003 を更新した。
+
+
+## 2026-10-21 — runner.SNG tempo record source と countdown を照合
+
+- FUN_1000_272a の read sequence を runner.SNG のファイル位置と照合。固定長 read 後の 0x00B5 から 590 bytes が 0x21DC buffer、続く 0x0303 から 352 bytes が 0x21E0 buffer に入る。0x21E0 読込後の file pointer 0x0463 から relative seek +36 bytes で 0x0487 に移動し、0x21E4 用の列を読む。
+- runner.SNG の 0x0303 先頭 record は (48,37)、次は (144,37)、続いて (192,37) の反復。末尾 sentinel は (0x8702,0xFFFF)。
+- FUN_1000_3406 は first word を 0x10AA = first_word - 1 として countdown に使い、次 record へ進む pointer 0x10AC を4進める。したがって record first word を MIDI tick と同一視しない。
+- raw 37 は ((37 * 0x2962) & 0xFFFF) / 0x40 = 69、60,000,000 / 69 = 869,565 µs/quarter。参照 MIDI tick 192 の数値とは一致するが、イベント時刻の対応は未証明。tick 8 の 869,000 の生成元も未解決。
+- FACTS F-060、HYPOTHESES H-012、NEXT_STEPS T-003、V1_TEMPO_INVESTIGATION.md を更新。静的解析のみ。converter/test code は変更なし。
