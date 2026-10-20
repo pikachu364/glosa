@@ -116,15 +116,20 @@ v1 part 10 の同 tick・同音高ノートで Note-off が tick 1728 と 1729 �
 
 ## H-012 — v1 の tempo meta は後続版と異なる変換経路を持つ可能性
 
-**状態:** v1 参照 MIDI と汎用 `ReadTempi` の出力候補が不一致。v1 専用 tempo 規則は未確定。
+**状態:** v1 参照 MIDI と汎用 ReadTempi の出力候補が不一致。内部 tempo buffer の充填・消費経路の一部は特定したが、v1 専用 tempo 規則は未確定。
 
-v1 `runner.MID` は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 µs/quarter の tempo meta を持つ。一方、v1 conductor 領域に対する現行 sentinel parser は step/value = 37/144, 37/192 ... と読むため、現行の後続版向け式では参照と一致しない。SNG2S の起動時 tempo 出力と `0x7BA` を参照する経路は逆アセンブル上確認できるが、参照 MIDI の各 tempo event と SNG 内フィールドの対応は未確定。
+v1 runner.MID は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 µs/quarter の tempo meta を持つ。一方、v1 conductor 領域に対する現行 sentinel parser は step/value = 37/144, 37/192 ... と読むため、後続版向け式では参照と一致しない。v1 では汎用 parser を適用しないガードがあり、現在は既定 tempo 500,000 のみを出す（FACTS F-053/F-056）。
 
-**追加で確認できたこと:** `FUN_1000_3406` は内部 far-pointer `0x21DC` のレコード列から `FF 58` time-signature meta を、`0x21E0` の列から `FF 51` tempo meta を出力する。別の `0x21E4` 列も読み込んで `0x7DE` を更新し `FUN_1000_3B78` を呼ぶが、そのイベント上の意味はまだ未確定（FACTS F-055）。これらは内部バッファポインタであり、SNG ファイルの絶対オフセットではない。
+**新たに確認した静的根拠（2026-10-21）:**
 
-**確認に必要なこと:** `0x21DC` / `0x21E0` / `0x21E4` の各バッファを SNG 読込・変換側の充填元まで逆引きし、特に参照 MIDI の tick 8 / 192 の tempo event と `0x7BA` の設定元を対応付ける。根拠がそろうまでは v1 tempo conversion を推測で変更しない。
+- FUN_1000_272a は local_6c byte の内部 buffer を確保し、DOS read (0x3F00) でデータを読み込む。読込前の seek (0x4201) は local_4 + local_6 を使う。その buffer pointer が 0x21E0 にコピーされるため、0x21E0 は SNG 絶対オフセットではなく、ファイル読込後の内部バッファを指す。
+- FUN_1000_3406 は 0x21E0 の4-byteレコードを走査し、第2 word を raw * 0x2962 / 0x40 で正規化、1〜480に制限して 0x7BA を更新する。レコードの first word / second word の完全な意味と累積 tick の対応はまだ確定していない。
+- 起動時の tempo meta 経路は 0x7BA != 0x78 の条件で FUN_1000_618A による 60,000,000 / 0x7BA の整数除算を行い、FF 51 03 を出力する。この初期出力と 0x21E0 レコード消費時の更新を、参照 MIDI の tick 0 / 8 / 192 に対応付ける根拠は未確定。
+- 0x21DC は time-signature 経路、0x21E4 は別レコード列から 0x7DE / FUN_1000_3B78 へ接続する（FACTS F-055）。
 
-**実装上の暫定対処（2026-10-20）:** 作業ブランチでは v1 に汎用 `ReadTempi` を適用しないようにした。これは誤った 270/360 BPM 候補の出力を避けるガードであり、参照 MIDI の tick 8 / 192 の tempo change を再現するものではない。F-056 を参照。
+**次に必要な確認:** FUN_1000_272a の 0x1Bxx 版別メタデータが local_4 / local_6 / local_6c に入る条件を追い、v1 SNG の seek / length 項目へ結び付ける。その後、0x21E0 の各 record、消費タイミング、累積 tick、正規化後の tempo 値を表にして参照 MIDI と照合する。根拠がそろうまでは converter の tempo conversion を変更しない。
+
+**実装上の暫定対処（2026-10-20）:** v1 に汎用 ReadTempi を適用しないガードを維持する。これは誤った候補を避けるもので、tick 8 / 192 の参照 tempo change を再現するものではない（F-056）。
 
 
 ## H-013 — v1 の Exclusive SysEx は SNG にそのまま格納されていない可能性
