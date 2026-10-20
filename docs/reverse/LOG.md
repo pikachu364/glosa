@@ -452,3 +452,11 @@
 - FUN_1000_3406 は first word を 0x10AA = first_word - 1 として countdown に使い、次 record へ進む pointer 0x10AC を4進める。したがって record first word を MIDI tick と同一視しない。
 - raw 37 は ((37 * 0x2962) & 0xFFFF) / 0x40 = 69、60,000,000 / 69 = 869,565 µs/quarter。参照 MIDI tick 192 の数値とは一致するが、イベント時刻の対応は未証明。tick 8 の 869,000 の生成元も未解決。
 - FACTS F-060、HYPOTHESES H-012、NEXT_STEPS T-003、V1_TEMPO_INVESTIGATION.md を更新。静的解析のみ。converter/test code は変更なし。
+
+
+## 2026-10-21 — tempo countdown と出力 delta-time loop
+
+- エントリ関数 1000:044B が初期 tempo meta 出力後に FUN_1000_3406 → FUN_1000_08EC を 0x7AC 終了まで反復する制御フローを確認した。
+- FUN_1000_3406 の通常経路は pending delta-time accumulator 0xF9A:0xF9C を +1 し、FUN_1000_08EC はイベント出力時に FUN_1000_16E6 で delta-time を flush して accumulator をクリアする。
+- 0x10AA countdown は同 scheduler loop 内で減算され、0 で次の 0x21E0 record を読む。first word を MIDI tick と直読する根拠はない。例外経路 0xF96 の条件分岐があるため、各ループ反復と delta-time の単純な一対一対応も未確定。
+- FACTS F-061、HYPOTHESES H-012、NEXT_STEPS T-003 を更新。converter/test code は変更なし。静的解析のみ。
