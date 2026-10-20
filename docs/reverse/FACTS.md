@@ -586,7 +586,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 - FUN_1000_272a は、別々に確保した3つの内部バッファの far pointer を 0x21DC、0x21E0、0x21E4 に設定する（解析資料 sng2gs解析データ.txt、FUN_1000_272a 内の代入列）。
 - FUN_1000_3406 は 0x21DC の4-byteレコードを読み、値が変わると FF 58 04 の time-signature meta event を出力する。レコードの第3–4 byteから numerator と denominator power を構成する（1000:3471–34FA）。
-- 同関数は 0x21E0 の4-byteレコードから tempo 値を更新し、FF 51 03 の tempo meta event を出力する。内部値は value * 0x2962 / 0x40 によって範囲 1–480 に丸められ、tempo は整数演算の 60,000,000 / value から計算される（1000:350E–3583）。
+- 同関数は 0x21E0 の4-byteレコードから tempo 値を更新し、FF 51 03 の tempo meta event を出力する。内部値は ((value * 0x2962) & 0xFFFF) / 0x40 によって範囲 1–480 に丸められ、tempo は整数演算の 60,000,000 / value から計算される（1000:350E–3583）。
 - 0x21E4 は別の4-byteレコード列として読み取られ、状態値 0x7DE を更新し、FUN_1000_3B78 を呼び出す（1000:35FF–3645）。この列の MIDI 意味と SNG 内フィールドへの対応は本調査だけでは確定しない。
 - これらのアドレスは SNG ファイル内の絶対オフセットではなく、SNG2S の内部 far-pointer 変数。各バッファの確保元と SNG からの充填処理をさらに追う必要がある。
 
@@ -623,6 +623,6 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 - FUN_1000_272a は local_6c byte のバッファを FUN_1000_5b53(local_6c) で確保する。DOS read (FUN_1000_40c8(0x3F00, ...)) でその長さを読み込み、直前に FUN_1000_40c8(0x4201, ..., local_4 + local_6, 0) で seek する。後段でこのポインタを 0x21E0 にコピーする。したがって 0x21E0 は SNG ファイル内の直接オフセットではなく、ファイルから読み込んだ内部バッファを指す。
 - 同関数内の local_4、local_6、local_6c は 0x1Bxx 領域から選択されたメタデータ値に由来する。どの 0x1Bxx フィールドが v1 SNG のどの header / seek 値へ対応するかは、版分岐を含めて未確定。
-- FUN_1000_3406 は 0x21E0 を4-byte strideで走査する。第2 word は 0x2962 を使って raw * 0x2962 / 0x40 に正規化され、1〜480へ制限される。変化がある場合は 0x7BA が更新される（解析資料 sng2gs解析データ.txt、1000:350E–3583）。
+- FUN_1000_3406 は 0x21E0 を4-byte strideで走査する。第2 word は 0x2962 を使って ((raw * 0x2962) & 0xFFFF) / 0x40 に正規化され、1〜480へ制限される。変化がある場合は 0x7BA が更新される（解析資料 sng2gs解析データ.txt、1000:350E–3583）。
 - 初期 tempo meta の出力経路は 0x7BA != 0x78 の条件で FUN_1000_618A を呼び、60,000,000 / 0x7BA の整数除算結果から FF 51 03 を構成する（1000:04A4–04E3）。この経路と 0x21E0 レコード列の更新を参照 MIDI の tick 0 / 8 / 192 に結び付ける証拠はまだない。
 - 根拠資料: [sng2gs解析データ.txt](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)、関数 FUN_1000_272a / FUN_1000_3406 / FUN_1000_618A。
