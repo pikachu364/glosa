@@ -220,3 +220,14 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 **完了条件:** 自動テスト・参照イベント比較とは別に、実再生した環境と結果が記録されていること。環境が用意できない場合は未実施として残し、実施済みと扱わない。
 
+
+
+## T-012 — tempo と device-parameter queue を分離
+**優先度:** 高
+
+- [x] 0x21E4 / 0x7DE / FUN_1000_3BA7 を FF 51 tempo path (0x21E0) から分離して確認。
+- [ ] FUN_1000_3406 の1回の scheduler call で、0x21E0 と 0x21E4 の両方が処理される順序を整理する。
+- [ ] FUN_1000_08EC が queue を読み出す順序、pending delta と absolute tick の更新を追う。
+- [ ] FF 51 と SysEx を含む queue contents を区別して、参照 tick 8 / 192 と照合する。
+
+**完了条件:** queue write と flush point の順序を根拠付きで整理し、未確認の tick mapping を事実扱いしない。
