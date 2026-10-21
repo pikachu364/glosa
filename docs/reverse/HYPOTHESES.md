@@ -144,3 +144,8 @@ v1 `runner.MID` は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565
 - したがって reference MIDI の tempo meta を一つの単純な record-to-tick 対応だけで説明できるとは限らない。queue drain / pending delta-time flush の順序を含めて検証する必要がある。
 - 未解決: tick 8 の 869,000 µs/quarter の生成元、最初の tempo record の出力 tick、tick 192 の 869,565 µs/quarter と grid 経路の因果関係。
 - 次の確認: FUN_1000_33D4 → FUN_1000_08EC → grid delta → FUN_1000_618A の順序と、0xF9A:0xF9C / 0x6F2:0x6F4 の値を各イベント出力点で追う。実行時トレースがない間は converter を変更しない。
+
+
+### H-012 follow-up — arithmetic paths identified, tick-8 runtime point remains open
+
+Static analysis distinguishes the two tempo values: the tempo-record path computes (60000 / 69) * 1000 = 869000, while the 192-grid path computes 60000000 / 69 = 869565. These match the reference values at ticks 8 and 192 respectively. The arithmetic is explained, but the tick-8 assignment is still a strong static mapping rather than runtime proof: the pending delta and absolute-tick state at the first queue drain have not been traced dynamically. Keep the converter guard until that timing is confirmed.
