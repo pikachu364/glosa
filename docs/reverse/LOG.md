@@ -468,3 +468,11 @@
 - 0x6EE は複数の event-output path で pending delta として使われるが、解析テキストでは直接書き込みを確認できない。初期値・由来を未解決として維持。
 - tempo の整数計算と初回 scheduler 例外経路は静的に追跡済み。一方、tick 8 への実際の時刻割当、runtime trace、実再生確認は未実施。
 - converter / regression test code は変更していない。PR #5 は open / unmerged のまま。
+
+
+## 2026-10-21 — 0x6EE の全命令参照と option token 比較を追加調査
+
+- `sng2gs解析データ.txt` 全体を命令行で走査し、`[0x6EE]` の29参照がすべて直接読み出しであることを確認。直接 store は見つからなかったが、data segment・間接書き込み・別名アドレスを含めた値の由来は未解決。
+- `FUN_1000_1CE4` の preamble queue drain 後、`0x6EE` は `0x1ED8:0x1EDA` に加算され、`0xF9A:0xF9C` にセットされる。同じパターンが別の event-output path にもあり、共通の delta/間隔値という仮説を H-016 として記録した。単位や MIDI tick との関係は未確定。
+- `FUN_1000_184A` が `FUN_1000_5EC8(input, 0xF05, 2)` を呼ぶこと、比較関数が一致時に0を返すことを確認。token の長さは2 bytesだが、実文字列は解析資料にないため /F 対応を確定できない。
+- FACTS F-067、HYPOTHESES H-015 follow-up / H-016、NEXT_STEPS T-013 を更新。converter / regression tests は変更なし。runtime trace・実再生も未実施。
