@@ -82,3 +82,20 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 4. runtime trace ができなければ、その制約を維持し、converter の tempo 規則を推測で変更しない。
 
 **実装ステータス:** v1 ReadTempi guard 維持。converter / regression tests に変更なし。静的解析のみで、runtime trace と実再生は未実施。
+
+
+## 0x6EE の命令参照スキャンと option parser の追加確認（2026-10-21）
+
+### 0x6EE
+
+チェックイン済み逆解析テキストの命令行を全走査したところ、`[0x6EE]` の直接参照は29箇所で、いずれも `MOV AX,[0x6EE]` の読み出しだった。直接 store は見つからない。`FUN_1000_1CE4` の queue drain 後は、読み出した値を `0x1ED8:0x1EDA` に加算し、`0xF9A:0xF9C` に設定する。ほかの event-output path にも同型の処理がある。このことから delta/間隔に関係する共通値という見方は強まるが、値・単位・初期化元は未確定。data segment、別名アドレス、間接 store は今回の資料だけでは排除できない。
+
+### 0xF05 / 0x622
+
+`FUN_1000_184A` は `FUN_1000_5EC8(input, 0xF05, 2)` を呼び、一致時に `0x622 = 1` とする。`FUN_1000_5EC8` は2-byteの文字列比較であることを命令列から確認した。ただし文字列テーブルの実体は資料にないため、token が /F であること、参照 MIDI 生成時に指定されたことは依然未確認。
+
+### これで進んだ点と限界
+
+- `0x6EE` の単純な直接書き込み探索は、解析テキスト全体に対して実施済み。
+- 次に必要なのは逆アセンブル本文以外の初期化データ／文字列領域、または実行時メモリ状態。これらがなければ値・token の実体は確定できない。
+- tick 8 の absolute tick への割当はまだ未証明。converter / tests は変更しない。
