@@ -228,6 +228,9 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] 0x21E4 / 0x7DE / FUN_1000_3BA7 を FF 51 tempo path (0x21E0) から分離して確認。
 - [ ] FUN_1000_3406 の1回の scheduler call で、0x21E0 と 0x21E4 の両方が処理される順序を整理する。
 - [ ] FUN_1000_08EC が queue を読み出す順序、pending delta と absolute tick の更新を追う。
-- [ ] FF 51 と SysEx を含む queue contents を区別して、参照 tick 8 / 192 と照合する。
+- [x] FF 51 tempo path を確認し、tempo record 側の整数計算が 869000、192-tick grid 側の計算が 869565 を出すことを静的解析で照合。参照 tick 8 / 192 との対応を説明できる。
 
 **完了条件:** queue write と flush point の順序を根拠付きで整理し、未確認の tick mapping を事実扱いしない。
+
+
+- [ ] 実行時トレースが可能なら、queue drain 時の absolute tick が tick 8 になることを確認し、推論と runtime evidence を分けて記録する。
