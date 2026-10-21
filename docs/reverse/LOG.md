@@ -459,3 +459,12 @@
 - `FUN_1000_3DE2` が `0xF96 = 0xFFFF` に設定し、`FUN_1000_33D4` は初回 `FUN_1000_3406` の後で `0xF96 = 0` にする。よって初回 `FUN_1000_3406` は通常経路の `0xF9A:0xF9C += 1` を通らない。
 - `FUN_1000_33D4` の後、`0x622 != 0` なら呼び出し元が pending delta をゼロ化してから初回 queue drain を行う。`FF` meta の consumer はその時点の pending delta を flush する。
 - 未解決: `0x6EE` の実値・由来、参照 MIDI 生成時の `0x622` 状態、preamble 後の absolute tick。したがって tick 8 の割当は未証明。静的解析のみで、converter / test code は変更していない。FACTS F-066、H-014、T-013、V1_TEMPO_INVESTIGATION.md を更新。
+
+
+## 2026-10-21 — 進捗スナップショットと残課題の整理
+
+- reverse docs を見たときに実装状況と未解決点を一目で把握できるよう、NEXT_STEPS.md の先頭に現状・証拠レベル・次の作業順を追加。
+- 0x622 は FUN_1000_184A が option token を検出したときに設定される。SNG2S.DOC の /F（track generation order change）説明と下流の track-order 分岐は整合するが、文字列テーブル実体は未確認のため H-015 の推定として記録。reference invocation に /F があったかも未確認。
+- 0x6EE は複数の event-output path で pending delta として使われるが、解析テキストでは直接書き込みを確認できない。初期値・由来を未解決として維持。
+- tempo の整数計算と初回 scheduler 例外経路は静的に追跡済み。一方、tick 8 への実際の時刻割当、runtime trace、実再生確認は未実施。
+- converter / regression test code は変更していない。PR #5 は open / unmerged のまま。
