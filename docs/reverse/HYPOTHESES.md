@@ -161,9 +161,10 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 
 ## H-015 — 0x622 は SNG2S の /F オプションに対応する可能性
 
-**状態:** 有力な推定だが未確定。文字列テーブルの実バイト照合と参照実行条件の確認が必要。
+**状態:** 有力な推定。SNG2S の定義データには `/F` の説明文字列が存在するが、比較先 `0xF05` とその文字列位置の対応、および参照実行条件は未確定。
 
-- FUN_1000_184A は文字列テーブル offset 0xF05 の option token を検出すると 0x622 を設定する。ただし、利用可能な解析テキストには token の実文字列が含まれていない。
+- `FUN_1000_184A` は `0xF05` の2-byte option token を比較し、一致時に `0x622` を設定する。
+- 解析テキスト末尾の `STRINGS / DEFINED DATA` セクションには `1627:0147` の `/F` 説明文字列（`Part 1-16 -> Track 2-11`）が収録されている。したがって `/F` という文字列自体が資料にない、という以前の記述は訂正する。ただし、定義データ上の `1627:0147` と比較先 `0xF05` が同一データを指すことは、このテキストだけでは確認できていない。
 - SNG2S.DOC は /F を MIDI track generation order の変更オプションとして説明する。逆アセンブルで観測した 0x622 の下流利用（alternate track-order selection と queue drain 前の pending-delta reset）はこの説明と整合する。
 - したがって 0x622 ↔ /F は有力な推定だが、実文字列の照合なしに確定扱いしない。また reference runner.MID 生成時に /F が指定されたかは不明。
 - 0x6EE は複数の event-output path で pending delta として読み出されるが、利用可能な解析テキスト内では直接書き込みを見つけられていない。値・由来を未解決として維持し、tick 8 の根拠に推測で使わない。
@@ -200,3 +201,8 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 
 
 追加の対応根拠（2026-10-21）: 参照 MIDI の最初の2件の SysEx は、どちらも payload 12 bytes で共通 prefix を持つ。一方、`FUN_1000_1CE4` の最初の2経路は同じ SysEx-style builder を使い、異なる文字列 offset `0xF34` / `0xF3F` のデータを出力して checksum と `F7` を追加する。event 数・形式・順序・tick 間隔が整合するため、これらが tick 0 / 4 の2件に対応し `0x6EE = 4` となる推定は以前より強い。ただし文字列データ本体が解析資料にないため byte-for-byte の照合は未完了で、確定事実には格上げしない。
+
+
+### H-015 follow-up — string-table evidence found (2026-10-21)
+
+Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includes a `STRINGS / DEFINED DATA` section. It contains the `/F` help text at `1627:0147`: `Part 1-16 -> Track 2-11 (default=Track 16-2)`. This confirms that the executable's documented `/F` option text is present in the recovered string table, correcting the earlier statement that no option string was available in the analysis text. It does **not** yet prove that the parser's comparison operand `0xF05` points to that string; segment/offset mapping or a direct data cross-reference is still needed. The relationship `0x622 ↔ /F` remains a strong hypothesis, not a confirmed fact, and the reference MIDI's invocation options remain unknown.
