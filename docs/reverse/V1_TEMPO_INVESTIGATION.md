@@ -65,19 +65,19 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 - 参照 MIDI の tempo meta は tick 0 / 8 / 192 で 500,000 / 869,000 / 869,565 µs/quarter。
 - raw tempo 37 を 69 BPM に正規化した後、tempo-record path の整数除算は 869,000、192-tick grid path は 869,565 を生成する。
 - FUN_1000_33D4 内の初回 FUN_1000_3406 は 0xF96 != 0 の例外経路であり、通常 scheduler path の pending-delta +1 を実行しない。
-- 0x622 は option token によって設定され、/F の track-order 変更というマニュアル説明と下流利用が整合する。ただし token の実文字列が未確認なので、これは有力な推定に留める。
+- 以前は `0x622 ↔ /F` と推定していたが、この対応は撤回する。`0x622` は SysEx を抑制する経路、`0x626` は track-order table を選ぶ経路に使われるため、現時点の最有力対応は `0x622 ↔ /XD`、`0x626 ↔ /F`。token bytes の直接確認は未実施。
 
 ### まだ証明できていないこと
 
 - tempo-record path の 869000 が参照 MIDI の tick 8 で出力されること（数値の一致だけでは時刻の証明にならない）。
 - 0x6EE の実値と初期化元、preamble queue drain 前後の pending delta / absolute tick。
-- 参照 MIDI 生成時に /F が指定されたか、したがって 0x622 の分岐が実際に有効だったか。
+- 参照 MIDI 生成時に `/XD` が指定されたか、したがって `0x622` の分岐が実際に有効だったか。
 - grid path が参照 MIDI の tick 192 event を直接生成したという因果関係の runtime 確認。
 
 ### 次の調査順
 
 1. 0x6EE の初期値・書き込み元をデータ領域と間接書き込みも含めて探す。
-2. 0xF05 の option token の実体を含むバイナリ／データダンプを探し、0x622 と /F の対応を確認する。
+2. `0xF05` の option token 実体を含むバイナリ／データダンプを探し、`0x622 ↔ /XD` を直接確認する。`0x626 ↔ /F` も token bytes か runtime trace で検証する。
 3. preamble の queue drain ごとに 0xF9A:0xF9C と 0x6F2:0x6F4 を表にして、参照 tick と照合する。
 4. runtime trace ができなければ、その制約を維持し、converter の tempo 規則を推測で変更しない。
 
@@ -92,7 +92,7 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 
 ### 0xF05 / 0x622
 
-`FUN_1000_184A` は `FUN_1000_5EC8(input, 0xF05, 2)` を呼び、一致時に `0x622 = 1` とする。`FUN_1000_5EC8` は2-byteの文字列比較であることを命令列から確認した。ただし文字列テーブルの実体は資料にないため、token が /F であること、参照 MIDI 生成時に指定されたことは依然未確認。
+`FUN_1000_184A` は `FUN_1000_5EC8(input, 0xF05, 2)` を呼び、一致時に `0x622 = 1` とする。下流で `0x622` が SysEx 出力を抑制する一方、`0x626` が track-order table を選ぶことから、最有力対応は `0x622 ↔ /XD`、`0x626 ↔ /F`。これは静的な用途の整合に基づく推定で、token の実 bytes や参照 MIDI 生成時のオプションは未確認。
 
 ### これで進んだ点と限界
 
@@ -112,3 +112,10 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 - ただし、queue payload と参照 SysEx payload の対応は未確認。track 1 event の時刻観測だけでは、conductor track の tempo event が同じ経路・累積時刻で出力される因果関係までは証明できない。`0x622` の実行時値も不明。
 
 **現在の評価:** `0x6EE = 4` は具体的で検証可能な仮説になったが、確認済み事実ではない。次は `0xF34` / `0xF3F` の queue payload を参照 SysEx に対応付け、queue drain 前後の accumulator を追う。runtime trace ができなければ、仮説と事実を分けたまま維持する。
+
+
+## オプションフラグ対応の再評価（2026-10-21）
+
+既存の下流制御フローを横断して見直した結果、以前の `0x622 ↔ /F` 仮説は撤回する。`FUN_1000_08EC` では `0x622 != 0` が SysEx payload の出力抑制に使われ、`FUN_1000_0010` では `0x626` が track-order table の選択に使われる。SNG2S の help text は `/XD` を Exclusive disable、`/F` を part-to-track order change と説明するため、現在の最有力対応は `0x622 ↔ /XD`、`0x626 ↔ /F` である（FACTS F-069）。
+
+この再評価により、`0x622 != 0` を `/F` の効果として説明する旧記述は採用しない。参照 MIDI に SysEx が4件あるため `/XD` が指定されていなかった可能性は高いが、実際の起動引数・実行時フラグ値は未確認。したがって tick 8 の pending-delta 論は依然として静的推定であり、converter / tests は変更しない。
