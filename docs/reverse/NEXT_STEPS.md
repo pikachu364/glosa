@@ -6,7 +6,7 @@
 - **参照 MIDI で確認済み:** tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。time signature は tick 0 の 4/4。
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
 - **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。これを使うと 0x6EE = 4 が具体的な候補になるが、queue payload と accumulator の対応は未確認。
-- **0x622 と /F:** 解析テキストの定義データに `/F` 説明文字列（`1627:0147`）があることを確認。ただし parser 比較先 `0xF05` とのポインタ／セグメント対応と参照実行時の指定有無は未確認なので、/F 対応は有力な推定に留める。
+- **オプションフラグ対応の再評価:** 下流の用途から `0x626 ↔ /F`（track-order table 選択）、`0x622 ↔ /XD`（SysEx 抑制）が最有力。以前の `0x622 ↔ /F` 仮説は撤回する。parser の比較 operand `0xF05` が `/XD` 文字列に対応すること、token bytes、参照生成時の実際の引数は未確認。FACTS F-069 を参照。
 - **実装への影響:** v1 の汎用 ReadTempi ガードを維持。converter / tempo regression tests は変更しない。v2–v4 の既存挙動も変更なし。
 - **PR:** #5 は reverse/v1-tempo-investigation で open / unmerged。直近確認時の CI status は空であり、CI 成功とは扱わない。
 - **作業の種類:** ここまでの tempo 調査は静的解析。実行時トレース・実再生確認は未実施。
@@ -15,8 +15,8 @@
 
 1. [x] 解析テキスト内の `0x6EE` 命令参照を全件確認。29参照はすべて直接読み出しで、直接 store は見つからず、複数出力経路で delta/間隔に使われることを記録（FACTS F-067 / H-016）。
 2. [ ] `0x6EE` の実値・初期化元を、実行ファイルの data segment／別名アドレス／間接書き込みまで含めて調べる。
-3. [ ] 定義データの `/F` 文字列（`1627:0147`）と parser 比較先 `0xF05` のセグメント／オフセット対応を調べ、`0x622` と /F の対応を確定または棄却する。
-4. [ ] reference MIDI を生成した SNG2S の実行条件が分かる資料を探し、`0x622` の実際の値を絞る。
+3. [ ] parser token `0xF05` の文字列実体とデータ segment 対応を確認し、`0x622 ↔ /XD` を直接検証する。`0x626 ↔ /F` も token bytes または runtime trace で確認する。
+4. [ ] reference MIDI を生成した SNG2S の実行条件が分かる資料を探し、`/XD` の有無（従って `0x622` の実際の値）を絞る。
 5. [ ] `FUN_1000_1CE4` の `0xF34` / `0xF3F` queue payload を参照 track 1 の SysEx 4件に対応付け、`0x6EE = 4` 仮説を検証する（FACTS F-068 / H-016）。
 6. [ ] preamble の各 queue drain 前後について `0xF9A:0xF9C` と `0x6F2:0x6F4` を対応表にし、tick 0 / 8 / 192 と照合する。
 7. [ ] 実行時トレースが可能なら静的推論と照合する。可能でなければ未確認と明記する。
@@ -269,8 +269,8 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] `FUN_1000_3DE2` が `0xF96 = 0xFFFF` にし、`FUN_1000_33D4` が初回 `FUN_1000_3406` の後で `0xF96 = 0` に戻すため、初回 `FUN_1000_3406` は通常の pending delta `+1` 経路を通らないことを確認。
 - [x] 解析テキスト全体の命令行を検索し、`[0x6EE]` の29参照がすべて直接読み出しで、直接 store が見つからないことを確認。複数の event-output path で `0x1ED8:0x1EDA` への加算と `0xF9A:0xF9C` への設定に使われる（FACTS F-067）。
 - [ ] `0x6EE` の実値と初期化元を特定する。data segment、別名アドレス、間接書き込み、runtime memory trace は未確認。
-- [x] `FUN_1000_184A` → `FUN_1000_5EC8(input, 0xF05, 2)` の比較経路を確認。token は2 bytes比較だが文字列実体は未収録のため、/F との対応は未確定（H-015）。
-- [ ] `0x622` の値が参照 MIDI の生成条件でどう決まるかを調べ、`0x622 != 0` の pending-delta reset が適用されるか確認する。
+- [x] `FUN_1000_184A` → `FUN_1000_5EC8(input, 0xF05, 2)` の比較経路を確認。2-byte token の一致で `0x622=1`。下流用途との整合から `/XD` が最有力で、以前の `/F` 対応推定は撤回。ただし token bytes と文字列の直接対応は未確認（FACTS F-069）。
+- [ ] 参照 MIDI 生成時に `/XD` が指定されたか確認し、`0x622 != 0` の pending-delta reset が実際に適用されたかを絞る。SysEx 4件の存在は `/XD` 無効を強く示唆するが、生成条件の直接証拠ではない。
 - [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
 
 **注意:** 初回 `FUN_1000_3406` に通常経路の +1 を当てはめない。tick 8 が説明できるまで `SngConverter.cs` と tempo regression tests は変更しない。
