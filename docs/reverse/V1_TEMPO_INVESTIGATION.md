@@ -45,3 +45,14 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 - Separately, after the initial queue drain the entry path computes the distance to the next 192-tick grid boundary with `FUN_1000_61EC`. If `0x7BA != 120`, it calls `FUN_1000_618A`, which computes 60,000,000 / 69 = 869,565 µs/quarter and emits FF 51. This matches the reference tempo value at tick 192.
 - The different values are explained by two distinct integer arithmetic paths; they are not evidence that raw record first words are MIDI ticks.
 - Confidence boundary: the formulas and grid-aligned path are supported by static control-flow analysis. The queue drain’s absolute tick being exactly 8 still needs a runtime trace, including the provenance of pending delta `0xF9A:0xF9C` before the first drain. Do not treat the tick-8 mapping as runtime-verified, and do not change converter logic yet.
+
+## 初回 tempo queue drain の再追跡（2026-10-21）
+
+`FUN_1000_1C70` から初回 tempo meta の queue drain までを静的に追った。
+
+- v1 の `FUN_1000_1C70` は `FUN_1000_1CE4` を呼ぶ。`FUN_1000_1CE4` は条件 `(0x6F8 == 0) || (0x6FA == 2)` が成立する経路で queue event を出力し `FUN_1000_08EC` を呼んだ後、`0xF9A:0xF9C = 0x6EE:0` を設定する処理を2回行う。2回目の drain は pending delta を flush し、条件に応じて `0x6F2:0x6F4` を進める。その後も pending delta は `0x6EE` に設定された状態で戻る。
+- `FUN_1000_33D4` は `FUN_1000_3DE2` の後に `FUN_1000_3406` を呼ぶ。`FUN_1000_3DE2` が `0xF96 = 0xFFFF` に設定し、`FUN_1000_33D4` は `FUN_1000_3406` の後で `0xF96 = 0` に戻す。このため、**初回** `FUN_1000_3406` は通常経路の pending delta `+1` を実行しない。
+- `FUN_1000_33D4` の戻り後、entry path は `0x622 != 0` の場合に pending delta と `0x1ED8:0x1EDA` をゼロ化し、それから `FUN_1000_08EC` で queue を drain する。`FF` meta status はこの consumer で pending delta flush と absolute tick 更新を起こす。
+- よって初回 tempo meta の absolute tick は、preamble drain 後の absolute tick、`0x6EE` の実値、`0x622` 分岐、および queue の先行 event に依存する。解析テキストでは `0x6EE` の直接代入を確認できず、値の由来と reference MIDI 生成時の `0x622` は未解決。
+
+**結論:** これで初回呼び出しが通常の `+1` 経路ではないことは静的に分かったが、tick 8 の最終対応はまだ証明されていない。runtime trace は未実施。converter / tests は変更しない。
