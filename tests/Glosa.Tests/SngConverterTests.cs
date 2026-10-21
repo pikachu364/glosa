@@ -308,12 +308,29 @@ public class SngConverterTests
     }
 
     [Fact]
-    public void BalladeV1TestKeepsDefaultTempoWhenTempoStreamIsUnchanged()
+    public void BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()
     {
         string root = FindRepositoryRoot();
-        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "TEST.SNG"));
-        byte[] smf = SngConverter.ToSmf(sng);
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+        int conductor = 0x46 + 4 * 11 + 2;
+        int conductorSize = (int)BinaryPrimitives.ReadUInt32LittleEndian(sng.AsSpan(0x46));
+        int conductorEnd = Math.Min(sng.Length, conductor + conductorSize);
+        byte[] marker = [0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF];
+        int last = -1;
+        for (int i = conductor; i + marker.Length <= conductorEnd; i++)
+            if (sng.AsSpan(i, marker.Length).SequenceEqual(marker)) last = i;
+        Assert.True(last >= 0);
 
+        // Make a deterministic no-change tempo stream from the public fixture:
+        // value 64 at base tempo 120 maps to 120 BPM.
+        for (int at = last + 10; at + 4 <= conductorEnd; at += 4)
+        {
+            ushort value = BinaryPrimitives.ReadUInt16LittleEndian(sng.AsSpan(at + 2));
+            if (value > 254) break;
+            BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(at + 2), 64);
+        }
+
+        byte[] smf = SngConverter.ToSmf(sng);
         Assert.True(ContainsSequence(smf, TempoEvent(500_000)));
         Assert.False(ContainsSequence(smf, TempoEvent(869_000)));
         Assert.False(ContainsSequence(smf, TempoEvent(869_565)));
