@@ -307,3 +307,19 @@ SNG2S `FUN_1000_272a` の v1 経路は、サイズ表を読み終えた後、fil
 - [ ] tempo stream の `step` が SNG2S の内部時間／MIDI delta time に変換される経路を追う。
 - [ ] 2つ以上の異なる tempo 値を持つ独立 fixture でイベント時刻を照合する。
 - [ ] tick 0 / tick 8 / tick 192 の値を regression test に追加し、tempo event timing の式が根拠を持つまで v1 tempo 変換は未解決のままにする。
+
+
+## 12. v1 tempo parser implementation and validation status
+
+The converter now has an isolated v1 tempo path rather than reusing the later-version slider parser.
+
+- Reads the v1 bar/signature record at conductor offset +125.
+- Reads base tempo from conductor offset +27 (file offset 143).
+- Starts the v1 tempo buffer at the last heap marker +10 (file offset 771 for runner.SNG).
+- Applies `floor(value × baseTempo / 64)`, clamped to 1–480 BPM.
+- Starts the first v1 tempo-stream event at MIDI tick 8, then advances the next record's event time by the current record's `step`. This is the SNG2S scheduler behavior inferred from the static control flow and the runner reference output.
+- Emits scheduler tempo changes using millisecond-rounded microseconds, and emits the effective non-120 tempo again at the song's first bar using integer `60,000,000 / BPM` microseconds.
+
+Regression tests now check runner.SNG's reference tempo events at ticks 0, 8 and 192, and that TEST.SNG retains only the default tempo. They record reference MIDI facts without checking the reference binary into the public repository.
+
+**Status:** The implementation matches the two available v1 fixtures for tempo metadata, and CI is being rerun on the latest commit. General v1 tempo compatibility is not yet proven: there is no independent v1 fixture with two or more different tempo values changing at later points in the song. Keep PR #9 open until the latest CI result is confirmed and this limitation has been reviewed; do not claim complete event-for-event MIDI equivalence.
