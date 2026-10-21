@@ -227,3 +227,13 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] 実行時トレースができない場合は、静的推論と参照 MIDI の観測事実を明確に分離して記録する。
 
 **完了条件:** 3つの参照 tempo event の値・tick と SNG2S の各出力経路を根拠付きで説明できること。そこまでは converter / regression test を変更しない。
+
+
+## T-012 — tempo と device-parameter queue を分離
+
+- [x] `0x21E4` / `0x7DE` / `FUN_1000_3BA7` を FF 51 tempo path (`0x21E0`) から分離して確認。
+- [x] tempo-record 側の整数計算 `(60000 / 69) * 1000 = 869000` と、192-tick grid 側の `60000000 / 69 = 869565` を静的解析で照合。参照 tick 8 / 192 の tempo 値に一致する。
+- [ ] queue drain 時点の absolute tick が tick 8 であることを runtime trace で確認する。pending delta `0xF9A:0xF9C` と absolute tick `0x6F2:0x6F4` の値を、最初の queue drain 前後で追う。
+- [ ] `FUN_1000_3406` の1回の scheduler call で、`0x21E0` と `0x21E4` の両方が処理される順序を整理し、`FUN_1000_08EC` の queue drain 順序を確認する。
+
+**注意:** 数値の一致は強い静的根拠だが、tick 8 の割当は runtime 未確認。実行時トレースが済むまでは converter / regression test を変更しない。
