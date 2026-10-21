@@ -25,6 +25,15 @@ testdata/ballade/v1/sng2gs/runner.MID の tempo meta を、SNG2S の入力読込
 - `FUN_1000_3406` は record の first word を `0x10AA = first_word - 1` としてカウントダウンに使い、record pointer `0x10AC` を4進める。よって 48 / 144 / 192 を MIDI tick そのものと扱うのは誤り。tick 8 / 192 との対応には別途、カウントダウン周期と出力 delta-time の関係を解明する必要がある。
 - 数値 869,565 は参照 MIDI の tick 192 イベントと一致するが、それだけでは同じイベント由来とは証明できない。tick 8 の 869,000 の生成元も未特定。
 
+## scheduler の countdown と delta-time の関係（2026-10-21）
+
+解析資料の呼出し経路を追加で追跡した。
+
+- エントリ関数は初期 tempo meta 出力後に FUN_1000_3406 と FUN_1000_08EC を反復する。
+- FUN_1000_3406 の通常経路は pending delta-time accumulator 0xF9A:0xF9C を +1 する。FUN_1000_08EC はイベント出力時に FUN_1000_16E6 で accumulator の値を書き出し、accumulator をクリアする。
+- 0x10AA countdown も FUN_1000_3406 内で減算され、0 になると 0x21E0 の次 record を消費する。first word は単純な MIDI tick 値ではなく、出力 scheduler の反復と関係するカウント値と考えるべき。
+- ただし例外経路があり、毎回の呼出しが同じように accumulator を進めるとは断定できない。tempo record が処理された時点の pending delta-time と参照 MIDI イベント時刻を直接結ぶ追跡は未完了。
+
 ## 次に追うデータフロー
 
 1. **レコードの意味を切り分ける:** FUN_1000_3406 が 0x21E0 の各4-byteレコードから first word / second word をどう消費し、カウンタ 0x10AA / offset 0x10AC が次レコードと tick をどう進めるか整理する。現状は第2 word の tempo 値正規化と 0x7BA 更新まで確認済み。
