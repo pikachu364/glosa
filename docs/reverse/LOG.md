@@ -476,3 +476,11 @@
 - `FUN_1000_1CE4` の preamble queue drain 後、`0x6EE` は `0x1ED8:0x1EDA` に加算され、`0xF9A:0xF9C` にセットされる。同じパターンが別の event-output path にもあり、共通の delta/間隔値という仮説を H-016 として記録した。単位や MIDI tick との関係は未確定。
 - `FUN_1000_184A` が `FUN_1000_5EC8(input, 0xF05, 2)` を呼ぶこと、比較関数が一致時に0を返すことを確認。token の長さは2 bytesだが、実文字列は解析資料にないため /F 対応を確定できない。
 - FACTS F-067、HYPOTHESES H-015 follow-up / H-016、NEXT_STEPS T-013 を更新。converter / regression tests は変更なし。runtime trace・実再生も未実施。
+
+
+## 2026-10-21 — 参照 MIDI の SysEx tick から 0x6EE 候補を絞る
+
+- 参照 `runner.MID` を SMF bytes から直接解析し、format 1 / 12 tracks / division 48、conductor tempo tick 0 / 8 / 192、track 1 SysEx tick 0 / 4 / 8 / 8 を確認した。
+- `FUN_1000_1CE4` は条件成立時に2回 queue drain し、それぞれの後で `0x6EE` を pending delta にセットする。最初の2 drain が SysEx tick 0 / 4 に対応するなら `0x6EE = 4` と説明でき、続く tempo tick 8 の候補経路にもつながる。
+- ただし queue payload と SysEx payload の対応、`0x6F2:0x6F4` / `0xF9A:0xF9C` の実値、`0x622` の実行時値は未確認。4 ticks は仮説であり、converter は変更しない。
+- FACTS F-068、HYPOTHESES H-016 follow-up、V1_TEMPO_INVESTIGATION.md、NEXT_STEPS.md を更新。runtime trace・実再生は未実施。
