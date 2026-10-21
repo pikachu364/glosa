@@ -71,7 +71,7 @@ jobs:
 
   macos:
     needs: [version, test]
-    runs-on: macos-latest
+    runs-on: macos-15
     env:
       VERSION: ${{ needs.version.outputs.version }}
       GH_TOKEN: ${{ github.token }}
