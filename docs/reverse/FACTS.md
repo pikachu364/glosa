@@ -629,3 +629,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 **制約:** 192-tick grid の存在は確認できたが、参照 MIDI の tick 192 tempo meta がこの経路で出力されたことや、tick 8 の 869,000 µs/quarter の生成元は未確定。静的解析のみ。
 
 **根拠:** private-data repo の sng2gs解析データ.txt 内 FUN_1000_0010 / FUN_1000_272a / FUN_1000_3406 / FUN_1000_61EC と runner.SNG offset 0x00B5。
+
+
+## F-065 — v1 tempo の2種類の整数計算
+
+**状態:** 静的逆アセンブル上の計算を照合。tick 8 への最終割当は runtime 未確認。
+
+- `0x21E0` の raw tempo 37 は、`FUN_1000_3406` の整数演算で 69 BPM に正規化される（`37 * 120 / 64` の切り捨てと整合）。
+- tempo-record 側では `60000 / 69` を先に整数除算し、その後 1000 倍するため、`869000` µs/quarter が得られる。これは参照 MIDI の tick 8 の値と一致する。
+- grid-aligned 側では `FUN_1000_618A` が 60,000,000 / 69 を整数除算し、`869565` µs/quarter を得る。entry path は sample の grid length 192 を使って次境界までの pending delta を計算してからこの tempo meta を出力し、参照 MIDI の tick 192 の値と一致する。
+- 2つの値は異なる整数除算経路で説明できる。ただし queue drain 時点の absolute tick が 8 であることは runtime trace で未確認。計算値の一致だけをイベント時刻の完全な証明と扱わない。
+
+**根拠:** SNG2S 静的解析資料の `FUN_1000_3406` (1000:3557–3583)、entry path、`FUN_1000_618A`。`runner.SNG` の raw tempo record 37 と参照 `runner.MID` の tempo meta。静的解析のみ。
