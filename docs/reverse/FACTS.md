@@ -641,3 +641,17 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - 2つの値は異なる整数除算経路で説明できる。ただし queue drain 時点の absolute tick が 8 であることは runtime trace で未確認。計算値の一致だけをイベント時刻の完全な証明と扱わない。
 
 **根拠:** SNG2S 静的解析資料の `FUN_1000_3406` (1000:3557–3583)、entry path、`FUN_1000_618A`。`runner.SNG` の raw tempo record 37 と参照 `runner.MID` の tempo meta。静的解析のみ。
+
+## F-066 — 初回 tempo queue drain 前の preamble delta と例外経路
+
+**状態:** 逆アセンブルの関数呼び出し順・分岐条件から静的に確認。`0x6EE` の値／由来と参照 MIDI の tick 8 への最終対応は未確認。runtime trace なし。
+
+- v1 では `FUN_1000_1C70` が `FUN_1000_1CE4` を呼ぶ。`FUN_1000_1CE4` の条件 `(0x6F8 == 0) || (0x6FA == 2)` が成立する経路は queue event を生成して `FUN_1000_08EC` を呼び、その後 `0xF9A:0xF9C` に `0x6EE:0` を設定する処理を2回行う。2回目の `FUN_1000_08EC` はその時点の pending delta を flush し、出力 event の条件に応じて absolute tick `0x6F2:0x6F4` を更新する。
+- 続く `FUN_1000_33D4` は `FUN_1000_3DE2` を呼ぶ。`FUN_1000_3DE2` は `FUN_1000_3EB5` の戻り値 0 を用いて `0x10AA` / `0x10AC` 等を初期化し、`0xF96 = 0xFFFF` に設定する。その後 `FUN_1000_33D4` は `FUN_1000_3406` → `FUN_1000_3B68` を呼び、最後に `0xF96 = 0` にする。
+- したがって `FUN_1000_33D4` 内の**初回** `FUN_1000_3406` は `0xF96 != 0` の分岐を通る。通常経路の `0xF9A:0xF9C += 1` はこの初回呼び出しでは実行されない。通常経路での +1 を初回にも適用する解釈は誤り。
+- `FUN_1000_33D4` の戻り後、呼び出し元は `0x622 != 0` の場合に `0xF9A:0xF9C` と `0x1ED8:0x1EDA` をゼロ化し、その後 `FUN_1000_08EC` で queue を drain する。`FUN_1000_08EC` は `FF` meta status の出力時には `0x622` の値にかかわらず pending delta を flush して absolute tick を更新する。
+- このため初回 tempo meta の tick は、`FUN_1000_1CE4` 後の absolute tick、最後に設定された `0x6EE` delta、呼び出し元の `0x622` 分岐、queue の先行 event に依存する。解析テキスト中で `0x6EE` の値を直接設定する命令は確認できず、その数値・意味・参照 MIDI 生成時の `0x622` 状態は未確定。
+
+**制約:** 上記は呼び出し順と accumulator の条件付き更新を狭める静的根拠であり、tick 8 の確定や runtime での再現を証明しない。converter / tests は変更しない。
+
+**根拠:** `sng2gs解析データ.txt` の `FUN_1000_1C70`, `FUN_1000_1CE4`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3EB5`, `FUN_1000_3406`, `FUN_1000_08EC`。
