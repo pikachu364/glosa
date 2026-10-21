@@ -157,3 +157,15 @@ Static analysis distinguishes the two tempo values: the tempo-record path comput
 v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C = 0x6EE:0` を設定する。続く初回 tempo queue drain 前には、呼び出し元が `0x622 != 0` の場合に pending delta をゼロ化する分岐もある。従って tick 8 を確定するには、`0x6EE` の実値・由来、参照 MIDI を生成した条件下の `0x622`、`0x6F2:0x6F4` の preamble 後の値、queue 内の先行 event を合わせて追う必要がある。
 
 これは tick-8 の既存仮説を強める/確定する証拠ではなく、通常 scheduler loop の `+1` を初回呼び出しに誤適用しないための制約である。runtime trace がなく、`0x6EE` の値も確定していないため、tick 8 は未確認のまま扱い、converter guard を維持する。
+
+
+## H-015 — 0x622 は SNG2S の /F オプションに対応する可能性
+
+**状態:** 有力な推定だが未確定。文字列テーブルの実バイト照合と参照実行条件の確認が必要。
+
+- FUN_1000_184A は文字列テーブル offset 0xF05 の option token を検出すると 0x622 を設定する。ただし、利用可能な解析テキストには token の実文字列が含まれていない。
+- SNG2S.DOC は /F を MIDI track generation order の変更オプションとして説明する。逆アセンブルで観測した 0x622 の下流利用（alternate track-order selection と queue drain 前の pending-delta reset）はこの説明と整合する。
+- したがって 0x622 ↔ /F は有力な推定だが、実文字列の照合なしに確定扱いしない。また reference runner.MID 生成時に /F が指定されたかは不明。
+- 0x6EE は複数の event-output path で pending delta として読み出されるが、利用可能な解析テキスト内では直接書き込みを見つけられていない。値・由来を未解決として維持し、tick 8 の根拠に推測で使わない。
+
+**次の確認:** 文字列テーブルを含むバイナリ／データダンプ、実際の SNG2S 呼び出し条件、0x6EE の初期値または間接書き込みを確認する。0x622 の対応が確定するまでは H-015 の推定状態を維持する。
