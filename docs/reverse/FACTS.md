@@ -615,3 +615,17 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - SNG2S マニュアルは /X1（Conductor track）、/X2（Track 2）、/XD（SysEx 無効化）を記載する。参照ファイルの track 1 が SysEx 用であることは実データで確認できたが、これら4件の SNG 側の生成元、/X オプションとの対応、Glosa で再現すべき互換範囲は未確定。
 - 元 SNG（85,897 bytes）を走査したところ、4件の payload そのものも、共通先頭列 `41 10 16 12` も、バイト列としては見つからなかった。これは literal な埋め込みがないという事実のみで、SNG2S が合成するのか、別フィールドから導出するのかはまだ判別できない。
 - 作業ブランチに上記4件を固定する回帰テストを追加。これは参照 MIDI の事実を固定するテストであり、converter が SysEx を生成できることを意味しない。テストコミット `cefcac720b993871534ce655a12494462d9f99e5` は `F0` ステータスも含めるよう期待値を修正（commit `335b23e0aef2763f1eaadd949a7a9804267a4f28`）。CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) で Ubuntu/macOS/Windows の全 build/test job が成功。
+
+
+## F-062 — v1 の time-signature buffer 先頭 byte は 192-tick 周期計算にも使われる
+
+**状態:** runner.SNG の実バイト列と SNG2S 静的解析を照合して確認。実行時トレースは未実施。
+
+- runner.SNG の offset 0x00B5 は `C0 00 04 04` で始まる。FUN_1000_272a はこの位置から 590 bytes を読み、内部 buffer pointer を 0x21DC に設定する。
+- FUN_1000_0010 は 0x21DC の先頭 byte を uVar11 として読み、offset +2 / +3 の `04 04` を 4/4 拍子メタイベントの payload に使う。先頭 byte 0xC0 (=192) は後続の時間計算にも使われる。
+- 初期イベントの処理後、entry path は FUN_1000_61EC(currentTick, uVar11, 0) で余りを求め、余りが非ゼロなら uVar11 - remainder を次の delta として計算する。実データでは uVar11=192 なので、次の 192-tick 境界への整列と整合する。
+- 初期の 500,000 µs/quarter tempo は tempo record 処理より前に明示的に出力される。後続の tempo record/countdown と 192-tick grid の出力経路は別段階である。
+
+**制約:** 192-tick grid の存在は確認できたが、参照 MIDI の tick 192 tempo meta がこの経路で出力されたことや、tick 8 の 869,000 µs/quarter の生成元は未確定。静的解析のみ。
+
+**根拠:** private-data repo の sng2gs解析データ.txt 内 FUN_1000_0010 / FUN_1000_272a / FUN_1000_3406 / FUN_1000_61EC と runner.SNG offset 0x00B5。
