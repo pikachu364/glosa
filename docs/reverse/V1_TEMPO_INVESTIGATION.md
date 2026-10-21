@@ -56,3 +56,29 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 - よって初回 tempo meta の absolute tick は、preamble drain 後の absolute tick、`0x6EE` の実値、`0x622` 分岐、および queue の先行 event に依存する。解析テキストでは `0x6EE` の直接代入を確認できず、値の由来と reference MIDI 生成時の `0x622` は未解決。
 
 **結論:** これで初回呼び出しが通常の `+1` 経路ではないことは静的に分かったが、tick 8 の最終対応はまだ証明されていない。runtime trace は未実施。converter / tests は変更しない。
+
+
+## 現在の進捗スナップショット（2026-10-21）
+
+### 説明できていること
+
+- 参照 MIDI の tempo meta は tick 0 / 8 / 192 で 500,000 / 869,000 / 869,565 µs/quarter。
+- raw tempo 37 を 69 BPM に正規化した後、tempo-record path の整数除算は 869,000、192-tick grid path は 869,565 を生成する。
+- FUN_1000_33D4 内の初回 FUN_1000_3406 は 0xF96 != 0 の例外経路であり、通常 scheduler path の pending-delta +1 を実行しない。
+- 0x622 は option token によって設定され、/F の track-order 変更というマニュアル説明と下流利用が整合する。ただし token の実文字列が未確認なので、これは有力な推定に留める。
+
+### まだ証明できていないこと
+
+- tempo-record path の 869000 が参照 MIDI の tick 8 で出力されること（数値の一致だけでは時刻の証明にならない）。
+- 0x6EE の実値と初期化元、preamble queue drain 前後の pending delta / absolute tick。
+- 参照 MIDI 生成時に /F が指定されたか、したがって 0x622 の分岐が実際に有効だったか。
+- grid path が参照 MIDI の tick 192 event を直接生成したという因果関係の runtime 確認。
+
+### 次の調査順
+
+1. 0x6EE の初期値・書き込み元をデータ領域と間接書き込みも含めて探す。
+2. 0xF05 の option token の実体を含むバイナリ／データダンプを探し、0x622 と /F の対応を確認する。
+3. preamble の queue drain ごとに 0xF9A:0xF9C と 0x6F2:0x6F4 を表にして、参照 tick と照合する。
+4. runtime trace ができなければ、その制約を維持し、converter の tempo 規則を推測で変更しない。
+
+**実装ステータス:** v1 ReadTempi guard 維持。converter / regression tests に変更なし。静的解析のみで、runtime trace と実再生は未実施。
