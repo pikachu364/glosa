@@ -149,3 +149,11 @@ v1 `runner.MID` は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565
 ### H-012 follow-up — arithmetic paths identified, tick-8 runtime point remains open
 
 Static analysis distinguishes the two tempo values: the tempo-record path computes (60000 / 69) * 1000 = 869000, while the 192-grid path computes 60000000 / 69 = 869565. These match the reference values at ticks 8 and 192 respectively. The arithmetic is explained, but the tick-8 assignment is still a strong static mapping rather than runtime proof: the pending delta and absolute-tick state at the first queue drain have not been traced dynamically. Keep the converter guard until that timing is confirmed.
+
+### H-014 follow-up — first scheduler call is an exception path (2026-10-21)
+
+追加で静的追跡した結果、`FUN_1000_33D4` 内の初回 `FUN_1000_3406` は通常の pending-delta `+1` 経路ではない。`FUN_1000_3DE2` が `0xF96 = 0xFFFF` を設定し、`FUN_1000_33D4` は `FUN_1000_3406` の後で初めて `0xF96 = 0` に戻すためである。
+
+v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C = 0x6EE:0` を設定する。続く初回 tempo queue drain 前には、呼び出し元が `0x622 != 0` の場合に pending delta をゼロ化する分岐もある。従って tick 8 を確定するには、`0x6EE` の実値・由来、参照 MIDI を生成した条件下の `0x622`、`0x6F2:0x6F4` の preamble 後の値、queue 内の先行 event を合わせて追う必要がある。
+
+これは tick-8 の既存仮説を強める/確定する証拠ではなく、通常 scheduler loop の `+1` を初回呼び出しに誤適用しないための制約である。runtime trace がなく、`0x6EE` の値も確定していないため、tick 8 は未確認のまま扱い、converter guard を維持する。
