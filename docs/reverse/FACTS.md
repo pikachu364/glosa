@@ -681,3 +681,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - したがって tick 0 / 4 / 8 / 8 は参照 MIDI から確認できた事実、`0x6EE = 4` は queue mapping が必要な仮説として分離する。
 
 **根拠:** `testdata/ballade/v1/sng2gs/runner.MID` の SMF header と track 0 / track 1 event delta-time。SNG2S 側の対応は静的解析のみ。
+
+
+## F-069 — 0x622 と 0x626 の役割を区別する
+
+**状態:** 静的な制御フローから確認。オプション文字列との対応は仮説として区別する。
+
+- `FUN_1000_08EC` は `0x622 == 0` のとき SysEx (`F0 ... F7`) を MIDI event queue に出力する。非ゼロの場合は SysEx payload を出力しない。一方、`FF` meta event の pending delta flush は `0x622` が非ゼロでも行われる。
+- `FUN_1000_0010` は `0x626 == 0` と非ゼロで異なる track-order table (`0x6AA` / `0x666` 対 `0x6CC` / `0x688`、SNG version により分岐) を `0x644` にコピーする。したがって `0x626` は track assignment/order の選択に直接関係する。
+- `FUN_1000_184A` では 1-byte token 比較が一致すると `0x626 = 1`、別の 2-byte token 比較 (`0xF05`) が一致すると `0x622 = 1` になる。
+- SNG2S の help text は `/F` を part-to-track order change、`/XD` を Exclusive disable と説明する。上記の変数の用途はそれぞれの説明と強く整合するため、以前の `0x622 ↔ /F` 仮説は誤りである可能性が高い。現時点の最良の対応は `0x626 ↔ /F`、`0x622 ↔ /XD` だが、token bytes の直接確認または runtime option trace は未実施。
+
+**根拠:** `sng2gs解析データ.txt` の `FUN_1000_0010`、`FUN_1000_08EC`、`FUN_1000_184A` と定義文字列 `1627:0147`、`1627:0261`。静的解析のみ。
