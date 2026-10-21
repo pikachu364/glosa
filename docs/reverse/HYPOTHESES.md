@@ -188,7 +188,7 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 
 ### H-016 follow-up — 0x6EE の数値候補は4 ticks（暫定）
 
-参照 `runner.MID` を SMF として直接解析すると、track 1 の SysEx event は tick 0 / 4 / 8 / 8 に出力されている（FACTS F-068）。一方、v1 の `FUN_1000_1CE4` は条件成立時に2回 queue event を drain し、各 drain 後に `0x6EE` を pending delta `0xF9A:0xF9C` に設定する。
+参照 `runner.MID` を SMF として直接解析すると、track 1 の SysEx event は tick 0 / 4 / 8 / 8 に出力されている（FACTS F-068）。一方、v1 の `FUN_1000_1CE4` は条件成立時に2回 SysEx-style event を生成して drain し、各 drain 後に `0x6EE` を pending delta `0xF9A:0xF9C` に設定する。`FUN_1000_3F79` の共通 byte 列、`FUN_1000_5FAA` のデータ生成、`FUN_1000_3F54` の checksum 用和計算、`FUN_1000_3EED` の checksum + `F7` 追加から、これらが SysEx 形式であることは静的に支持される。
 
 この2回の drain が track 1 の tick 0 と tick 4 の最初の2件に対応するなら、`0x6EE = 4` と推定でき、2回目の drain 後に残る delta 4 は次の出力を tick 8 に進め得る。これは tick 8 tempo の説明につながる具体的候補だが、まだ以下が未確認である。
 
