@@ -403,7 +403,7 @@
 ## 2026-10-20 — SNG2S conductor metadata buffer consumersを追跡
 
 - FUN_1000_272a の初期化処理で、3つの内部 far-pointer 0x21DC / 0x21E0 / 0x21E4 に別々の確保済みバッファを設定することを確認。
-- FUN_1000_3406 の命令列で 0x21DC が FF 58 04 time-signature meta、0x21E0 が FF 51 03 tempo meta の出力経路に接続することを確認。tempo stream の値は value * 0x2962 / 0x40 で1〜480に制限され、60,000,000 / value から microseconds-per-quarter を作る。
+- FUN_1000_3406 の命令列で 0x21DC が FF 58 04 time-signature meta、0x21E0 が FF 51 03 tempo meta の出力経路に接続することを確認。tempo stream の値は value * (word stored at memory address 0x2962) / 0x40 で1〜480に制限され、60,000,000 / value から microseconds-per-quarter を作る。
 - 0x21E4 は別レコード列から 0x7DE を更新して FUN_1000_3B78 を呼ぶ。出力イベントの意味は未確定として断定しない。
 - これらは内部ポインタであり、SNG ファイル内の直接オフセットではない。SNG reader が各 buffer をどこから埋めるか、v1 参照 tempo の tick 8 / 192 とどのレコードが対応するかは未解決。converter の tempo 式は変更していない。
 - 作業ブランチの現行 head 650c5fa44982b9f82ce58ea005d4f7e831c4a4d9 に紐づく CI run 39334626186 は成功を返した。これは当該 head の CI 状態であり、今回の追加テストコミットの CI 結果ではない。
