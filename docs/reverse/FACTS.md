@@ -652,3 +652,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - ただし FUN_1000_3406 には 0xF96 != 0 の場合に別経路へ進む分岐があり、0x7AC は別のイベント列の終端でクリアされる。したがって単純な「first word = MIDI tick」や「全呼出しが必ず delta-time +1」とする解釈は不適切。実際の record update 時点を tick 0 / 8 / 192 に割り当てるには、例外経路も含めた呼出し状態の追跡が必要。
 
 **根拠:** 解析資料の FUN_1000_3406 (1000:3416–3533)、エントリループ (1000:0524–0545)、FUN_1000_08EC の delta-time flush path。静的解析のみ。
+
+
+## F-064 — v1 の 0x21E4 テーブルはテンポ表とは別経路
+
+**状態:** 静的解析で確認。
+
+- runner.SNG の offset 0x0487 から始まる内部テーブル 0x21E4 は、0x21E0 の tempo record table とは別である。
+- FUN_1000_3406 は 0x21E4 の値を 0x7DE に反映し、値が 0x10B4 と異なる場合に FUN_1000_3B78 / FUN_1000_3BA7 を呼ぶ。
+- FUN_1000_3BA7 は tempo meta ではなく device-parameter SysEx bytes を queue に追加する。
+- queue order / delta-time への影響と tick 8 / 192 の tempo mapping は未確定。
+
+**根拠:** runner.SNG offset 0x0487 と sng2gs解析データ.txt の FUN_1000_3406 / FUN_1000_3B78 / FUN_1000_3BA7。静的解析のみ。
