@@ -53,3 +53,8 @@ v1 の tempo meta は未解決。確定しているのは、SNG2S に少なく�
 - タスクリスト: NEXT_STEPS.md T-003
 
 この文書は調査順序を整理するもので、新しい変換仕様を確定するものではない。
+
+
+## Follow-up: separate table path
+
+Static disassembly shows that the 0x21E4 table is not the tempo table. Its records update 0x7DE; when this value changes, FUN_1000_3B78/FUN_1000_3BA7 queue device-parameter SysEx messages. The tempo records are read from 0x21E0 and produce FF 51 meta events by a separate path. This distinction explains why queue contents around the first tempo record can include non-tempo events, but it does not yet determine the tempo events' final ticks. Source bytes at offset 0x0487 contain records with second word 75 (0x004B); the table and its effects are static-analysis findings only.
