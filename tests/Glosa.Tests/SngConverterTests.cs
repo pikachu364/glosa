@@ -290,4 +290,49 @@ public class SngConverterTests
         }
         return data;
     }
+
+    [Fact]
+    public void BalladeV1RunnerMatchesSng2GsReferenceNoteEvents()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+        byte[] reference = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "sng2gs", "runner.MID"));
+
+        MidiSequence actual = SmfReader.Read(SngConverter.ToSmf(sng));
+        MidiSequence expected = SmfReader.Read(reference);
+
+        static string[] NoteSignatures(MidiSequence sequence)
+            => sequence.Events
+                .Where(e => e.Kind == MidiEventKind.Channel &&
+                    (((e.Status & 0xF0) == 0x90) || ((e.Status & 0xF0) == 0x80)))
+                .Select(e =>
+                {
+                    bool noteOn = (e.Status & 0xF0) == 0x90 && e.Data2 != 0;
+                    bool noteOff = (e.Status & 0xF0) == 0x80 ||
+                        ((e.Status & 0xF0) == 0x90 && e.Data2 == 0);
+                    if (!noteOn && !noteOff) return null;
+                    return $"{e.Ticks}:{(noteOn ? 1 : 0)}:{e.Data1}:{(noteOn ? e.Data2 : 0)}";
+                })
+                .Where(e => e is not null)
+                .Select(e => e!)
+                .OrderBy(e => e, StringComparer.Ordinal)
+                .ToArray();
+
+        Assert.Equal(3295 * 2, NoteSignatures(expected).Length);
+        Assert.Equal(NoteSignatures(expected), NoteSignatures(actual));
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (Directory.Exists(Path.Combine(directory.FullName, "testdata", "ballade")))
+                return directory.FullName;
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException(
+            "Could not find the repository root containing testdata/ballade.");
+    }
 }
