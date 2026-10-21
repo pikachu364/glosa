@@ -667,3 +667,16 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - option parser の `FUN_1000_184A` は `FUN_1000_5EC8(input, 0xF05, 2)` を呼ぶ。`FUN_1000_5EC8` は指定長の文字列比較で一致時に 0 を返すため、`0xF05` は parser が比較する2-byte token の先頭位置であることまでは確認できる。実際の2文字と /F との対応は、文字列データが解析資料にないため未確定。
 
 **根拠:** `sng2gs解析データ.txt` 全体の `[0x6EE]` 命令参照、`FUN_1000_1CE4` (1000:1D5D / 1DA4 / 1E53)、`FUN_1000_184A` (1000:1989–199A)、`FUN_1000_5EC8` (1000:5EC8–5F01)。静的解析のみ。
+
+
+## F-068 — 参照 runner.MID の conductor tempo と SysEx tick 配置
+
+**状態:** 参照 MIDI の SMF バイト列を直接解析して確認。SNG2S 内部 queue item との対応は未確定。
+
+- `testdata/ballade/v1/sng2gs/runner.MID` は SMF format 1、12 tracks、time division 48。
+- conductor track の tempo meta は tick 0 / 8 / 192 にあり、値はそれぞれ 500,000 / 869,000 / 869,565 µs/quarter。
+- track 1 の SysEx event は4件で、絶対 tick は 0 / 4 / 8 / 8。payload 長は順に 12 / 12 / 10 / 10 bytes。
+- この tick 配置は `0x6EE` の数値候補を絞る材料になる。仮に `FUN_1000_1CE4` の2回の queue drain が tick 0 と tick 4 の SysEx に対応するなら、後続 delta として使われる `0x6EE` は4 ticksと整合する。ただし、各 payload と関数内の `0xF34` / `0xF3F` 文字列の対応、また tempo meta が同じ累積時刻に到達する因果関係はまだ未確認。
+- したがって tick 0 / 4 / 8 / 8 は参照 MIDI から確認できた事実、`0x6EE = 4` は queue mapping が必要な仮説として分離する。
+
+**根拠:** `testdata/ballade/v1/sng2gs/runner.MID` の SMF header と track 0 / track 1 event delta-time。SNG2S 側の対応は静的解析のみ。
