@@ -237,3 +237,13 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] `FUN_1000_3406` の1回の scheduler call で、`0x21E0` と `0x21E4` の両方が処理される順序を整理し、`FUN_1000_08EC` の queue drain 順序を確認する。
 
 **注意:** 数値の一致は強い静的根拠だが、tick 8 の割当は runtime 未確認。実行時トレースが済むまでは converter / regression test を変更しない。
+
+## T-013 — preamble delta と初回 tempo queue drain の状態を確定
+
+- [x] v1 の `FUN_1000_1C70` → `FUN_1000_1CE4` → `FUN_1000_33D4` → 初回 `FUN_1000_3406` → `FUN_1000_08EC` の呼び出し順を静的に追跡。
+- [x] `FUN_1000_3DE2` が `0xF96 = 0xFFFF` にし、`FUN_1000_33D4` が初回 `FUN_1000_3406` の後で `0xF96 = 0` に戻すため、初回 `FUN_1000_3406` は通常の pending delta `+1` 経路を通らないことを確認。
+- [ ] `0x6EE` の値と初期化元を特定する。現行解析テキストでは読み取り箇所はあるが、直接書き込みは確認できていない。
+- [ ] `0x622` の値が参照 MIDI の生成条件でどう決まるかを調べ、`0x622 != 0` の pending-delta reset が適用されるか確認する。
+- [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
+
+**注意:** 初回 `FUN_1000_3406` に通常経路の +1 を当てはめない。tick 8 が説明できるまで `SngConverter.cs` と tempo regression tests は変更しない。
