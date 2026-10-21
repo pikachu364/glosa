@@ -248,3 +248,30 @@ JMPlayer 文書は、以下2ファイルを通常の形式解釈では説明し�
 
 - [ ] 各項目に「JMPlayer 文書の記載」「Glosa の静的解析」「fixture で確認」「SNG2S 実行結果」のどれに基づくかを明記する。
 - [ ] SNG2S を実行していない項目は、実行済み・再現済みと書かない。既存 MIDI の比較結果も、生成元と生成時点が確認できる範囲に限って扱う。
+
+
+## 10. 追加調査（2026-10-22）：v1 tempo/meta の生成経路
+
+**状態:** SNG2S の静的逆解析と `runner.SNG` のバイト列を追加照合。tempo のソースフィールドと参照 MIDI の全イベントの対応は未確定。実行時トレース・SNG2S 再実行は未実施。
+
+### Glosa 側で観測した不一致
+
+`runner.SNG` の v1 レイアウト候補では conductor は file offset 116 から始まり、サイズ表の値は 1,394 bytes。heap marker `FF 7F FF FF FF FF` は file offset 761 にあり、後続版向けの `ReadTempi` がその12 bytes後から読むと、最初のレコードは `step=37, value=144`、次は `step=37, value=192` となる。後続版の slider 式を当てると 270 / 360 BPM になり、v1 の参照 MIDI の tempo meta と一致しない。したがって v1 に後続版の `ReadTempi` をそのまま適用しない判断は維持する。
+
+### SNG2S の静的解析から分かった処理
+
+- SNG2S の読み込み関数 `FUN_1000_272a` は、版別の初期化時に v1 と v2 以降で異なる内部 byte 位置を参照し、base tempo 候補を `0x2962` と `0x7BA` に設定する。v1 経路では `0x1AFE`、後続版では `0x1AE8` を読む。
+- `FUN_1000_3406` は、内部 tempo buffer `0x21E0` の4-byte recordを処理する。record の value に base tempo 候補を掛けて `0x40` で割り、1〜480 に clamp する。変換後の値が現在値と異なると tempo event bytes を生成する。
+- 出力処理は `60,000,000 / tempo` の計算結果を SMF tempo meta event `FF 51 03` として出力する。初期 tempo が 120 以外の場合にも、別の tempo meta event を出す経路がある。
+- 参照 MIDI の tempo meta は、既存の F-053 の記録では tick 0 = 500,000 µs/quarter、tick 8 = 869,000、tick 192 = 869,565。これらの値と `0x1AFE`、tempo buffer `0x21E0` の元になった SNG byte 範囲の対応付けはまだできていない。
+
+### 結論と次の手順
+
+ここまでの静的根拠は、v1 の tempo が単純な「後続版と同じ slider 値の列」ではなく、SNG2S 内部の base tempo と別の tempo buffer を通って生成される可能性を示す。ただし、内部アドレスの意味だけから file offset を推測して実装してはならない。
+
+- [ ] `0x1AFE` が読み込まれる元データの byte 範囲を、v1 の読み込み順とコピー先から特定する。
+- [ ] v1 の入力 byte から内部 tempo buffer `0x21E0` が構築される経路を追う。
+- [ ] 参照 MIDI の tick 8 / tick 192 の tempo event と入力データを対応付ける。
+- [ ] それまでは v1 の tempo 変換を未解決として扱い、後続版の `ReadTempi` を v1 に流用しない。
+
+参考: [JMPlayer の Ballade SNG format notes](https://github.com/jihodaya/jmplayer/blob/main/docs/formats/en/sng-ballade.md)（CC BY 4.0。v1 の設定領域・tempo stream の差異を考えるための参考資料。Glosa 側で独立に再検証した内容とは区別する）。
