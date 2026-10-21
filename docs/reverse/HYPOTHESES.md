@@ -134,3 +134,13 @@ v1 `runner.MID` は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565
 - 根拠: v1 の参照 MIDI track 1 に Roland-style の SysEx 4件がある（FACTS F-057）。元の `runner.SNG` 全体（85,897 bytes）には、各 payload の完全一致も共通先頭列 `41 10 16 12` も存在しない。
 - 解釈候補: SNG2S が設定値から SysEx を生成している、または元 SNG の別フィールドを変換している。現時点ではどちらとも断定しない。
 - 次の確認: SNG2S マニュアルの /X1 /X2 /XD の意味を解析資料と照合し、SysEx を出力する関数・分岐と、SNG 読込時に作られる関連バッファを追跡する。4件の payload を converter に直接ハードコードしない。
+
+
+## H-014 — v1 tempo event は record countdown と 192-tick grid の複数経路でスケジュールされる
+
+**状態:** 部分的に裏付けられた仮説。正確な出力 tick は未確定。
+
+- 根拠: 初期 500,000 µs/quarter は tempo record 初期化より前に明示出力される。別途 FUN_1000_3406 が 0x21E0 の 4-byte tempo records を countdown で処理し、entry path は 0x21DC の先頭 byte 192 を使って次の 192-tick 境界までの差分を計算する。
+- したがって reference MIDI の tempo meta を一つの単純な record-to-tick 対応だけで説明できるとは限らない。queue drain / pending delta-time flush の順序を含めて検証する必要がある。
+- 未解決: tick 8 の 869,000 µs/quarter の生成元、最初の tempo record の出力 tick、tick 192 の 869,565 µs/quarter と grid 経路の因果関係。
+- 次の確認: FUN_1000_33D4 → FUN_1000_08EC → grid delta → FUN_1000_618A の順序と、0xF9A:0xF9C / 0x6F2:0x6F4 の値を各イベント出力点で追う。実行時トレースがない間は converter を変更しない。
