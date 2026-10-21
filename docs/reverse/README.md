@@ -2,6 +2,16 @@
 
 このディレクトリは、Ballade SNG と SNG2S/SNG2GS の調査情報を、長い作業ログから切り離して整理するための入口です。
 
+## 現在の進捗（2026-10-21）
+
+**最優先:** Ballade v1 の tempo meta（tick 8 / 192）の出力時刻を SNG2S の処理経路と対応付ける。
+
+- 数値計算は静的解析で説明できているが、tick 8 への割当は未証明。
+- 初回 scheduler の例外経路は確認済み。0x6EE の値・由来と 0x622 の実行時状態が未解決。
+- 0x622 と /F の対応は有力な推定だが、option 文字列の実バイト照合が必要。
+- converter / regression tests は未変更。実行時トレースと実再生は未実施。
+- まず [NEXT_STEPS.md](NEXT_STEPS.md) の進捗サマリーと優先順を確認してください。
+
 ## 読む順番
 1. [FACTS.md](FACTS.md) — 根拠が確認できている事実
 2. [HYPOTHESES.md](HYPOTHESES.md) — 有力候補・未確定事項
