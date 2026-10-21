@@ -443,3 +443,11 @@
 - FUN_1000_61EC(currentTick, uVar11, 0) の剰余と uVar11 - remainder によって次の 192-tick 境界への delta を計算する経路を確認。
 - 初期 500,000 µs/quarter tempo は FUN_1000_33D4 の tempo record 処理より前に出力される。record countdown と grid-based tempo output は別の段階として扱う。
 - tick 8 の 869,000 µs/quarter の生成元と、tick 192 の 869,565 µs/quarter の出力経路はまだ確定していない。静的解析のみであり、converter/test code は変更していない。
+
+
+## 2026-10-21 — v1 tempo integer formulas separated
+
+- Raw tempo 37 was traced through `FUN_1000_3406` to 69 BPM.
+- The tempo-record arithmetic `(60000 / 69) * 1000` produces 869000 µs/quarter, matching the reference tick-8 value.
+- The grid-aligned arithmetic `60000000 / 69` produces 869565 µs/quarter; the entry path calculates the distance to the next 192-tick boundary before emitting it, matching the reference tick-192 value.
+- Recorded the calculations in FACTS F-065 and added the confidence boundary to V1_TEMPO_INVESTIGATION.md and HYPOTHESES H-012. The tick-8 absolute-tick assignment is not runtime verified; no converter or test code changed.
