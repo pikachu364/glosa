@@ -336,6 +336,23 @@ public class SngConverterTests
         Assert.False(ContainsSequence(smf, TempoEvent(869_565)));
     }
 
+    [Theory]
+    [InlineData("v1", "runner.SNG")]
+    [InlineData("v2", "SHIZUME0.SNG")]
+    [InlineData("v3", "START__0.SNG")]
+    [InlineData("v4", "BOURREE0.SNG")]
+    public void ConvertsCheckedInBalladeFixturesToReadableMidi(string version, string fileName)
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", version, fileName));
+
+        byte[] smf = SngConverter.ToSmf(sng);
+        MidiSequence sequence = SmfReader.Read(smf);
+
+        Assert.True(smf.AsSpan().StartsWith("MThd"u8));
+        Assert.True(sequence.TrackCount >= 2);
+    }
+
     [Fact]
     public void BalladeV1RunnerProducesExpectedNoteEventCounts()
     {
