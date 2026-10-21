@@ -58,3 +58,8 @@ v1 の tempo meta は未解決。確定しているのは、SNG2S に少なく�
 ## Follow-up: separate table path
 
 Static disassembly shows that the 0x21E4 table is not the tempo table. Its records update 0x7DE; when this value changes, FUN_1000_3B78/FUN_1000_3BA7 queue device-parameter SysEx messages. The tempo records are read from 0x21E0 and produce FF 51 meta events by a separate path. This distinction explains why queue contents around the first tempo record can include non-tempo events, but it does not yet determine the tempo events' final ticks. Source bytes at offset 0x0487 contain records with second word 75 (0x004B); the table and its effects are static-analysis findings only.
+
+
+## Stronger mapping: grid-aligned tempo output
+
+The entry path calls FUN_1000_33D4 and then drains its queue with FUN_1000_08EC. It next calls FUN_1000_61EC with the current absolute tick and grid length (192 in this sample), stores the distance to the next boundary in pending delta 0xF9A:0xF9C, and checks 0x7BA. If 0x7BA is not 120, it calls FUN_1000_618A with the 60,000,000 constant and 0x7BA, flushes the pending delta through FUN_1000_16E6, clears the pending delta, and writes FF 51 03 with the computed tempo. In this sample 0x7BA is 69, so this path emits 869,565 us/quarter at the next 192-tick boundary, matching the reference tick-192 tempo. This is strong static evidence for that event path, but tick 8 with 869,000 remains unresolved.
