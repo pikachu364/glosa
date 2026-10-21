@@ -184,3 +184,16 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 - ただし初期化データ、別名参照、間接 store の可能性が残る。値が分からないため、MIDI tick との換算や tick 8 との対応はまだ導けない。
 
 **次の確認:** 実行ファイルの data segment / relocation / 文字列領域を含むダンプ、または runtime memory trace を得る。解析テキストの xref scan だけでは値の由来は確定しない。
+
+
+### H-016 follow-up — 0x6EE の数値候補は4 ticks（暫定）
+
+参照 `runner.MID` を SMF として直接解析すると、track 1 の SysEx event は tick 0 / 4 / 8 / 8 に出力されている（FACTS F-068）。一方、v1 の `FUN_1000_1CE4` は条件成立時に2回 queue event を drain し、各 drain 後に `0x6EE` を pending delta `0xF9A:0xF9C` に設定する。
+
+この2回の drain が track 1 の tick 0 と tick 4 の最初の2件に対応するなら、`0x6EE = 4` と推定でき、2回目の drain 後に残る delta 4 は次の出力を tick 8 に進め得る。これは tick 8 tempo の説明につながる具体的候補だが、まだ以下が未確認である。
+
+- `0xF34` / `0xF3F` から作られる queue payload が、参照 SysEx のどの payload と一致するか。
+- queue drain ごとの `0x6F2:0x6F4` と `0x1ED8:0x1EDA` の実際の値。
+- 参照実行時の `0x622` が pending delta reset を有効にしたか。
+
+したがって `0x6EE = 4` は有望な仮説であり、確認済み事実ではない。runtime trace または payload / tick のイベント単位対応が得られるまでは converter を変更しない。
