@@ -451,3 +451,11 @@
 - The tempo-record arithmetic `(60000 / 69) * 1000` produces 869000 µs/quarter, matching the reference tick-8 value.
 - The grid-aligned arithmetic `60000000 / 69` produces 869565 µs/quarter; the entry path calculates the distance to the next 192-tick boundary before emitting it, matching the reference tick-192 value.
 - Recorded the calculations in FACTS F-065 and added the confidence boundary to V1_TEMPO_INVESTIGATION.md and HYPOTHESES H-012. The tick-8 absolute-tick assignment is not runtime verified; no converter or test code changed.
+
+## 2026-10-21 — 初回 tempo queue drain の例外経路を追跡
+
+- `FUN_1000_1C70` の v1 分岐から `FUN_1000_1CE4`、続いて entry path の `FUN_1000_33D4`、その中の初回 `FUN_1000_3406`、呼び出し元の `FUN_1000_08EC` までを静的に追った。
+- `FUN_1000_1CE4` は条件 `(0x6F8 == 0) || (0x6FA == 2)` が成立する経路で、queue drain の前後に `0xF9A:0xF9C = 0x6EE:0` を設定する。2回目の drain は pending delta を flush して absolute tick `0x6F2:0x6F4` を更新する。
+- `FUN_1000_3DE2` が `0xF96 = 0xFFFF` に設定し、`FUN_1000_33D4` は初回 `FUN_1000_3406` の後で `0xF96 = 0` にする。よって初回 `FUN_1000_3406` は通常経路の `0xF9A:0xF9C += 1` を通らない。
+- `FUN_1000_33D4` の後、`0x622 != 0` なら呼び出し元が pending delta をゼロ化してから初回 queue drain を行う。`FF` meta の consumer はその時点の pending delta を flush する。
+- 未解決: `0x6EE` の実値・由来、参照 MIDI 生成時の `0x622` 状態、preamble 後の absolute tick。したがって tick 8 の割当は未証明。静的解析のみで、converter / test code は変更していない。FACTS F-066、H-014、T-013、V1_TEMPO_INVESTIGATION.md を更新。
