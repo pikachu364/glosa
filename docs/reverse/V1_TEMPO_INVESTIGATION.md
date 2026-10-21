@@ -99,3 +99,16 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 - `0x6EE` の単純な直接書き込み探索は、解析テキスト全体に対して実施済み。
 - 次に必要なのは逆アセンブル本文以外の初期化データ／文字列領域、または実行時メモリ状態。これらがなければ値・token の実体は確定できない。
 - tick 8 の absolute tick への割当はまだ未証明。converter / tests は変更しない。
+
+
+## 参照 MIDI の SysEx tick と 0x6EE 候補（2026-10-21）
+
+`runner.MID` の SMF bytes を直接解析し、tempo meta と track 1 SysEx の絶対 tick を再確認した。
+
+- SMF header は format 1、12 tracks、division 48。
+- conductor track の tempo meta は tick 0 / 8 / 192（500,000 / 869,000 / 869,565 µs/quarter）。
+- track 1 の SysEx は4件で tick 0 / 4 / 8 / 8。payload length は 12 / 12 / 10 / 10 bytes。
+- `FUN_1000_1CE4` は条件成立時に2回 queue event を drain し、各 drain 後に `0x6EE` を `0x1ED8:0x1EDA` に加算、`0xF9A:0xF9C` に設定する。この2回の drain が最初の2件の SysEx（tick 0 / 4）に対応するなら `0x6EE = 4` が候補となり、2回目の後に残る delta 4 は次の event を tick 8 に進め得る。
+- ただし、queue payload と参照 SysEx payload の対応は未確認。track 1 event の時刻観測だけでは、conductor track の tempo event が同じ経路・累積時刻で出力される因果関係までは証明できない。`0x622` の実行時値も不明。
+
+**現在の評価:** `0x6EE = 4` は具体的で検証可能な仮説になったが、確認済み事実ではない。次は `0xF34` / `0xF3F` の queue payload を参照 SysEx に対応付け、queue drain 前後の accumulator を追う。runtime trace ができなければ、仮説と事実を分けたまま維持する。
