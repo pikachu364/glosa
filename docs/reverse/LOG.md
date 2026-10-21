@@ -460,3 +460,11 @@
 - FUN_1000_3406 の通常経路は pending delta-time accumulator 0xF9A:0xF9C を +1 し、FUN_1000_08EC はイベント出力時に FUN_1000_16E6 で delta-time を flush して accumulator をクリアする。
 - 0x10AA countdown は同 scheduler loop 内で減算され、0 で次の 0x21E0 record を読む。first word を MIDI tick と直読する根拠はない。例外経路 0xF96 の条件分岐があるため、各ループ反復と delta-time の単純な一対一対応も未確定。
 - FACTS F-061、HYPOTHESES H-012、NEXT_STEPS T-003 を更新。converter/test code は変更なし。静的解析のみ。
+
+
+## 2026-10-21 — v1 tempo integer formulas separated
+
+- Raw tempo 37 was traced through `FUN_1000_3406` to 69 BPM.
+- The tempo-record arithmetic `(60000 / 69) * 1000` produces 869000 µs/quarter, matching the reference tick-8 value.
+- The grid-aligned arithmetic `60000000 / 69` produces 869565 µs/quarter; the entry path calculates the distance to the next 192-tick boundary before emitting it, matching the reference tick-192 value.
+- Recorded the calculations in FACTS F-065 and added the confidence boundary to V1_TEMPO_INVESTIGATION.md and HYPOTHESES H-012. The tick-8 absolute-tick assignment is not runtime verified; no converter or test code changed.
