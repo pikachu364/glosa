@@ -63,3 +63,11 @@ Static disassembly shows that the 0x21E4 table is not the tempo table. Its recor
 ## Stronger mapping: grid-aligned tempo output
 
 The entry path calls FUN_1000_33D4 and then drains its queue with FUN_1000_08EC. It next calls FUN_1000_61EC with the current absolute tick and grid length (192 in this sample), stores the distance to the next boundary in pending delta 0xF9A:0xF9C, and checks 0x7BA. If 0x7BA is not 120, it calls FUN_1000_618A with the 60,000,000 constant and 0x7BA, flushes the pending delta through FUN_1000_16E6, clears the pending delta, and writes FF 51 03 with the computed tempo. In this sample 0x7BA is 69, so this path emits 869,565 us/quarter at the next 192-tick boundary, matching the reference tick-192 tempo. This is strong static evidence for that event path, but tick 8 with 869,000 remains unresolved.
+
+
+## Integer tempo formulas and event-time confidence (2026-10-21)
+
+- `FUN_1000_3406` normalizes raw tempo 37 to 69 BPM. In the tempo-record path, the assembly divides 60,000 by 69 first (integer truncation to 869), then multiplies by 1000, producing 869,000 µs/quarter. This matches the reference tempo value at tick 8.
+- Separately, after the initial queue drain the entry path computes the distance to the next 192-tick grid boundary with `FUN_1000_61EC`. If `0x7BA != 120`, it calls `FUN_1000_618A`, which computes 60,000,000 / 69 = 869,565 µs/quarter and emits FF 51. This matches the reference tempo value at tick 192.
+- The different values are therefore explained by two distinct integer arithmetic paths; they are not evidence that raw record first words are MIDI ticks.
+- Confidence boundary: the formulas and grid-aligned path are supported by static control-flow analysis. The queue drain’s absolute tick being exactly 8 still needs a runtime trace, including the provenance of pending delta `0xF9A:0xF9C` before the first drain. Do not treat the tick-8 mapping as runtime-verified, and do not change converter logic yet.
