@@ -234,3 +234,5 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 
 - [ ] 実行時トレースが可能なら、queue drain 時の absolute tick が tick 8 になることを確認し、推論と runtime evidence を分けて記録する。
+
+- [ ] `FUN_1000_1c70` / `FUN_1000_1ce4` の初期設定で pending delta `0xF9A:0xF9C` がどの値になるかを追い、`0x6EE` の意味と初回 `FUN_1000_08EC` drain の absolute tick を対応付ける。計算値の一致だけで tick 8 を runtime-confirmed と扱わない。
