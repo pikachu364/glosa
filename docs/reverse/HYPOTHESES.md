@@ -141,3 +141,8 @@ v1 runner.MID は tick 0 / 8 / 192 にそれぞれ 500,000 / 869,000 / 869,565 �
 - 根拠: v1 の参照 MIDI track 1 に Roland-style の SysEx 4件がある（FACTS F-057）。元の `runner.SNG` 全体（85,897 bytes）には、各 payload の完全一致も共通先頭列 `41 10 16 12` も存在しない。
 - 解釈候補: SNG2S が設定値から SysEx を生成している、または元 SNG の別フィールドを変換している。現時点ではどちらとも断定しない。
 - 次の確認: SNG2S マニュアルの /X1 /X2 /XD の意味を解析資料と照合し、SysEx を出力する関数・分岐と、SNG 読込時に作られる関連バッファを追跡する。4件の payload を converter に直接ハードコードしない。
+
+
+### H-012 follow-up — arithmetic paths identified, tick-8 runtime point remains open
+
+Static analysis now distinguishes the two tempo values: the tempo-record path computes (60000 / 69) * 1000 = 869000, while the 192-grid path computes 60000000 / 69 = 869565. These match the reference values at ticks 8 and 192 respectively. The arithmetic is explained, but the tick-8 assignment is still a strong static mapping rather than runtime proof: the pending delta and absolute-tick state at the first queue drain have not been traced dynamically. Keep the converter guard until that timing is confirmed.
