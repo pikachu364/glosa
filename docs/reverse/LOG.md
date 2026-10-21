@@ -484,3 +484,6 @@
 - `FUN_1000_1CE4` は条件成立時に2回 queue drain し、それぞれの後で `0x6EE` を pending delta にセットする。最初の2 drain が SysEx tick 0 / 4 に対応するなら `0x6EE = 4` と説明でき、続く tempo tick 8 の候補経路にもつながる。
 - ただし queue payload と SysEx payload の対応、`0x6F2:0x6F4` / `0xF9A:0xF9C` の実値、`0x622` の実行時値は未確認。4 ticks は仮説であり、converter は変更しない。
 - FACTS F-068、HYPOTHESES H-016 follow-up、V1_TEMPO_INVESTIGATION.md、NEXT_STEPS.md を更新。runtime trace・実再生は未実施。
+
+
+- 追加照合: `FUN_1000_1CE4` の最初の2イベント生成経路は共通 SysEx prefix、異なるデータ文字列 (`0xF34` / `0xF3F`)、checksum、`F7` terminator を使う。参照 track 1 の最初の2 SysEx も共通 prefix・payload 12 bytes で tick 0 / 4 にあるため、2つの drain がこの2件に対応し `0x6EE = 4` となる推定は強まった。文字列 data segment がなく、payload の byte-for-byte 同一性はまだ確認できない。
