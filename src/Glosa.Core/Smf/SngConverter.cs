@@ -24,7 +24,8 @@ public static class SngConverter
         int barLength = 192, numerator = 4, denominator = 4;
         int conductorStart = layout.Starts[0];
         int conductorEnd = Math.Min(data.Length, conductorStart + layout.Sizes[0]);
-        int meterAt = conductorStart + 77;
+        // v1 stores the bar/signature record at +125; later versions use +77.
+        int meterAt = conductorStart + (layout.IsLegacyV1 ? 125 : 77);
         if (meterAt + 12 <= conductorEnd)
         {
             int len = U16(data, meterAt);
@@ -34,12 +35,11 @@ public static class SngConverter
             { barLength = len; numerator = num; denominator = den; }
         }
 
-        // The generic slider parser is validated only for later layouts. On v1 it
-        // interprets status-like conductor records as tempo values (see FACTS F-053),
-        // producing tempo events that disagree with runner.MID. Until the v1 buffer
-        // mapping is established, preserve the SMF default rather than invent changes.
+        // v1 uses a different tempo-buffer start, a base-tempo byte in its
+        // conductor header, and a separate song-start tempo event. Later versions
+        // retain the slider curve implemented by ReadTempi.
         var tempi = layout.IsLegacyV1
-            ? new List<TempoPoint>()
+            ? ReadLegacyV1Tempi(data, conductorStart, conductorEnd, barLength)
             : ReadTempi(data, conductorStart, conductorEnd);
         int settings = 0x46 + 4 * (layout.Parts + 1);
         int transpose = settings + 11 <= data.Length ? (short)U16(data, settings + 9) : 0;
@@ -185,13 +185,17 @@ public static class SngConverter
             int denPow = 0;
             for (int value = denominator; value > 1; value >>= 1) denPow++;
             WriteVar(body, 0); body.Write([0xFF, 0x58, 0x04, (byte)numerator, (byte)denPow, 24, 8]);
-            int firstTempo = tempi.Count == 0 ? 500000 : tempi[0].Microseconds;
+            int firstTempo = layout.IsLegacyV1 || tempi.Count == 0
+                ? 500000
+                : tempi[0].Microseconds;
             WriteVar(body, 0); WriteTempo(body, firstTempo);
             int previous = 0;
             foreach (var tempo in tempi)
             {
-                int at = tempo.Tick + barLength;
-                if (at <= previous && tempo.Tick == 0) continue;
+                // v1 points already carry SNG2S-observed absolute ticks; the
+                // later layouts' points are relative to the song's bar-in.
+                int at = layout.IsLegacyV1 ? tempo.Tick : tempo.Tick + barLength;
+                if (!layout.IsLegacyV1 && at <= previous && tempo.Tick == 0) continue;
                 WriteVar(body, (uint)Math.Max(0, at - previous));
                 WriteTempo(body, tempo.Microseconds);
                 previous = at;
@@ -295,6 +299,55 @@ public static class SngConverter
                         [(byte)(0x90 | channel), (byte)outputKey, record.Velocity]));
             }
         }
+    }
+
+    private static List<TempoPoint> ReadLegacyV1Tempi(
+        ReadOnlySpan<byte> data, int start, int end, int barLength)
+    {
+        var result = new List<TempoPoint>();
+        ReadOnlySpan<byte> sentinel = [0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF];
+        int last = -1;
+        for (int i = start; i + 6 <= end; i++)
+            if (data.Slice(i, 6).SequenceEqual(sentinel)) last = i;
+        if (last < 0 || start + 27 >= data.Length) return result;
+
+        // SNG2S loads file offset 143 into its v1 base-tempo byte (0x1AFE).
+        // Its v1 tempo buffer begins marker + 10, unlike the later marker + 12.
+        int baseTempo = data[start + 27];
+        if (baseTempo == 0) baseTempo = 120;
+        int at = last + 10;
+        int tick = 8; // SNG2S has accumulated 8 MIDI ticks when this stream begins.
+        int currentBpm = baseTempo;
+        int bpmAtSongStart = baseTempo;
+
+        while (at + 4 <= end)
+        {
+            int step = U16(data, at), value = U16(data, at + 2);
+            if (value > 254) break;
+            at += 4;
+
+            // SNG2S skips zero-step records while searching for the next timed record.
+            if (step == 0) continue;
+
+            int bpm = Math.Clamp((value * baseTempo) / 64, 1, 480);
+            if (bpm != currentBpm)
+            {
+                // The running scheduler rounds to whole milliseconds before
+                // converting to microseconds (e.g. 69 BPM -> 869000 us).
+                result.Add(new TempoPoint(tick, (60000 / bpm) * 1000));
+                currentBpm = bpm;
+            }
+
+            if (tick <= barLength) bpmAtSongStart = currentBpm;
+            tick += step;
+        }
+
+        // SNG2S emits the effective tempo again at the song's first bar, using
+        // exact integer microseconds rather than its scheduler's ms-rounded path.
+        if (bpmAtSongStart != 120)
+            result.Add(new TempoPoint(barLength, 60000000 / bpmAtSongStart));
+
+        return result.OrderBy(point => point.Tick).ToList();
     }
 
     private static List<TempoPoint> ReadTempi(ReadOnlySpan<byte> data, int start, int end)
