@@ -113,8 +113,8 @@ public class SngConverterTests
         MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
         var notes = NoteEvents(sequence, 60);
 
-        Assert.Single(notes.Where(e => e.Data2 == 100));
-        Assert.Single(notes.Where(e => e.Data2 == 0));
+        Assert.Single(notes, e => e.Data2 == 100);
+        Assert.Single(notes, e => e.Data2 == 0);
         Assert.Equal(192L, notes.Single(e => e.Data2 == 100).Ticks);
         Assert.Equal(240L, notes.Single(e => e.Data2 == 0).Ticks);
     }
@@ -132,8 +132,8 @@ public class SngConverterTests
         MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
         var notes = NoteEvents(sequence, 60);
 
-        Assert.Single(notes.Where(e => e.Data2 == 100));
-        Assert.Single(notes.Where(e => e.Data2 == 0));
+        Assert.Single(notes, e => e.Data2 == 100);
+        Assert.Single(notes, e => e.Data2 == 0);
         Assert.Equal(240L, notes.Single(e => e.Data2 == 0).Ticks);
     }
 
@@ -167,8 +167,8 @@ public class SngConverterTests
         BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(firstPart + 112), 24);
 
         MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
-        Assert.Single(NoteEvents(sequence, 60).Where(e => e.Data2 == 100));
-        Assert.Single(NoteEvents(sequence, 60).Where(e => e.Data2 == 0));
+        Assert.Single(NoteEvents(sequence, 60), e => e.Data2 == 100);
+        Assert.Single(NoteEvents(sequence, 60), e => e.Data2 == 0);
         Assert.Empty(NoteEvents(sequence, 61));
     }
 
