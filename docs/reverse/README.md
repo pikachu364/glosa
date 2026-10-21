@@ -6,7 +6,7 @@
 
 **最優先:** Ballade v1 の tempo meta（tick 8 / 192）の出力時刻を SNG2S の処理経路と対応付ける。
 
-- 数値計算は静的解析で説明できているが、tick 8 への割当は未証明。参照 track 1 の SysEx は tick 0 / 4 / 8 / 8 で、0x6EE = 4 が検証可能な仮説として浮上。
+- 数値計算と初回 scheduler の例外経路は静的解析で説明できている。参照 track 1 の SysEx payload と checksum は `FUN_1000_1CE4` / `FUN_1000_3BA7` の生成経路に強く一致し、tick 0 / 4 の並びから `0x6EE = 4` が有力な静的推定となった。ただし実行時値と tick 8 の割当は未検証。
 - 初回 scheduler の例外経路は確認済み。0x6EE の全29命令参照は直接読み出しで、複数の出力経路で delta/間隔値として使われるが、値・初期化元は未解決。
 - 0x622 は 0xF05 の2-byte option token 比較で設定される。文字列実体は未確認のため、/F 対応は有力な推定に留める。
 - converter / regression tests は未変更。実行時トレースと実再生は未実施。
