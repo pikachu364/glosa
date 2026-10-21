@@ -275,3 +275,35 @@ JMPlayer 文書は、以下2ファイルを通常の形式解釈では説明し�
 - [ ] それまでは v1 の tempo 変換を未解決として扱い、後続版の `ReadTempi` を v1 に流用しない。
 
 参考: [JMPlayer の Ballade SNG format notes](https://github.com/jihodaya/jmplayer/blob/main/docs/formats/en/sng-ballade.md)（CC BY 4.0。v1 の設定領域・tempo stream の差異を考えるための参考資料。Glosa 側で独立に再検証した内容とは区別する）。
+
+
+## 11. 追加照合（2026-10-22）：v1 tempo stream の入力位置と値
+
+**状態:** `runner.SNG` / `TEST.SNG` のバイト列と、手元の SNG2S 参照 MIDI の tempo meta を照合。base tempo の入力位置と tempo stream の先頭は特定できた。可変 tempo の MIDI tick 変換は静的解析だけではまだ一般化できていない。
+
+### 入力位置の対応
+
+SNG2S `FUN_1000_272a` の v1 経路は、サイズ表を読み終えた後、file offset 114 の1 byteを読み、続いて file offset 115 から66 bytesを内部アドレス `0x1AE2` に読む。従って、v1 の base tempo byte `0x1AFE` は `0x1AE2 + 0x1C` であり、**file offset 143** に対応する。runner.SNG と TEST.SNG の値はいずれも 120。
+
+同関数はさらに、v1 経路で590 bytesを file offset 181 から内部 `0x1F10` に読み、続いて352 bytesを file offset 771 から内部 `0x1F0C` に読む。内部 pointer `0x21E0` は後者を指す。runner.SNG の heap marker は offset 761 にあるため、SNG2S が tempo buffer として処理する領域は **marker + 10 bytes** から始まる。これは後続版の一般的な `marker + 12` 仮説を v1 にそのまま適用できないことを示す。
+
+### 入力レコードと参照 MIDI
+
+| ファイル | base tempo (offset 143) | SNG2S tempo buffer の先頭レコード |
+|---|---:|---|
+| `runner.SNG` | 120 | `step=48, value=37`; 次は `step=144, value=37` |
+| `TEST.SNG` | 120 | `step=0, value=64`; 次は `step=192, value=64` |
+
+`FUN_1000_3406` の計算は `floor(value × baseTempo / 64)` で、結果を 1〜480 に制限する。runner の `value=37` は `floor(37 × 120 / 64) = 69 BPM` になる。tempo meta writer には2つの丸め経路があることも逆アセンブルから確認できる。
+
+- スケジューラ内の tempo 変更経路は `floor(60,000 / BPM) × 1,000` µs を出力する。69 BPM なら 869,000 µs で、参照 runner.MID の tick 8 イベントと一致。
+- 初期化／曲開始側の経路は `floor(60,000,000 / BPM)` µs を出力する。69 BPM なら 869,565 µs で、参照 runner.MID の tick 192 イベントと一致。
+- runner.MID の tempo meta は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565。TEST.MID は tick 0 = 500,000 のみ。参照 MIDI は公開リポジトリには含めず、期待値だけを記録する。
+
+この照合により、base tempo の byte 位置・tempo buffer の入力開始位置・tempo 値のスケーリング・2種類の tempo meta 丸めは説明できる。ただし、tempo record の `step` から任意の MIDI tick への変換、特に複数の tempo 変更がある曲での時刻計算は、まだ完全に説明できていない。tick 8 と tick 192 の一致だけを根拠に一般式を仮定しない。
+
+### 残タスク
+
+- [ ] tempo stream の `step` が SNG2S の内部時間／MIDI delta time に変換される経路を追う。
+- [ ] 2つ以上の異なる tempo 値を持つ独立 fixture でイベント時刻を照合する。
+- [ ] tick 0 / tick 8 / tick 192 の値を regression test に追加し、tempo event timing の式が根拠を持つまで v1 tempo 変換は未解決のままにする。
