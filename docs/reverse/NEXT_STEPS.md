@@ -5,7 +5,7 @@
 - **進行中の最優先課題:** v1 tempo meta の tick 8 / tick 192 の出力時刻を SNG2S の処理経路と対応付ける。
 - **参照 MIDI で確認済み:** tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。time signature は tick 0 の 4/4。
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
-- **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。0x6EE は全29の命令参照が直接読み出しで、複数の出力経路で delta/間隔のように使われるが、値・初期化元は未解決。
+- **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。これを使うと 0x6EE = 4 が具体的な候補になるが、queue payload と accumulator の対応は未確認。
 - **0x622 と /F:** `0xF05` の2-byte option token を比較する経路は確認済み。token の文字列実体と参照実行時の指定有無は未確認なので、/F 対応は有力な推定に留める。
 - **実装への影響:** v1 の汎用 ReadTempi ガードを維持。converter / tempo regression tests は変更しない。v2–v4 の既存挙動も変更なし。
 - **PR:** #5 は reverse/v1-tempo-investigation で open / unmerged。直近確認時の CI status は空であり、CI 成功とは扱わない。
@@ -17,9 +17,10 @@
 2. [ ] `0x6EE` の実値・初期化元を、実行ファイルの data segment／別名アドレス／間接書き込みまで含めて調べる。
 3. [ ] `0xF05` の2-byte token の実文字列を含むデータを確認し、`0x622` と /F の対応を確定または棄却する。
 4. [ ] reference MIDI を生成した SNG2S の実行条件が分かる資料を探し、`0x622` の実際の値を絞る。
-5. [ ] preamble の各 queue drain 前後について `0xF9A:0xF9C` と `0x6F2:0x6F4` を対応表にし、tick 0 / 8 / 192 と照合する。
-6. [ ] 実行時トレースが可能なら静的推論と照合する。可能でなければ未確認と明記する。
-7. [ ] tempo 問題が解決するまで converter / regression tests を変更しない。
+5. [ ] `FUN_1000_1CE4` の `0xF34` / `0xF3F` queue payload を参照 track 1 の SysEx 4件に対応付け、`0x6EE = 4` 仮説を検証する（FACTS F-068 / H-016）。
+6. [ ] preamble の各 queue drain 前後について `0xF9A:0xF9C` と `0x6F2:0x6F4` を対応表にし、tick 0 / 8 / 192 と照合する。
+7. [ ] 実行時トレースが可能なら静的推論と照合する。可能でなければ未確認と明記する。
+8. [ ] tempo 問題が解決するまで converter / regression tests を変更しない。
 ---
 
 # 次の調査タスク
