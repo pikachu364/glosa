@@ -11,6 +11,7 @@ public class SequencerTests
         private readonly Stopwatch _clock = Stopwatch.StartNew();
         public List<(uint Packed, int Port, double Ms)> Shorts { get; } = [];
         public List<(byte[] Data, int Port)> Longs { get; } = [];
+        public double ElapsedMs => _clock.Elapsed.TotalMilliseconds;
 
         /// <summary>Everything in the order it came: "cc 78", "long F7", "wait 0" and so on.</summary>
         public List<string> Log { get; } = [];
@@ -106,12 +107,15 @@ public class SequencerTests
 
         var done = new ManualResetEventSlim();
         seq.Finished += () => done.Set();
+        // Measure from the caller's start, not from the first dispatched event. The
+        // playback clock starts inside Play(), before its worker thread is scheduled; on a
+        // busy CI runner, that delay can make event-to-event intervals look too short.
+        double started = sink.ElapsedMs;
         seq.Play();
         Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
 
-        double first = sink.Shorts[0].Ms;
-        double second = sink.Shorts[1].Ms - first;
-        double third = sink.Shorts[2].Ms - first;
+        double second = sink.Shorts[1].Ms - started;
+        double third = sink.Shorts[2].Ms - started;
 
         // Generous bounds: CI machines are noisy, but a broken clock would be far off.
         Assert.InRange(second, 150, 320);
