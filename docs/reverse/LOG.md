@@ -487,3 +487,11 @@
 
 
 - 追加照合: `FUN_1000_1CE4` の最初の2イベント生成経路は共通 SysEx prefix、異なるデータ文字列 (`0xF34` / `0xF3F`)、checksum、`F7` terminator を使う。参照 track 1 の最初の2 SysEx も共通 prefix・payload 12 bytes で tick 0 / 4 にあるため、2つの drain がこの2件に対応し `0x6EE = 4` となる推定は強まった。文字列 data segment がなく、payload の byte-for-byte 同一性はまだ確認できない。
+
+
+## 2026-10-21 — option flag mapping の再評価
+
+- `0x622` と `/F` の対応を再検討。`FUN_1000_08EC` では `0x622 != 0` が SysEx payload の抑制に使われ、`FUN_1000_0010` では `0x626` が track-order table の選択に使われる。
+- help text の説明（`/XD`: Exclusive disable、`/F`: part-to-track order change）と照合し、最有力対応を `0x622 ↔ /XD`、`0x626 ↔ /F` に修正。旧 `0x622 ↔ /F` 仮説は撤回する（FACTS F-069）。token bytes の直接対応・参照実行時の引数とフラグ値は未確認。
+- 参照 MIDI に SysEx が4件あることは `/XD` 無効を示唆するが、生成時の引数を証明するものではない。tick 8 の pending-delta 説明は静的推定のまま維持し、converter / tests は変更しない。
+- `NEXT_STEPS.md` と `V1_TEMPO_INVESTIGATION.md` を更新。HYPOTHESES.md の H-015 には旧対応の記述が残っており、文書間の同期が未完了である点に注意。
