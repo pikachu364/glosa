@@ -676,6 +676,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `testdata/ballade/v1/sng2gs/runner.MID` は SMF format 1、12 tracks、time division 48。
 - conductor track の tempo meta は tick 0 / 8 / 192 にあり、値はそれぞれ 500,000 / 869,000 / 869,565 µs/quarter。
 - track 1 の SysEx event は4件で、絶対 tick は 0 / 4 / 8 / 8。payload 長は順に 12 / 12 / 10 / 10 bytes。
+- `FUN_1000_1CE4` の2回のイベント生成は、`FUN_1000_3F79` で共通の byte 列を出し、`FUN_1000_5FAA` で文字列由来のデータを生成、`FUN_1000_3F54` でデータを出力しながら checksum 用の和を計算し、`FUN_1000_3EED` で checksum と `F7` terminator を追加する経路を通る。これは track 1 の SysEx event と同種の出力であることを静的に支持するが、文字列 `0xF34` / `0xF3F` の payload と参照 MIDI の各 event の同一性までは未確認。
 - この tick 配置は `0x6EE` の数値候補を絞る材料になる。仮に `FUN_1000_1CE4` の2回の queue drain が tick 0 と tick 4 の SysEx に対応するなら、後続 delta として使われる `0x6EE` は4 ticksと整合する。ただし、各 payload と関数内の `0xF34` / `0xF3F` 文字列の対応、また tempo meta が同じ累積時刻に到達する因果関係はまだ未確認。
 - したがって tick 0 / 4 / 8 / 8 は参照 MIDI から確認できた事実、`0x6EE = 4` は queue mapping が必要な仮説として分離する。
 
