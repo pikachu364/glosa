@@ -292,6 +292,34 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void BalladeV1RunnerProducesReferenceTempoEvents()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+        byte[] smf = SngConverter.ToSmf(sng);
+
+        // SNG2GS runner.MID records: tick 0 = 500000, tick 8 = 869000,
+        // tick 192 = 869565 microseconds per quarter note. The reference
+        // binary is kept outside this repository; assert its recorded facts.
+        Assert.True(ContainsSequence(smf, TempoEvent(500_000)));
+        Assert.True(ContainsSequence(smf, [0x08, .. TempoEvent(869_000)]));
+        // Delta from tick 8 to tick 192 is 184, encoded as the VLQ 0x81 0x38.
+        Assert.True(ContainsSequence(smf, [0x81, 0x38, .. TempoEvent(869_565)]));
+    }
+
+    [Fact]
+    public void BalladeV1TestKeepsDefaultTempoWhenTempoStreamIsUnchanged()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "TEST.SNG"));
+        byte[] smf = SngConverter.ToSmf(sng);
+
+        Assert.True(ContainsSequence(smf, TempoEvent(500_000)));
+        Assert.False(ContainsSequence(smf, TempoEvent(869_000)));
+        Assert.False(ContainsSequence(smf, TempoEvent(869_565)));
+    }
+
+    [Fact]
     public void BalladeV1RunnerProducesExpectedNoteEventCounts()
     {
         string root = FindRepositoryRoot();
