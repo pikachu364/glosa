@@ -266,7 +266,9 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] v1 の `FUN_1000_1C70` → `FUN_1000_1CE4` → `FUN_1000_33D4` → 初回 `FUN_1000_3406` → `FUN_1000_08EC` の呼び出し順を静的に追跡。
 - [x] `FUN_1000_3DE2` が `0xF96 = 0xFFFF` にし、`FUN_1000_33D4` が初回 `FUN_1000_3406` の後で `0xF96 = 0` に戻すため、初回 `FUN_1000_3406` は通常の pending delta `+1` 経路を通らないことを確認。
-- [ ] `0x6EE` の値と初期化元を特定する。現行解析テキストでは読み取り箇所はあるが、直接書き込みは確認できていない。
+- [x] 解析テキスト全体の命令行を検索し、`[0x6EE]` の29参照がすべて直接読み出しで、直接 store が見つからないことを確認。複数の event-output path で `0x1ED8:0x1EDA` への加算と `0xF9A:0xF9C` への設定に使われる（FACTS F-067）。
+- [ ] `0x6EE` の実値と初期化元を特定する。data segment、別名アドレス、間接書き込み、runtime memory trace は未確認。
+- [x] `FUN_1000_184A` → `FUN_1000_5EC8(input, 0xF05, 2)` の比較経路を確認。token は2 bytes比較だが文字列実体は未収録のため、/F との対応は未確定（H-015）。
 - [ ] `0x622` の値が参照 MIDI の生成条件でどう決まるかを調べ、`0x622 != 0` の pending-delta reset が適用されるか確認する。
 - [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
 
