@@ -870,3 +870,15 @@ For private `testdata/ballade/v1/runner.SNG`:
 - **Still open:** identify the initialized value/source of `0x6EE`, the exact preamble queue items and command-line flags used for `runner.MID`, and the pending-delta/absolute-tick state at the drain that emits the coarse 869000 event. No runtime trace was performed.
 
 **Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` bytes and reference `runner.MID`. Static analysis only.
+
+
+## F-082 — TEST.SNG/TEST.MID independently confirms the v1 setup-SysEx schedule and the no-change tempo case
+
+**Status:** private fixture bytes and reference MIDI event stream parsed and compared.
+
+- Private `TEST.SNG` is v1.00, 9,089 bytes; its conductor block starts at 116 and has size 1,528. The tempo marker is at 971 and the stream at marker +10 = 981. Its first records are `(step=0,value=64)`, then `(192,64)` repeatedly; the base-tempo byte at absolute offset 143 is 120.
+- Private reference `TEST.MID` has SMF division 48, 4/4 and default 500,000 µs/quarter at tick 0, but no additional tempo meta. This agrees with the SNG2S scaling path: value 64 at base tempo 120 normalizes to 120 BPM, so no changed-tempo event is needed.
+- Both `TEST.MID` and `runner.MID` contain the same setup SysEx schedule on track 1: events at ticks 0, 4, 8, and 8, with the first two payloads 12 bytes and the latter two 10 bytes. `runner.MID` then contains the coarse 869,000 µs/quarter tempo meta at tick 8; `TEST.MID` does not because its tempo value is unchanged.
+- This independent v1 fixture strengthens the explanation that tick 8 is the point reached by the common setup-output sequence before the queued coarse tempo meta is serialized. It still does not prove every possible v1 file uses identical setup records or eliminate the need to map each payload producer.
+
+**Sources:** private `testdata/ballade/v1/TEST.SNG`, `testdata/ballade/v1/sng2gs/TEST.MID`, `testdata/ballade/v1/sng2gs/runner.MID`; private SNG2S decompilation. Static event parsing, not playback.
