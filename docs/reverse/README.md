@@ -42,3 +42,7 @@
 - private workflow の `glosa_ref` を確認し、検証したブランチ/commit と run 結果を記録する。公開 CI と private fixture CI は別の検証層として扱う。
 - 現状の2テストが保証するのは v1 tempo と note events。SysEx payload、物理 track/chunk order、controller/program/pitch bend、v2-v4 全体の正しさまで保証すると解釈しない。
 - private fixture と解析ダンプは公開リポジトリへコピーしない。
+
+## MIMPIV4 playback tempo investigation
+
+Static analysis identifies the driver-dispatch and INT 8 timer initialization path, but does **not** yet connect the binary SNG tempo-record value to a playback-time timer update. Treat the player-side tempo formula as unresolved; do not reuse SNG2S MIDI-export formulas. See [FACTS.md](FACTS.md) F-086 and [NEXT_STEPS.md](NEXT_STEPS.md).
