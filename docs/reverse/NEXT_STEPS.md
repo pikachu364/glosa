@@ -249,7 +249,8 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] FUN_1000_33D4 の初回 record 消費から FUN_1000_08EC の queue drain まで、pending delta-time (0xF9A:0xF9C) と absolute tick (0x6F2:0x6F4) の更新をイベント出力点ごとに追う。
 - [ ] grid delta 計算（uVar11=192）後の FUN_1000_618A 呼び出しについて、キュー投入時刻と実際の MIDI tick を分けて整理する。
 - [x] tick 0 と tick 192 の経路を対応付ける。tick 0 は既定 500000 µs/quarter、tick 192 は grid-aligned exact tempo meta。v1/v3/v4 の cross-version values confirm the same integer path (FACTS F-071/F-072).
-- [ ] tick 8 の 869,000 µs/quarter がどの queue record/consumer で出力されるかを追う。tempo slider raw value 37 → 69 BPM は確定したが、coarse tempo meta の直接の producer と queue-drain tick 8 はまだ静的に完全確定していない。
+- [x] coarse tempo meta の直接 producer を特定。`FUN_1000_3406` は raw slider 37 → 69 BPM を算出し、`floor(60000/69)*1000=869000` を `FF 51 03` として queue に書く（FACTS F-073）。
+- [ ] queue drain 前後の `0xF9A:0xF9C` / `0x6F2:0x6F4` を追い、なぜこの queued tempo event が tick 8 に置かれるかを静的に完全説明する。
 - [ ] 実行時トレースができない場合は、静的推論と参照 MIDI の観測事実を明確に分離して記録する。
 
 **完了条件:** 3つの参照 tempo event の値・tick と SNG2S の各出力経路を根拠付きで説明できること。そこまでは converter / regression test を変更しない。
