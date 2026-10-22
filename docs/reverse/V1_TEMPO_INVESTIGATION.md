@@ -153,3 +153,12 @@ The static trace has progressed beyond identifying candidate tempo producers:
 - `0x6EE` is read and added into pending timing in setup-output paths, but the exported text disassembly omits initialized data bytes. Its value is therefore not established by the current static export; interpreting it as 4 ticks remains speculative.
 
 This narrows the next useful experiment to a runtime trace or a recovered initialized data segment. Re-reading the 192-tick grid calculation will not resolve the tick-8 placement. No converter behavior is changed by this finding.
+
+
+## Follow-up audit 2 (2026-10-22): what the 0x6EE references actually establish
+
+A full text search of the available SNG2S disassembly export finds repeated **reads** of `0x6EE` in setup/preamble paths, including `FUN_1000_0010`, `FUN_1000_1CE4`, `FUN_1000_1E6C`, and related setup emitters. Each observed use adds that word to the internal absolute accumulator at `0x1ED8:0x1EDA` and assigns it as the next pending delta at `0xF9A:0xF9C`. The text export contains no direct store to `0x6EE`, so its initial value is not recoverable from this export alone.
+
+`FUN_1000_08EC` drains queued MIDI-like events by converting the pending delta to a variable-length quantity, then advances the accumulated output tick (`0x6F2:0x6F4`) and clears the pending delta. This confirms the role of the *pending-delta/absolute-tick machinery*, but it still does not reveal the initialized value of `0x6EE` or prove that it equals 4. The observed reference SysEx ticks 0/4/8 are compatible with a 4-unit interval, but compatibility is not proof.
+
+**Revised conclusion:** `0x6EE` is a shared setup-event spacing value in the SNG2S output scheduler; its numeric value and the exact mapping from each setup emission to the reference SysEx events remain unknown. Do not hard-code 4 or change converter timing from this evidence alone.
