@@ -869,3 +869,16 @@ For private `testdata/ballade/v1/runner.SNG`:
 - **Still unproven:** the full source-byte initialization path for `uVar11`/the `0x21DC` stream and whether all v1 files use the same grid operand. Do not generalize the tick-192 event to arbitrary meter without tracing the meter/grid input.
 
 **Sources:** private SNG2S Ghidra export `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`; private `runner.SNG` and reference tempo facts. Static analysis only.
+
+
+## F-081 — the coarse tick-8 tempo event is queued after setup output, before the shared drain
+
+**Status:** call order and queue behavior are statically confirmed; exact producer-to-SysEx-payload mapping remains open.
+
+- `FUN_1000_0010` writes the default tempo at tick 0 and drains it, then calls setup/output routines including `FUN_1000_2144` and `FUN_1000_1C70` before `FUN_1000_33D4`.
+- `FUN_1000_33D4` invokes `FUN_1000_3406` once during initialization. When the first tempo value normalizes to 69 BPM, `FUN_1000_3406` queues the coarse `FF 51 03` tempo event (869000 µs/quarter) in the same output queue that is drained by the following `FUN_1000_08EC`.
+- The reference MIDI has setup SysEx events at ticks 0, 4, 8, and 8, followed by the coarse tempo meta at tick 8. This queue order explains why the tempo meta can inherit the timing position established by preceding setup output; it is not derived directly from the tempo record's step word 48.
+- `FUN_1000_08EC` flushes each event's pending delta into the absolute tick before writing it, then clears the pending delta. The exact SysEx producer/payload mapping and the precise `0xF9A:0xF9C` values for each queued setup event remain unproven without a runtime trace or a complete payload-level trace.
+- The exact-tempo event at tick 192 is separate: after that drain, `FUN_1000_0010` aligns the exact tempo meta to the next 192-tick grid boundary (F-080).
+
+**Sources:** private SNG2S Ghidra export `FUN_1000_0010`, `FUN_1000_2144`, `FUN_1000_1C70`, `FUN_1000_33D4`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` and reference `runner.MID`. Static analysis only.
