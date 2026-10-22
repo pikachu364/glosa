@@ -367,7 +367,7 @@ runner 比較の失敗ログでは、比較対象の最初の差として、期�
 
 **現在の判断:** PR #9 は未マージのまま保留する。公開 CI の成功だけでは、private reference MIDI とのイベント単位の一致は保証できない。
 
-## 10. 追加調査結果（2026-10-22）：SNG2S の tempo / SysEx 経路と未確定点
+## 14. 追加調査結果（2026-10-22）：SNG2S の tempo / SysEx 経路と未確定点
 
 この節は、版別レイアウト比較から派生した追加の静的調査をまとめる。以下は private fixture / 逆解析資料による確認であり、private データ自体はこの公開リポジトリへ追加しない。
 
@@ -399,10 +399,16 @@ MIMPIV4 の legacy loader が conductor/header 内の base-tempo byte を timer-
 - 現行 `main` での再変換や runtime trace はこの追加調査では実施していない。
 - converter の tempo 規則・SysEx のハードコード・3/4 BPM 補正は、追加の根拠が得られるまで変更しない。
 
-### 10.1 Additional static trace: SNG2S tempo-record decoder (2026-10-22)
+### 14.1 Additional static trace: SNG2S tempo-record decoder (2026-10-22)
 
 `FUN_1000_3406` reads 4-byte tempo records from the table at `0x21E0`. It multiplies the record value by the base tempo at `0x2962`, divides by 64, clamps the result to 1–480, and updates `0x7BA` when the normalized tempo changes. At base tempo 120, record value 37 yields 69 BPM, explaining the numeric value behind the coarse 869000 µs/qn event.
 
 `FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting that flag. The first call therefore follows a different pending-delta path from later calls.
 
 The arithmetic is now supported by static evidence. Why the coarse event is serialized at absolute tick 8 remains a separate question involving preceding setup-event drains and pending-delta/absolute-tick state. The initialized value of `0x6EE` is absent from the export, so four ticks remains unproven.
+
+## 文書監査メモ（2026-10-22）
+
+- 本文の v1 layout と tempo 調査は静的解析・保存済み fixture 比較の記録であり、SNG2S runtime trace や MIDI 実再生を意味しない。
+- 直近の優先項目は [NEXT_STEPS.md](NEXT_STEPS.md) の T-017。既に説明できた tempo の整数計算や 192-tick grid を再調査せず、tick 8 の pending-delta / absolute-tick 状態、`0x6EE` の初期値、setup SysEx の payload 対応に絞る。
+- 節番号の重複を解消した。既存の結果や未解決事項を削除・格上げしていない。
