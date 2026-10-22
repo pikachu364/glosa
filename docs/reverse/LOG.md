@@ -505,3 +505,9 @@
 - FACTS には F-078 / F-079 / F-084 の ID 重複がある。既存参照を壊す一括改番は行わず、重複の存在を明記。次回は参照先を全件検索してから ID を整理する。
 - 比較文書の節番号が「10」で重複していたため、後続の tempo/SysEx 追加節を 14 に整理する。過去の調査ログは削除せず、履歴として残す。
 - 文書だけの監査であり、converter / regression tests は変更していない。private fixture は公開せず、PR #9 はマージしていない。
+
+## 2026-10-22 — MIMPIV4 driver setup と tempo consumer を分離
+
+- 静的解析で `FUN_1FF5_1344` の driver dispatch、選択された初期化関数から `0x0438` → `0x0440` のコピー、`FUN_1FF5_0D61` の INT 8 hook、`FUN_1FF5_0DFA` の divisor 計算と I/O port 書き込みを整理した。
+- この経路は timer の初期化を示すが、SNG tempo record の第2 word が playback 中に timer globals を更新する呼び出し経路はまだ確認できていない。
+- FACTS F-086 と NEXT_STEPS に反映。静的解析のみで、runtime trace・実再生・converter 変更はなし。
