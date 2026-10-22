@@ -292,7 +292,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **優先度:** 中（v1 の読み込み失敗を直すブロッカーではない）
 
 - [x] jmplayer の仕様メモと SNG2S `FUN_1000_3406` を照合し、`rawValue * baseTempo / 64` の整数除算、1..480 の clamp、baseTempo=120 の場合の `floor(15*v/8) = 2v - ceil(v/8)` を確認（FACTS F-071）。
-- [x] `FUN_1000_3406` の tempo stream reader を確認。レコードは interval/count と raw tempo value の組で、`37` は raw tempo slider value、`48/144/192` は interval fields。baseTempo 120 なら `floor(37*120/64)=69 BPM`。以前の逆の解釈を撤回（FACTS F-071）。
+- [x] `runner.SNG` の v1 tempo stream を実バイトで再確認。レコードは `(step, value)` の little-endian word pair で、`37` は第2 word、`48/144/192` は第1 word の interval fields。baseTempo 120 で SNG2S の式に入れると 69 BPM になるが、37 をユーザー向け slider 値と同一視できる根拠は未確認（FACTS F-071/F-078）。
 - [ ] SNG2S の 3/4 固有 +1 BPM 説明について、time-signature input と MIDI tempo-meta generation の間に条件分岐があるか、decompilation の全 call/data flow を調べる。
 - [ ] 3/4 の SNG と SNG2S 参照 MIDI が得られた場合、slider 値ごとに実際の tempo meta と time-signature meta を比較する。現在の private fixture tree には 3/4 の参照 fixture が見つかっていないため、未確認のまま数値補正を実装しない。
 - [x] v1/v3/v4 reference MIDIs show the same two integer paths: v1 869000 at tick 8 and 869565 at tick 192 (69 BPM); v3 361000 at tick 92 and 361445 at tick 192 (166 BPM); v4 260000 at tick 116 and 260869 at tick 192 (230 BPM). This confirms the values are coarse millisecond and exact microsecond representations of the same normalized tempo, not two actual BPM changes (FACTS F-071).
@@ -304,7 +304,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 ## T-015 — versioned tempo-stream start offsets
 **Priority:** completed for v1; keep later-version base-tempo semantics as a separate audit.
 
-- [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S `FUN_1000_3406` uses the second word as the slider value, so 37 at baseTempo120 gives 69 BPM.
+- [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S consumes the second word in its base-tempo scaling calculation, so 37 at baseTempo120 yields 69 BPM. Whether this word is semantically the same as the UI slider remains unproven (FACTS F-078).
 - [x] Verify v3/v4 use sentinel +12: value 89 gives 166 BPM in `START__0.SNG`, and value 123 gives 230 BPM in `BOURREE0.SNG`, matching their reference MIDIs.
 - [x] Confirm Glosa already has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` implementations.
 - [ ] Separate audit: v2 `SHIZUME0.SNG` has a different base-tempo setting and a 6/4 grid. Verify its full tempo-stream-to-MIDI tick scaling before changing shared later-version code; do not infer it from the v1 rule.
