@@ -967,3 +967,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - driver 分岐先の複数関数は初期化時に `0x0438` を `0x0440` へコピーする。別経路では `0x7BF0` と `0x0440` に format-dependent な header/base-tempo byte を設定する。
 
 **制約:** これらは driver/timer の初期化経路を示すが、SNG 再生中に tempo record の第2 word を読む処理や、それが `0x0438` / `0x0440` / `0x7BF0` を更新するデータフローは確認できていない。SNG2S の MIDI export 式を MIMPIV4 の playback tempo 式として流用しない。解析ダンプに基づく静的確認のみで、runtime trace・実再生は未実施。
+
+
+## F-088 — Private v1 fixture workflow passed after canonical Note-event ordering fix (2026-10-23)
+
+**Status:** verified from the private GitHub Actions run and its job log; scoped to the tests that ran.
+
+- Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) checked out Glosa commit `440000b971e72debcef72bb12407bcf4e944527a`, completed the build, and passed all 977 tests.
+- The run included `PrivateV1TestSngKeepsReferenceTempoEvents` and `PrivateV1RunnerMatchesReferenceNoteEvents`.
+- The preceding Note-event comparison failure was due to the ordering of simultaneous Note-off signatures at tick 4012, channel 1, pitches 77 and 82. Canonical sorting by pitch stabilized the comparison; no production converter change was needed to resolve that failure.
+- Comparing the validated checkout with the current PR #9 branch shows only documentation changes after that checkout; converter and test source are unchanged from the passing code state.
+
+**Limitations:** this establishes the scoped tempo-event and Note-event tests, not byte-for-byte SMF equivalence, SysEx payload identity, physical track/chunk ordering, complete controller/program/pitch-bend equivalence, or actual player playback. The current PR head's public CI run #824 was cancelled; do not mark that run as passed.
