@@ -275,6 +275,8 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] `FUN_1000_08EC` の drain semantics を確認。`FF` tempo meta は必ず既存の `0xF9A:0xF9C` を絶対 tick `0x6F2:0x6F4` に加算してから出力し、pending delta をクリアする。`FUN_1000_3406` が1回の call 内で複数 event を queue した場合、同じ drain 内の後続 event は delta 0 で同じ tick になり得る（FACTS F-076）。
 - [x] 解析テキスト全体の命令行を検索し、`[0x6EE]` の29参照がすべて直接読み出しで、直接 store が見つからないことを確認。複数の event-output path で `0x1ED8:0x1EDA` への加算と `0xF9A:0xF9C` への設定に使われる（FACTS F-067）。
 - [ ] `0x6EE` の実値と初期化元を特定する。data segment、別名アドレス、間接書き込み、runtime memory trace は未確認。
+- [x] Private `testdata/ballade/sng2gs/sng2s33.lzh` contains an LH5-compressed `SNG2S.EXE` member (uncompressed size 32,383 bytes); no standalone EXE exists at the obvious fixture paths. The current Ghidra text export does not include the initialized data-segment bytes needed to read `0x6EE` directly.
+- [ ] Extract `SNG2S.EXE` only in a private/local analysis environment and map the DOS data segment to inspect the initialized value/source of `0x6EE` and the `/XD` flag. Never commit the EXE, extracted data, or private fixtures to the public repository.
 - [x] `FUN_1000_184A` → `FUN_1000_5EC8(input, 0xF05, 2)` の比較経路を確認。2-byte token の一致で `0x622=1`。下流用途との整合から `/XD` が最有力で、以前の `/F` 対応推定は撤回。ただし token bytes と文字列の直接対応は未確認（FACTS F-069）。
 - [ ] 参照 MIDI 生成時に `/XD` が指定されたか確認し、`0x622 != 0` の pending-delta reset が実際に適用されたかを絞る。SysEx 4件の存在は `/XD` 無効を強く示唆するが、生成条件の直接証拠ではない。
 - [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
