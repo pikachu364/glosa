@@ -1,3 +1,13 @@
+【最新状況の追記：2026-10-22】
+
+最初に docs/reverse/NEXT_STEPS.md の進捗サマリーと T-017 を読むこと。現在の主課題は SNG2S の tempo 値の計算ではなく、tick 8 の pending-delta / absolute-tick の説明、0x6EE の初期値、4件の setup SysEx payload の対応、参照 MIDI 生成時の実オプションである。0x6EE = 4 は未証明の仮説であり、実装に使わない。
+
+文書監査で FACTS.md の F-078 / F-079 / F-084 に ID 重複が見つかった。既存の参照を壊さないため一括改番は未実施。各 ID は見出し名と合わせて参照し、今後の整理では参照箇所を検索してから修正する。
+
+調査ブランチ：fix/ballade-v1-layout-2026-10-22。PR #9 はユーザーの明示的な許可なしにマージしない。private fixture や解析データを公開リポジトリへコピーしない。converter / tests は根拠が揃うまで変更しない。
+
+---
+
 引継ぎお願いします
 
 引継ぎ：Glosa SNG 対応化 — Ballade SNG v1 の解析と jmplayer 読み込み問題
