@@ -7,12 +7,23 @@
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
 - **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
 - **オプションフラグ対応の再評価:** 下流の用途から `0x626 ↔ /F`（track-order table 選択）、`0x622 ↔ /XD`（SysEx 抑制）が最有力。以前の `0x622 ↔ /F` 仮説は撤回する。parser の比較 operand `0xF05` が `/XD` 文字列に対応すること、token bytes、参照生成時の実際の引数は未確認。FACTS F-069 を参照。
-- **実装への影響:** v1 の汎用 ReadTempi ガードを維持。converter / tempo regression tests は変更しない。v2–v4 の既存挙動も変更なし。
-- **PR:** [#9](https://github.com/pikachu364/glosa/pull/9) は open / unmerged。調査ブランチ `fix/ballade-v1-layout-2026-10-22` は `main` より ahead。CI run [39714779346](https://github.com/pikachu364/glosa/actions/runs/39714779346) は commit `3287b8d` で Windows/macOS/Ubuntu の build と test が成功。後続の docs-only commits に対する新しい workflow run はまだ確認できていない。
+- **実装への影響:** v1 の汎用 ReadTempi ガードと既存の v1 tempo regression tests を維持する。tick 8 の内部 delta 説明が未確定であることと、現在の実装が参照値を出力することは区別する。新しい tempo 挙動を推測で追加せず、v2–v4 の既存挙動も変更しない。
+- **PR / CI の最新確認 (2026-10-22):** [PR #9](https://github.com/pikachu364/glosa/pull/9) は open / unmerged、head は `3ce65a96cbd13d2f935719545152614e18eb2938`。この head に対する CI run [39764666646](https://github.com/pikachu364/glosa/actions/runs/39764666646) は completed / success。commit status API の statuses は空だが、workflow run 自体の成功を確認した。
 - **jmplayer の v1 layout rejection:** private `runner.SNG` の実バイト列と現在の `sngmidi.cpp` を照合し、3つの header candidate がすべて part 1 の後続版 offset validation で失敗することを確認（FACTS F-075）。これは静的再現であり、jmplayer を実行してエラーダイアログを採取したものではない。
 - **実データで再確認:** `runner.SNG` は 85,897 bytes、tableEnd=114、legacy headerEnd=116、part 1 start=1510。v1 の +80 block size、+115/+117 length fields、+119 の13 seek 値の合計は実データと一致（FACTS F-037–F-040/F-075）。
 - **MIMPIV4 のタイマー経路:** legacy loader が base-tempo byte を `0x440` / `0x7BF0` に設定し、interrupt-8 hook と I/O timer divisor calculation (`FUN_1FF5_0D61` / `FUN_1FF5_0DFA`) を使用することを確認（FACTS F-077）。v1 tempo-record から実際の playback period / delta への経路は未確定。
 - **作業の種類:** ここまでの tempo / jmplayer 調査は静的解析。実行時トレース・実再生確認は未実施。
+
+## 調査項目の整理（2026-10-22）
+
+このファイルには、完了した解析履歴と現在の未解決事項が混在している。重複した TODO を別々に再調査しないため、以後は次の整理に従う。
+
+- **現在の最優先 TODO の正本:** T-017。残件は (1) 初回 coarse tempo が tick 8 に出る直前の pending delta / absolute tick の根拠、(2) `0x6EE` の初期値・設定元、(3) setup SysEx 4件と各 producer の payload 対応、(4) 参照 MIDI を生成した実際の SNG2S オプション。
+- **重複する観点:** T-011 は grid と queue drain の全体像、T-012 は tempo/device queue の分離、T-013 は preamble と初回 drain の状態を記録している。これらの完了済みチェックをやり直さず、残件は T-017 の上記4点に集約して進める。個々の過去の根拠・解析ログは削除せず保持する。
+- **別件として維持:** T-014 の 3/4 固有丸め、T-015 の v2 tempo-stream audit、T-016 の MIMPIV4 再生タイマー経路は、tick-8 queue gap と同一視しない。
+- **実装/検証の境界:** PR #9 の説明にある tempo 値の出力は現実装と参照 MIDI の一致を指す。一方、初回イベントが tick 8 になる内部 delta の完全な説明や、任意の v1 ファイルへの一般化は未証明。これらを「実装が未対応」と「内部根拠が未確定」で混同しない。
+
+---
 
 ## 次に行うこと（順序）
 
