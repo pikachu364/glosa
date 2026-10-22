@@ -3,7 +3,7 @@
 ## 現在地
 
 - **進行中の最優先課題:** SNG2S では setup 出力が `FUN_1000_33D4` より先にキューへ積まれ、初回 `FUN_1000_3406` が coarse tempo meta を追加してから `FUN_1000_08EC` がまとめて drain する呼び出し順を確認済み。これが tick 8 になる流れと整合するが、個々の SysEx payload と pending-delta 値の完全な対応は未確定。tick 192 は別経路の 192-grid alignment で説明できる（FACTS F-080/F-081）。
-- **参照 MIDI で確認済み:** tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。time signature は tick 0 の 4/4。
+- **参照 MIDI で確認済み:** `runner.MID` は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。`TEST.MID` は tick 0 の 500,000 のみ。両方とも setup SysEx は track 1 の tick 0/4/8/8 にある（FACTS F-082）。time signature は tick 0 の 4/4。
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
 - **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
 - **オプションフラグ対応の再評価:** 下流の用途から `0x626 ↔ /F`（track-order table 選択）、`0x622 ↔ /XD`（SysEx 抑制）が最有力。以前の `0x622 ↔ /F` 仮説は撤回する。parser の比較 operand `0xF05` が `/XD` 文字列に対応すること、token bytes、参照生成時の実際の引数は未確認。FACTS F-069 を参照。
@@ -254,7 +254,8 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] tick 0 と tick 192 の経路を対応付ける。tick 0 は既定 500000 µs/quarter、tick 192 は grid-aligned exact tempo meta。v1/v3/v4 の cross-version values confirm the same integer path (FACTS F-071/F-072).
 - [x] coarse tempo meta の直接 producer を特定。`FUN_1000_3406` は v1 tempo-record の第2 word 37 と base tempo 120 から 69 BPM を算出し、`floor(60000/69)*1000=869000` を `FF 51 03` として queue に書く。第2 word が UI slider と同義かは未確認（FACTS F-073/F-078）。
 - [x] Call order confirms setup/output routines (`FUN_1000_2144`, `FUN_1000_1C70`) precede `FUN_1000_33D4`; the initial `FUN_1000_3406` queues the coarse tempo meta before the following shared `FUN_1000_08EC` drain. Reference SysEx events at ticks 0/4/8/8 precede the coarse tempo meta at tick 8 (FACTS F-081).
-- [ ] Fully map each setup routine to the reference SysEx payload and prove the per-event `0xF9A:0xF9C` / `0x6F2:0x6F4` values. Static queue ordering is consistent with tick 8 but not a runtime trace.
+- [x] Compare a second private v1 fixture: `TEST.SNG` has value 64 with base tempo 120 and `TEST.MID` has no changed-tempo meta; both `TEST.MID` and `runner.MID` show the same setup SysEx ticks 0/4/8/8 (FACTS F-082).
+- [ ] Fully map each setup routine to each reference SysEx payload and prove the per-event `0xF9A:0xF9C` / `0x6F2:0x6F4` values. Static queue ordering and a second fixture support the tick-8 explanation but do not replace a runtime trace.
 - [ ] 実行時トレースができない場合は、静的推論と参照 MIDI の観測事実を明確に分離して記録する。
 
 **完了条件:** 3つの参照 tempo event の値・tick と SNG2S の各出力経路を根拠付きで説明できること。そこまでは converter / regression test を変更しない。
