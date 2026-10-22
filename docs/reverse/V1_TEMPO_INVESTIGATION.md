@@ -1,5 +1,7 @@
 # v1 Tempo Event Investigation
 
+> **Current status (2026-10-22):** The integer conversion for the coarse tempo event and the separate 192-tick grid path are supported by static analysis. The remaining tick-8 issue is event placement: pending delta / absolute tick and prior queue drains. `0x6EE` is read by setup paths, but its initialized value and exact SysEx mapping are not known. Do not assume it equals 4 or change converter timing without new evidence. See [NEXT_STEPS.md](NEXT_STEPS.md), T-017.
+
 ## Scope and current reference
 
 This note tracks the unresolved v1 tempo conversion in `runner.SNG` compared with `testdata/ballade/v1/sng2gs/runner.MID`. The reference MIDI contains tempo meta events at ticks 0, 8, and 192:
