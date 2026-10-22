@@ -1,15 +1,17 @@
-# 逆解析の進捗サマリー（2026-10-21）
+# 逆解析の進捗サマリー（2026-10-22）
 
 ## 現在地
 
-- **進行中の最優先課題:** v1 tempo meta の tick 8 / tick 192 の出力時刻を SNG2S の処理経路と対応付ける。
+- **進行中の最優先課題:** SNG2S の tempo queue drain で tick 8 が生じる pending-delta の出所を静的に説明する。tick 192 は stored meter-grid alignment で説明できる（FACTS F-072/F-073）。
 - **参照 MIDI で確認済み:** tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。time signature は tick 0 の 4/4。
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
-- **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。これを使うと 0x6EE = 4 が具体的な候補になるが、queue payload と accumulator の対応は未確認。
+- **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
 - **オプションフラグ対応の再評価:** 下流の用途から `0x626 ↔ /F`（track-order table 選択）、`0x622 ↔ /XD`（SysEx 抑制）が最有力。以前の `0x622 ↔ /F` 仮説は撤回する。parser の比較 operand `0xF05` が `/XD` 文字列に対応すること、token bytes、参照生成時の実際の引数は未確認。FACTS F-069 を参照。
 - **実装への影響:** v1 の汎用 ReadTempi ガードを維持。converter / tempo regression tests は変更しない。v2–v4 の既存挙動も変更なし。
-- **PR:** #5 は reverse/v1-tempo-investigation で open / unmerged。直近確認時の CI status は空であり、CI 成功とは扱わない。
-- **作業の種類:** ここまでの tempo 調査は静的解析。実行時トレース・実再生確認は未実施。
+- **PR:** [#9](https://github.com/pikachu364/glosa/pull/9) は open / unmerged。調査ブランチ `fix/ballade-v1-layout-2026-10-22` は `main` より ahead。CI run [39714779346](https://github.com/pikachu364/glosa/actions/runs/39714779346) は commit `3287b8d` で Windows/macOS/Ubuntu の build と test が成功。後続の docs-only commits に対する新しい workflow run はまだ確認できていない。
+- **jmplayer の v1 layout rejection:** private `runner.SNG` の実バイト列と現在の `sngmidi.cpp` を照合し、3つの header candidate がすべて part 1 の後続版 offset validation で失敗することを確認（FACTS F-075）。これは静的再現であり、jmplayer を実行してエラーダイアログを採取したものではない。
+- **実データで再確認:** `runner.SNG` は 85,897 bytes、tableEnd=114、legacy headerEnd=116、part 1 start=1510。v1 の +80 block size、+115/+117 length fields、+119 の13 seek 値の合計は実データと一致（FACTS F-037–F-040/F-075）。
+- **作業の種類:** ここまでの tempo / jmplayer 調査は静的解析。実行時トレース・実再生確認は未実施。
 
 ## 次に行うこと（順序）
 
