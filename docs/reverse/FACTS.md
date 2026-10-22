@@ -858,27 +858,15 @@ For private `testdata/ballade/v1/runner.SNG`:
 **Sources:** private MIMPIV4 Ghidra export, `FUN_1000_22FC`, `FUN_1FF5_1409`, `FUN_1000_A3BB`; complete text scan for literal references to `0x0440`. Static analysis only.
 
 
-## F-080 — SNG2S explicitly aligns the exact-tempo meta to the next bar/grid boundary
+## F-080 — SNG2S aligns the exact-tempo meta to the next 192-tick grid boundary
 
-**Status:** the control-flow and arithmetic are confirmed; the coarse tick-8 event has a separate queue-delta path.
+**Status:** source control flow and the grid operand's source bytes are confirmed. This path explains the exact-tempo event at tick 192; it does not explain the earlier coarse tempo event at tick 8.
 
-- In `FUN_1000_0010`, after `FUN_1000_33D4` and its queue drain, SNG2S calls `FUN_1000_61EC(currentAbsoluteTick, uVar11, 0, 0)`. That helper returns the current absolute tick modulo `uVar11`.
-- The caller computes `delta = uVar11 - remainder`; if that is zero, it substitutes a full `uVar11`. It then writes an exact-microsecond tempo meta when `0x7BA != 120`. With grid operand 192 and current absolute tick 8, the delta is 184 and the event lands at tick 192, matching `runner.MID`'s 869565 µs/quarter event.
-- This is the **bar-start exact-tempo event**, not the coarse 869000 µs/quarter event at tick 8. The coarse event is queued by `FUN_1000_3406` and its tick depends on the pending delta already present when the earlier queue drain emits it (F-076).
-- The tempo record's step word 48 is consumed by `FUN_1000_3406` to advance the tempo-record scheduler. It is not the source of the tick-192 grid alignment.
-- **Still unproven:** the full source-byte initialization path for `uVar11`/the `0x21DC` stream and whether all v1 files use the same grid operand. Do not generalize the tick-192 event to arbitrary meter without tracing the meter/grid input.
+- At the start of `FUN_1000_0010`, SNG2S reads the conductor/grid structure through the pointer at `0x21DC`. The first byte is assigned to `uVar11`; the next bytes supply the time-signature numerator and denominator. In v1 `runner.SNG`, file offset 231 contains `C0 00 04 04`, so the grid operand is 192 ticks and the meter is 4/4.
+- After the first scheduler call and queue drain, `FUN_1000_0010` calls `FUN_1000_61EC(currentAbsoluteTick, uVar11, 0, 0)`. With the fourth argument zero, the helper calculates the remainder of the current absolute tick modulo `uVar11`. The caller sets pending delta to `uVar11 - remainder`, substituting a full grid if the result is zero.
+- The code then writes the exact-microsecond tempo meta using `floor(60,000,000 / currentBpm)`. With a 192-tick grid and the normalized 69 BPM tempo, the value is 869565 µs/quarter. The reference `runner.MID` places this event at tick 192.
+- The earlier 869000 µs/quarter event is queued by `FUN_1000_3406` through the millisecond-rounded calculation `floor(60,000 / BPM) * 1000` and is drained before this grid-alignment block. It is already present at tick 8 in the reference MIDI. Do **not** describe the 192-tick grid calculation as the cause of the tick-8 event.
+- The grid-alignment arithmetic explains the exact-tempo event at the next bar/grid boundary. For the observed reference output, the current absolute tick before this calculation must be consistent with the earlier tick-8 event; however, the exact preamble state that causes the coarse event to land at tick 8 remains unresolved.
+- **Still open:** identify the initialized value/source of `0x6EE`, the exact preamble queue items and command-line flags used for `runner.MID`, and the pending-delta/absolute-tick state at the drain that emits the coarse 869000 event. No runtime trace was performed.
 
-**Sources:** private SNG2S Ghidra export `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`; private `runner.SNG` and reference tempo facts. Static analysis only.
-
-
-## F-081 — the coarse tick-8 tempo event is queued after setup output, before the shared drain
-
-**Status:** call order and queue behavior are statically confirmed; exact producer-to-SysEx-payload mapping remains open.
-
-- `FUN_1000_0010` writes the default tempo at tick 0 and drains it, then calls setup/output routines including `FUN_1000_2144` and `FUN_1000_1C70` before `FUN_1000_33D4`.
-- `FUN_1000_33D4` invokes `FUN_1000_3406` once during initialization. When the first tempo value normalizes to 69 BPM, `FUN_1000_3406` queues the coarse `FF 51 03` tempo event (869000 µs/quarter) in the same output queue that is drained by the following `FUN_1000_08EC`.
-- The reference MIDI has setup SysEx events at ticks 0, 4, 8, and 8, followed by the coarse tempo meta at tick 8. This queue order explains why the tempo meta can inherit the timing position established by preceding setup output; it is not derived directly from the tempo record's step word 48.
-- `FUN_1000_08EC` flushes each event's pending delta into the absolute tick before writing it, then clears the pending delta. The exact SysEx producer/payload mapping and the precise `0xF9A:0xF9C` values for each queued setup event remain unproven without a runtime trace or a complete payload-level trace.
-- The exact-tempo event at tick 192 is separate: after that drain, `FUN_1000_0010` aligns the exact tempo meta to the next 192-tick grid boundary (F-080).
-
-**Sources:** private SNG2S Ghidra export `FUN_1000_0010`, `FUN_1000_2144`, `FUN_1000_1C70`, `FUN_1000_33D4`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` and reference `runner.MID`. Static analysis only.
+**Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` bytes and reference `runner.MID`. Static analysis only.
