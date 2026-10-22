@@ -754,3 +754,19 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - **Scope note:** this does not resolve the documented 3/4 +1 BPM export-rounding observation. The core `FUN_1000_3406` tempo normalization is independent of meter; the 3/4 behavior remains a separate export/grid question.
 
 **Sources:** jmplayer `sngmidi.cpp` tempo parser; private SNG2S `FUN_1000_3406`; v1 `runner.SNG` bytes / `runner.MID`; v2 `SHIZUME0.SNG` / `SHIZUME0.MID`; v3 `START__0.SNG` / `START__0.MID`; v4 `BOURREE0.SNG` / `BOURREE0.MID`.
+
+
+## F-075 — jmplayer's three v1 layout candidates all fail on runner.SNG at part 1
+
+**Status:** independently recalculated from the private `runner.SNG` bytes using the current `sngmidi.cpp` `buildLayout()` checks. This is a static reproduction of the rejection path, not a runtime capture of jmplayer.
+
+- The file is 85,897 bytes. Its version is `1.00`, table starts at `0x46`, table end is `0x72` (114), and the 11 little-endian entries begin with conductor size 1,394 and part-1 entry 1,230.
+- The correct legacy header end is 116 (`0x74`), and the correct part-1 start is 1,510. The real part-1 size is `1230 + 80 = 1310`; its v1 fields are used length 464 at +115, controller length 256 at +117, and the 13 seek values sum to 510 from +119. Their sum is 1,230, matching the part-table entry.
+- jmplayer tries header ends 208 (`tableEnd + 94`), 116 (`tableEnd + 2`), and 114 (`tableEnd`). Each candidate fails the first-part length validation:
+  - H=208 places part 1 at 1,602; the later-version reads yield used=0, controller=1,036, index=17,920, capacity=1,153.
+  - H=116 places part 1 at the correct start 1,510, but the later-version reads yield used=0, controller=53,248, index=1, capacity=1,153. The sum exceeds capacity.
+  - H=114 places part 1 at 1,508; the later-version reads yield used=0, controller=0, index=53,248, capacity=1,153.
+- Therefore, for this actual fixture, `buildLayout()` returns false before `toMidi()` reaches event conversion. The v1 header candidate is present; rejection is caused by validating the v1 block with later-version field offsets and size rules, not by a missing `tableEnd + 2` candidate.
+- This matches the source path where `toMidi()` immediately returns an empty `QByteArray` when `buildLayout()` fails. No interactive jmplayer launch or error dialog was captured.
+
+**Sources:** private `testdata/ballade/v1/runner.SNG` bytes; current jmplayer `sngmidi.cpp` `buildLayout()` and `toMidi()`. Static data/code comparison only.
