@@ -398,3 +398,11 @@ MIMPIV4 の legacy loader が conductor/header 内の base-tempo byte を timer-
 - 参照 v1 MIDI の Note-on 3,295 件・Note-off 3,295 件の一致は、該当作業ブランチでのオフライン比較結果であり、tempo/meta、全 SysEx、物理 track-chunk order を含む byte-for-byte SMF equivalence を意味しない。
 - 現行 `main` での再変換や runtime trace はこの追加調査では実施していない。
 - converter の tempo 規則・SysEx のハードコード・3/4 BPM 補正は、追加の根拠が得られるまで変更しない。
+
+### 10.1 Additional static trace: SNG2S tempo-record decoder (2026-10-22)
+
+`FUN_1000_3406` reads 4-byte tempo records from the table at `0x21E0`. It multiplies the record value by the base tempo at `0x2962`, divides by 64, clamps the result to 1–480, and updates `0x7BA` when the normalized tempo changes. At base tempo 120, record value 37 yields 69 BPM, explaining the numeric value behind the coarse 869000 µs/qn event.
+
+`FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting that flag. The first call therefore follows a different pending-delta path from later calls.
+
+The arithmetic is now supported by static evidence. Why the coarse event is serialized at absolute tick 8 remains a separate question involving preceding setup-event drains and pending-delta/absolute-tick state. The initialized value of `0x6EE` is absent from the export, so four ticks remains unproven.
