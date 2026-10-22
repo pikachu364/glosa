@@ -948,3 +948,13 @@ For private `testdata/ballade/v1/runner.SNG`:
 **Implication:** continue tracing the MIMPIV4 binary SNG parser and the data that populates its timing state separately from SNG2S's SMF tempo-meta exporter. Do not use SNG2S's `869000` / `869565` calculations as proof of MIMPIV4 playback timing.
 
 **Source:** private MIMPIV4 static-analysis export and `MIMPIV4.DOC`; no runtime trace.
+
+## F-087 — MIMPIV4 derives its initial timer base from a version-dependent header byte (2026-10-22)
+
+**Status:** confirmed by static disassembly; dynamic tempo-change behavior remains unresolved.
+
+In `FUN_1000_22FC`, MIMPIV4 classifies the loaded Ballade-family header using the version/type byte and sets `0x7800` to the corresponding format path. Later in that same loader, it copies a byte from the loaded record at `0x6568` into both `0x7BF0` and `0x0440`: offset `+0x1C` when `0x7800 == 0`, and offset `+0x06` when the format path is nonzero. A separate non-SNG/default setup path (`FUN_1000_314F`) initializes `0x7BF0` to `0x78` (120).
+
+This narrows the source of the initial timer base but does not show that tempo records encountered during playback update it. The loaded record's role and the dynamic tempo path still require separate tracing.
+
+**Source:** private MIMPIV4 static-analysis export, `FUN_1000_22FC` (1000:22FC onward) and `FUN_1000_314F`; no runtime trace.
