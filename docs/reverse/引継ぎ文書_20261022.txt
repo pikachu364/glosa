@@ -192,3 +192,13 @@ jmplayer の仕様メモには、2曲が SNG2S と一致しない理由として
 同時に、確定事項・推測・未検証を明確に分ける。検証していないことを完了と報告しない。作業が複数の壁に分かれても、Glosa で v1 を正しく変換するというゴールを見失わない。
 
 最終ゴール： SNG2S/MIMPIV4 の仕様に根拠を持つ Ballade SNG v1 converter を完成させ、jmplayer の v1 読み込み問題を説明できる状態にする。
+
+【最新状況の追記：2026-10-23】
+
+private workflow run #6（https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256）は Glosa commit 440000b971e72debcef72bb12407bcf4e944527a を checkout し、build 成功・977 tests passed。PrivateV1TestSngKeepsReferenceTempoEvents と PrivateV1RunnerMatchesReferenceNoteEvents も pass。
+
+先行する Note-event 比較失敗は、tick 4012 / channel 1 の Note-off pitch 77 と 82 が canonical list 内で逆順になった比較テスト上の問題。pitch を含めて canonical sort を安定化したことで解消し、converter 本体の修正は不要だった。現 PR #9 head までの追加変更は docs のみで、検証済み converter/test code と同じ。
+
+現 PR #9 head 81f5dccedd4f4df390f8d454accbbd98436e658f の public CI run #824 は cancelled。旧 head の run #815 success を現 head の成功と混同しない。PR #9 は open / unmerged のまま維持し、明示許可なく merge しない。
+
+残課題：setup SysEx payload の byte equality、SMF physical track/chunk order、controller/program/pitch bend の網羅、変化する tempo を含む独立 fixture、SNG2S tick 8 / 0x6EE 初期値、MIMPIV4 playback tempo consumer の特定。0x6EE=4 は未証明。runtime trace と実再生は未実施。private fixture や解析 dump は public repo に置かない。
