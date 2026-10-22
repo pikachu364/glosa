@@ -935,3 +935,16 @@ For private `testdata/ballade/v1/runner.SNG`:
 - The numeric tempo conversion is now explained. The remaining tick-8 question is the queue/pending-delta state and prior setup output; the 192-tick grid path remains a separate, already-supported path.
 
 **Source:** private SNG2S static-analysis export, functions `FUN_1000_3DE2`, `FUN_1000_33D4`, and `FUN_1000_3406`. No runtime trace.
+
+## F-086 — MIMPIV4 timer initialization path is distinct from SNG2S MIDI export (2026-10-22)
+
+**Status:** static disassembly fact; runtime playback behavior and SNG tempo-record mapping remain unresolved.
+
+- In the MIMPIV4.EXE export, `FUN_1FF5_0D61` saves the existing INT 8 vector via DOS `INT 21h / AH=35h`, installs a handler via `INT 21h / AH=25h`, initializes timer-related state, and calls `FUN_1FF5_0DFA` with the value loaded from `0x0440`.
+- `FUN_1FF5_0DFA` derives a divisor using `0x3386`, `0x3392`, and its input `CX`; it writes calculated bytes to I/O ports `0x71` and `0x5F`. `FUN_1FF5_0D61` also configures the related control port at `0x77`.
+- The loader sets `0x7BF0` and `0x0440` from a byte in the loaded legacy header/record, with the source offset depending on the selected format path. A later initialization path copies `0x7BF0` back to `0x0440`.
+- The MIMPIV4 manual documents user-facing playback-tempo controls (Up/Down and `/Tn`), but does not describe how binary SNG tempo records are decoded. The currently traced timer routines do not establish a mapping from SNG tempo-record fields to playback intervals.
+
+**Implication:** continue tracing the MIMPIV4 binary SNG parser and the data that populates its timing state separately from SNG2S's SMF tempo-meta exporter. Do not use SNG2S's `869000` / `869565` calculations as proof of MIMPIV4 playback timing.
+
+**Source:** private MIMPIV4 static-analysis export and `MIMPIV4.DOC`; no runtime trace.
