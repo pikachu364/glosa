@@ -322,4 +322,47 @@ The converter now has an isolated v1 tempo path rather than reusing the later-ve
 
 Regression tests now check runner.SNG's reference tempo events at ticks 0, 8 and 192, plus a no-change tempo stream synthesized by replacing runner.SNG's tempo values with 64. They record reference MIDI facts without checking the reference binary into the public repository. The private-data TEST.SNG reference also contains only the default tempo, but it is not a public CI fixture.
 
-**Status:** The implementation matches the two available v1 fixtures for tempo metadata, and CI is being rerun on the latest commit. General v1 tempo compatibility is not yet proven: there is no independent v1 fixture with two or more different tempo values changing at later points in the song. Keep PR #9 open until the latest CI result is confirmed and this limitation has been reviewed; do not claim complete event-for-event MIDI equivalence.
+**Status:** Public CI for the implementation has passed on the tested branch revision. A separate private-fixture comparison was added on 2026-10-22; its TEST.SNG tempo comparison passed, but its runner.SNG note-event comparison failed. See section 13 below. General v1 tempo compatibility is not yet proven: there is no independent v1 fixture with two or more different tempo values changing at later points in the song. Keep PR #9 open until the private comparison discrepancy is understood and the remaining limitations have been reviewed; do not claim complete event-for-event MIDI equivalence.
+
+
+## 13. 非公開 fixture による追加検証（2026-10-22）
+
+**目的:** 公開リポジトリに参照データを置かず、glosa-private-data に保存された SNG / MIDI を使って、PR #9 の変換結果を参照 MIDI と比較する。
+
+### 実行構成
+
+- 非公開リポジトリに専用ワークフロー .github/workflows/private-data-ci.yml を追加した。
+- ワークフローは非公開リポジトリ内の fixture を取得し、対象ブランチ fix/ballade-v1-layout-2026-10-22 の Glosa ソースと一時的に組み合わせてビルド・テストする。
+- private-only テストコードは .github/private-tests/PrivateBalladeFixtureTests.cs に置き、公開リポジトリには追加していない。
+- 参照 fixture 自体は公開リポジトリへコピーせず、Actions artifact としても公開しない構成にしている。
+
+ワークフロー実行: [Private Ballade fixture validation #3](https://github.com/pikachu364/glosa-private-data/actions/runs/39699313907)
+
+### 結果
+
+| 検証 | 結果 | 観測 |
+|---|---|---|
+| Build | 成功 | PR #9 のソースと private-only テストがコンパイルできた |
+| TEST.SNG の tempo event 比較 | 成功 | 参照 TEST.MID と変換結果の tempo event 列が一致した |
+| runner.SNG のノートイベント比較 | 失敗 | 全体のイベント配列比較で差が検出された |
+| テスト全体 | 976 passed / 1 failed / 977 total | 失敗は private runner 比較テスト |
+
+runner 比較の失敗ログでは、比較対象の最初の差として、期待側に Track=2, Tick=1728, Channel=9, Key=54 などが現れる一方、変換側は Track=2, Tick=2423, Channel=1, Key=73 から始まっている。これはテストが記録した不一致であり、ログだけでは原因を断定できない。
+
+### 解釈と制約
+
+- 現時点では「runner のノートイベントが参照 MIDI と一致した」とは言えない。
+- 比較テストはトラック番号と tick を含むイベント列を直接比較している。参照 MIDI と変換 MIDI でトラック配置・イベント順序・チャンネルの対応が異なる場合も差分として検出されるため、まず両ファイルのトラック構成とイベントを対応付けて原因を切り分ける必要がある。
+- 逆に、トラック構成の違いだけだと決めつけることもできない。tick mapping、ノートの再構成、チャンネル割当など変換側の差である可能性も未解決である。
+- TEST.SNG の tempo 比較成功は、runner の可変 tempo 処理やノートイベントの完全一致を証明しない。
+- このワークフローは PR #9 のソースをビルド・テストしたが、private runner 比較が失敗しているため、参照 MIDI との完全な互換性を示す検証にはなっていない。
+
+### 次の作業
+
+- [ ] runner.MID と変換 MIDI の各トラックについて、トラック名・チャンネル・ノート数・tick 範囲を集計し、トラック対応を確認する。
+- [ ] トラック番号の違いを正規化した比較と、tick/音程/velocity を含むイベント内容の比較を分けて実施する。
+- [ ] ノート数、ノートオン／オフの対応、tick 差分、channel 差分を個別に集計し、最初の不一致だけでなく差分の分布を確認する。
+- [ ] 比較ロジックの前提が確認できるまではテストを緩めて成功扱いにせず、差分を保持する。
+- [ ] 原因が Glosa の変換コードにあると確認された場合にのみ、修正と回帰テストを追加する。
+
+**現在の判断:** PR #9 は未マージのまま保留する。公開 CI の成功だけでは、private reference MIDI とのイベント単位の一致は保証できない。
