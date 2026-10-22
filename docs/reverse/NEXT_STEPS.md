@@ -289,3 +289,14 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] Keep T-011/T-012 open for the exact queue-drain/tick placement explanation, especially why the first event lands at tick 8 and the exact-tempo event at tick 192. Keep the 3/4 +1 BPM quirk separate.
 
 **完了条件:** slider-to-timer curve と SNG2S MIDI-export rounding を別の処理として説明し、3/4 の補正は参照 fixture で確認できるまで実装しない。
+
+
+## T-015 — versioned tempo-stream start offsets
+**Priority:** completed for v1; keep later-version base-tempo semantics as a separate audit.
+
+- [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S `FUN_1000_3406` uses the second word as the slider value, so 37 at baseTempo120 gives 69 BPM.
+- [x] Verify v3/v4 use sentinel +12: value 89 gives 166 BPM in `START__0.SNG`, and value 123 gives 230 BPM in `BOURREE0.SNG`, matching their reference MIDIs.
+- [x] Confirm Glosa already has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` implementations.
+- [ ] Separate audit: v2 `SHIZUME0.SNG` has a different base-tempo setting and a 6/4 grid. Verify its full tempo-stream-to-MIDI tick scaling before changing shared later-version code; do not infer it from the v1 rule.
+
+**Result:** jmplayer's shared `last+12` tempo parser would misread the v1 stream even after its part-block layout is fixed. This is a separate v1 compatibility fix, documented in FACTS F-074.
