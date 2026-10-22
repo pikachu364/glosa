@@ -317,9 +317,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **Priority:** high; required for the SNG2S/MIMPIV4 comparison.
 
 - [x] Retrieve the complete private MIMPIV4 Ghidra export via its blob; the file is larger than the ordinary file-content response and must remain private.
-- [x] Confirm `FUN_1000_22FC` legacy branch stores the legacy base-tempo byte in `0x7BF0` and `0x0440`.
+- [x] Confirm `FUN_1000_22FC` legacy branch reads the byte at `+0x1C` of the loaded conductor structure and stores it in `0x7BF0` and `0x0440`; the timer parameter is not calculated from the tempo record's second word at this point (FACTS F-079).
 - [x] Trace timer setup: `FUN_1FF5_0D61` installs the interrupt-8 handler and initializes timer state; `FUN_1FF5_0DFA` calculates a hardware timer divisor using the current CX parameter, a factor of 120, and `0x3392` timebase; `FUN_1FF5_0DE1` updates the scheduled count.
-- [ ] Identify which MIMPIV4 routine consumes the v1 conductor tempo records and determine whether it changes `0x0440`, another timer parameter, or per-event delta scaling.
+- [x] Scan the full available MIMPIV4 Ghidra export for direct `0x0440` references: only loader initialization and timer-driver initialization write it; playback later passes it to `FUN_1FF5_0DE1` (FACTS F-079).
+- [ ] Identify which MIMPIV4 routine consumes the v1 conductor tempo records and determine whether it changes another timer parameter or per-event delta scaling.
 - [ ] Reconcile that routine against the actual v1 `runner.SNG` records without assuming the SNG2S MIDI-export curve applies to MIMPIV4 playback.
 - [ ] If the path cannot be proven statically, record the exact remaining dataflow gap; do not claim runtime behavior without a trace.
 
