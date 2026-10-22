@@ -844,3 +844,15 @@ For private `testdata/ballade/v1/runner.SNG`:
 - The parser's initial scheduler tick of 8 is a separate preamble state. The first record's step 48 advances the schedule *after* the tempo record is considered; it does not explain why the first tempo event is at tick 8. Repeated value 37 records do not create further tempo changes. The special bar-start emission accounts for the reference event at tick 192.
 
 **Sources:** direct byte inspection of private `runner.SNG`; SNG2S Ghidra export `FUN_1000_3406` and `FUN_1000_08EC`; reference tempo facts recorded for private `runner.MID`. Static analysis; no SNG2S runtime trace.
+
+
+## F-079 — MIMPIV4's legacy base-tempo byte is loaded from the conductor structure, not inferred from the tempo record value
+
+**Status:** direct loader data flow and all literal references to the timer parameter confirmed in the available Ghidra export.
+
+- In `FUN_1000_22FC`, after the conductor/part data is read into the allocated in-memory structures, the legacy branch (`0x7800 == 0`) selects the structure pointed to by `0x6568` and reads its byte at offset `+0x1C`. That byte is stored into both `0x7BF0` and `0x0440`. Later format branches select different offsets.
+- In the available full MIMPIV4 Ghidra export, the only direct writes to `0x0440` are the loader assignment in `FUN_1000_22FC` and initialization/copy from `0x7BF0` in `FUN_1FF5_1409`. `FUN_1000_A3BB` passes the current `0x0440` to `FUN_1FF5_0DE1` when its timer threshold expires.
+- This strengthens the evidence that the hardware-timer period parameter is initialized from the loaded header/conductor structure. It does **not** prove that tempo records never affect playback: they could alter a separate per-event delta or scheduler state, which has not yet been traced to completion.
+- The currently exported dump has no decompiled body for the installed interrupt handler target `1FF5:0E71`, so its tick-update behavior cannot be used to bridge this gap.
+
+**Sources:** private MIMPIV4 Ghidra export, `FUN_1000_22FC`, `FUN_1FF5_1409`, `FUN_1000_A3BB`; complete text scan for literal references to `0x0440`. Static analysis only.
