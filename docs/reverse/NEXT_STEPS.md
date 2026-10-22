@@ -274,3 +274,15 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
 
 **注意:** 初回 `FUN_1000_3406` に通常経路の +1 を当てはめない。tick 8 が説明できるまで `SngConverter.cs` と tempo regression tests は変更しない。
+
+
+## T-014 — tempo slider curve と 3/4 の MIDI 出力丸めを分離
+**優先度:** 中（v1 の読み込み失敗を直すブロッカーではない）
+
+- [x] jmplayer の仕様メモと SNG2S `FUN_1000_3406` を照合し、`rawValue * baseTempo / 64` の整数除算、1..480 の clamp、baseTempo=120 の場合の `floor(15*v/8) = 2v - ceil(v/8)` を確認（FACTS F-071）。
+- [x] 証拠の訂正：v1 conductor の現在の parser が読んだ `37` は step/delay 候補であり、slider value と断定しない。`144/192` も 1..127 の slider domain 外なので、誤った parser 出力を slider curve に直接入力しない（FACTS F-071）。
+- [ ] SNG2S の 3/4 固有 +1 BPM 説明について、time-signature input と MIDI tempo-meta generation の間に条件分岐があるか、decompilation の全 call/data flow を調べる。
+- [ ] 3/4 の SNG と SNG2S 参照 MIDI が得られた場合、slider 値ごとに実際の tempo meta と time-signature meta を比較する。現在の private fixture tree には 3/4 の参照 fixture が見つかっていないため、未確認のまま数値補正を実装しない。
+- [ ] v1 の 500000 / 869000 / 869565 µs/quarter の生成元と tick 配置は T-011〜T-013 で別途解決する。3/4 の +1 BPM と混ぜて説明しない。
+
+**完了条件:** slider-to-timer curve と SNG2S MIDI-export rounding を別の処理として説明し、3/4 の補正は参照 fixture で確認できるまで実装しない。
