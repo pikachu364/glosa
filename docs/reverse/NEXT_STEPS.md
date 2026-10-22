@@ -11,6 +11,7 @@
 - **PR:** [#9](https://github.com/pikachu364/glosa/pull/9) は open / unmerged。調査ブランチ `fix/ballade-v1-layout-2026-10-22` は `main` より ahead。CI run [39714779346](https://github.com/pikachu364/glosa/actions/runs/39714779346) は commit `3287b8d` で Windows/macOS/Ubuntu の build と test が成功。後続の docs-only commits に対する新しい workflow run はまだ確認できていない。
 - **jmplayer の v1 layout rejection:** private `runner.SNG` の実バイト列と現在の `sngmidi.cpp` を照合し、3つの header candidate がすべて part 1 の後続版 offset validation で失敗することを確認（FACTS F-075）。これは静的再現であり、jmplayer を実行してエラーダイアログを採取したものではない。
 - **実データで再確認:** `runner.SNG` は 85,897 bytes、tableEnd=114、legacy headerEnd=116、part 1 start=1510。v1 の +80 block size、+115/+117 length fields、+119 の13 seek 値の合計は実データと一致（FACTS F-037–F-040/F-075）。
+- **MIMPIV4 のタイマー経路:** legacy loader が base-tempo byte を `0x440` / `0x7BF0` に設定し、interrupt-8 hook と I/O timer divisor calculation (`FUN_1FF5_0D61` / `FUN_1FF5_0DFA`) を使用することを確認（FACTS F-077）。v1 tempo-record から実際の playback period / delta への経路は未確定。
 - **作業の種類:** ここまでの tempo / jmplayer 調査は静的解析。実行時トレース・実再生確認は未実施。
 
 ## 次に行うこと（順序）
@@ -302,3 +303,17 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] Separate audit: v2 `SHIZUME0.SNG` has a different base-tempo setting and a 6/4 grid. Verify its full tempo-stream-to-MIDI tick scaling before changing shared later-version code; do not infer it from the v1 rule.
 
 **Result:** jmplayer's shared `last+12` tempo parser would misread the v1 stream even after its part-block layout is fixed. This is a separate v1 compatibility fix, documented in FACTS F-074.
+
+
+## T-016 — MIMPIV4 legacy tempo records to playback timer
+
+**Priority:** high; required for the SNG2S/MIMPIV4 comparison.
+
+- [x] Retrieve the complete private MIMPIV4 Ghidra export via its blob; the file is larger than the ordinary file-content response and must remain private.
+- [x] Confirm `FUN_1000_22FC` legacy branch stores the legacy base-tempo byte in `0x7BF0` and `0x0440`.
+- [x] Trace timer setup: `FUN_1FF5_0D61` installs the interrupt-8 handler and initializes timer state; `FUN_1FF5_0DFA` calculates a hardware timer divisor using the current CX parameter, a factor of 120, and `0x3392` timebase; `FUN_1FF5_0DE1` updates the scheduled count.
+- [ ] Identify which MIMPIV4 routine consumes the v1 conductor tempo records and determine whether it changes `0x0440`, another timer parameter, or per-event delta scaling.
+- [ ] Reconcile that routine against the actual v1 `runner.SNG` records without assuming the SNG2S MIDI-export curve applies to MIMPIV4 playback.
+- [ ] If the path cannot be proven statically, record the exact remaining dataflow gap; do not claim runtime behavior without a trace.
+
+**Current result:** the hardware-timer path is mapped, but the v1 tempo-record-to-playback timing path is not yet proven (FACTS F-077).
