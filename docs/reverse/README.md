@@ -50,8 +50,8 @@ Static analysis identifies the driver-dispatch and INT 8 timer initialization pa
 ## 2026-10-23 — PR / CI 状態の再確認
 
 - PR #10（停止時無音時間テストの CI scheduling jitter 対策）は merge 済み。merge commit: `6e99e68aa30a91f508c816b49cb8d7d214a4c5e6`。変更は `TheSilenceOnStoppingKeepsToTheCap` の上限を 200 ms から 300 ms に広げるテストのみで、再生・MIDI pacing の本体コードは変更していない。
-- PR #9（v1 legacy layout）は引き続き open / unmerged。GitHub PR metadata で head `3463baf2f59c2e31fc76c00846e88ac5e713f2b4`、公開 CI run #815（run ID `39867006220`）は `success` と確認。これは private reference 比較の失敗を解消したことを意味しない。
-- PR #9 branch は `main` と diverged し、`main` より 2 commits behind / 102 commits ahead。base `main` の SHA は PR #10 merge commit `6e99e68aa30a91f508c816b49cb8d7d214a4c5e6`。branch への取り込みは private fixture discrepancy の原因特定と差分確認後に判断する。
+- PR #9（v1 legacy layout）は引き続き open / unmerged。現在の head は `81f5dccedd4f4df390f8d454accbbd98436e658f`。この head の公開 CI run #824（run ID `39873998025`）は確認時点で pending。直前の head `3463baf2f59c2e31fc76c00846e88ac5e713f2b4` の run #815 は success。private fixture CI run #6 も成功しているが、対象範囲は tempo と Note-event signature に限られる。
+- PR #9 branch は `main` と diverged し、`main` より 2 commits behind / 107 commits ahead。base `main` の SHA は PR #10 merge commit `6e99e68aa30a91f508c816b49cb8d7d214a4c5e6`。branch への取り込みは private fixture 比較が解決したことを踏まえつつ、2 commits の差分を確認してから判断する。
 - private fixture CI run #6（[run 39699711256](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256)）は成功。Glosa branch checkout は `440000b971e72debcef72bb12407bcf4e944527a`、build 成功、977 tests passed。現在の PR #9 head はこの検証済み commit の後続で、比較差分は docs のみ（converter / tests は変更なし）。
 - 先行 run #4/#5 の失敗は同 tick・同 channel の Note-off 2件（pitch 77/82）の順序だけが異なっていた。Note-event signature の canonical sort に `Key` を含めて順序を安定化した後、private run #6 が成功した。これは変換コードの修正ではなく比較テストの正規化。private fixture / 解析ダンプは公開リポジトリへコピーしない。
 
