@@ -1,4 +1,4 @@
-# 逆解析の進捗サマリー（2026-10-22）
+# 逆解析の進捗サマリー（2026-10-23 更新）
 
 ## 現在地
 
@@ -439,3 +439,21 @@ Static tracing now establishes the driver-dispatch and timer-initialization path
 ### Private v1 fixture CI result (2026-10-23)
 
 Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) passed on Glosa checkout `440000b971e72debcef72bb12407bcf4e944527a`: build succeeded and 977/977 tests passed, including v1 `TEST.SNG` tempo comparison and `runner.SNG` Note-event comparison. The preceding failures were a comparison-order issue for simultaneous Note-off events at tick 4012 (pitches 77 and 82), not evidence of a converter timing/channel mismatch. The canonical test ordering was stabilized by pitch; production converter code was not changed. Current PR head adds docs only after the validated checkout. Remaining v1 limits: this does not establish SysEx byte equality, physical SMF track/chunk order, complete controller/program/pitch-bend equivalence, or runtime playback correctness. Private metadata files still contain stale v1-unsupported descriptions and should be corrected in the private repository separately.
+
+
+## 2026-10-23 — private v1 validation outcome and next priorities
+
+### What is now verified
+
+- Private workflow [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) checked out Glosa commit `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed 977/977 tests, including `PrivateV1TestSngKeepsReferenceTempoEvents` and `PrivateV1RunnerMatchesReferenceNoteEvents`.
+- The prior runner Note-event mismatch was only the ordering of two simultaneous Note-off signatures at tick 4012, channel 1, pitches 77 and 82. Canonical sorting by pitch fixed the test comparison; production converter code did not need a behavior change.
+- The current PR #9 head is documentation-only after that validated converter/test state. Public CI run #824 for the current docs head was cancelled; prior public run #815 succeeded on an older head. Keep these statuses separate.
+
+### Next actions (ordered)
+
+1. **Do not modify note conversion to address the resolved ordering mismatch.** The canonical-order test fix is sufficient for that issue.
+2. Obtain a non-cancelled public CI run for the current PR head; a cancelled run is neither pass nor failure evidence.
+3. Correct the stale v1-unsupported status in the private metadata (`testdata/ballade/README.md`, `manifest.json`, `v1/sng2gs/README.md`) in the private repository, without copying fixture bytes or private analysis exports into public `glosa`.
+4. Continue only on genuine equivalence gaps: setup SysEx payload byte equality, physical SMF track/chunk order, controller/program/pitch-bend coverage, and later changing-tempo reference fixtures.
+5. Keep the SNG2S tick-8 pending-delta / `0x6EE` initialization question and MIMPIV4 runtime tempo-consumer question separate. `0x6EE = 4` remains unproven; no runtime trace or actual playback test has been performed.
+6. PR #9 remains open. Do not merge without explicit user authorization; before merging, review the two commits behind `main` and resolve any conflict deliberately.
