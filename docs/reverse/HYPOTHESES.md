@@ -228,3 +228,12 @@ Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includ
 - Do not reuse the SNG2S MIDI-export curve `floor(120*v/64)` as the MIMPIV4 playback formula without locating that consumer or obtaining runtime evidence.
 
 **Next evidence:** identify the binary conductor/tempo-record parser's caller chain into playback scheduling, or trace a known SNG with a changed tempo record while observing the timer parameter and update path.
+
+
+### H-018 — Numeric tempo conversion resolved; tick placement remains open (2026-10-22)
+
+Static tracing of `FUN_1000_3406` confirms that SNG2S reads a tempo value from the table at `0x21E0`, multiplies by the base tempo at `0x2962`, divides by 64, and clamps the result to 1–480. With base tempo 120, value 37 becomes 69 BPM. This is now a supported fact, not an open arithmetic hypothesis.
+
+`FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting it. The first call therefore skips the pending-delta increment used by later calls.
+
+Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute tick 8. `0x6EE` is read by setup paths, but its initialized value is missing from the export. The proposed value 4 remains a hypothesis only. Runtime state or initialized data is needed before changing converter behavior.
