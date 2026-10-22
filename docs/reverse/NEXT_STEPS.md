@@ -280,9 +280,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **優先度:** 中（v1 の読み込み失敗を直すブロッカーではない）
 
 - [x] jmplayer の仕様メモと SNG2S `FUN_1000_3406` を照合し、`rawValue * baseTempo / 64` の整数除算、1..480 の clamp、baseTempo=120 の場合の `floor(15*v/8) = 2v - ceil(v/8)` を確認（FACTS F-071）。
-- [x] 証拠の訂正：v1 conductor の現在の parser が読んだ `37` は step/delay 候補であり、slider value と断定しない。`144/192` も 1..127 の slider domain 外なので、誤った parser 出力を slider curve に直接入力しない（FACTS F-071）。
+- [x] `FUN_1000_3406` の tempo stream reader を確認。レコードは interval/count と raw tempo value の組で、`37` は raw tempo slider value、`48/144/192` は interval fields。baseTempo 120 なら `floor(37*120/64)=69 BPM`。以前の逆の解釈を撤回（FACTS F-071）。
 - [ ] SNG2S の 3/4 固有 +1 BPM 説明について、time-signature input と MIDI tempo-meta generation の間に条件分岐があるか、decompilation の全 call/data flow を調べる。
 - [ ] 3/4 の SNG と SNG2S 参照 MIDI が得られた場合、slider 値ごとに実際の tempo meta と time-signature meta を比較する。現在の private fixture tree には 3/4 の参照 fixture が見つかっていないため、未確認のまま数値補正を実装しない。
-- [ ] v1 の 500000 / 869000 / 869565 µs/quarter の生成元と tick 配置は T-011〜T-013 で別途解決する。3/4 の +1 BPM と混ぜて説明しない。
+- [x] v1/v3/v4 reference MIDIs show the same two integer paths: v1 869000 at tick 8 and 869565 at tick 192 (69 BPM); v3 361000 at tick 92 and 361445 at tick 192 (166 BPM); v4 260000 at tick 116 and 260869 at tick 192 (230 BPM). This confirms the values are coarse millisecond and exact microsecond representations of the same normalized tempo, not two actual BPM changes (FACTS F-071).
+- [ ] Keep T-011/T-012 open for the exact queue-drain/tick placement explanation, especially why the first event lands at tick 8 and the exact-tempo event at tick 192. Keep the 3/4 +1 BPM quirk separate.
 
 **完了条件:** slider-to-timer curve と SNG2S MIDI-export rounding を別の処理として説明し、3/4 の補正は参照 fixture で確認できるまで実装しない。
