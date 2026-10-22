@@ -162,3 +162,12 @@ A full text search of the available SNG2S disassembly export finds repeated **re
 `FUN_1000_08EC` drains queued MIDI-like events by converting the pending delta to a variable-length quantity, then advances the accumulated output tick (`0x6F2:0x6F4`) and clears the pending delta. This confirms the role of the *pending-delta/absolute-tick machinery*, but it still does not reveal the initialized value of `0x6EE` or prove that it equals 4. The observed reference SysEx ticks 0/4/8 are compatible with a 4-unit interval, but compatibility is not proof.
 
 **Revised conclusion:** `0x6EE` is a shared setup-event spacing value in the SNG2S output scheduler; its numeric value and the exact mapping from each setup emission to the reference SysEx events remain unknown. Do not hard-code 4 or change converter timing from this evidence alone.
+
+
+## Follow-up 3 (2026-10-22): tempo arithmetic is resolved, tick placement is not
+
+`FUN_1000_3406` reads tempo records from `0x21E0` and computes the normalized tempo from the record value and base tempo at `0x2962`, divided by 64 and clamped to 1–480. At base tempo 120, record value 37 yields 69 BPM. The numeric conversion is therefore supported by the static trace.
+
+`FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` and resets `0xF96` only after that call. This confirms the first-call exception to the later pending-delta increment path.
+
+The remaining issue is narrower: why the coarse 869000 µs/qn event is serialized at absolute tick 8. That requires the pending-delta, absolute-tick and preceding queue-drain state. The initialized numeric value of `0x6EE` is still absent from the export, so interpreting it as 4 ticks remains unproven. No converter behavior is changed.
