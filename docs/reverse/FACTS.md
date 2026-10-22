@@ -856,3 +856,16 @@ For private `testdata/ballade/v1/runner.SNG`:
 - The currently exported dump has no decompiled body for the installed interrupt handler target `1FF5:0E71`, so its tick-update behavior cannot be used to bridge this gap.
 
 **Sources:** private MIMPIV4 Ghidra export, `FUN_1000_22FC`, `FUN_1FF5_1409`, `FUN_1000_A3BB`; complete text scan for literal references to `0x0440`. Static analysis only.
+
+
+## F-080 — SNG2S explicitly aligns the first non-default tempo meta to the next grid boundary
+
+**Status:** the control-flow and arithmetic are confirmed; the grid operand's exact value for runner.SNG still needs to be traced to its source bytes.
+
+- In `FUN_1000_0010`, after `FUN_1000_33D4` and the queue drain, SNG2S calls `FUN_1000_61EC(currentAbsoluteTick, uVar11, 0, 0)`. That helper returns the remainder of the current absolute tick divided by `uVar11`.
+- The caller computes `delta = uVar11 - remainder`; if that is zero, it substitutes a full `uVar11`. It then places the pending delta before the first non-default tempo meta when `0x7BA != 120`.
+- Therefore the first non-default tempo meta is deliberately scheduled at the *next multiple of the grid operand*, not at the first tempo record's step word. If the fixture's operand is 8 and current tick is 0, this yields tick 8. This is consistent with `runner.MID`, but the exact dataflow proving `uVar11 == 8` for this fixture is not yet closed.
+- The subsequent exact-tempo event at tick 192 is a separate bar-start emission. The observed interval field 48 is consumed later by `FUN_1000_3406` to advance the tempo-record scheduler; it is not the source of the initial tick-8 alignment.
+- **Still unproven:** which bytes initialize the pointer at `0x21DC` used to obtain `uVar11`, and whether the queue drain leaves absolute tick 0 for every relevant v1 file. Do not hardcode tick 8 for all v1 files solely from this one fixture.
+
+**Sources:** private SNG2S Ghidra export `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`; private `runner.SNG` and reference tempo facts. Static analysis only.
