@@ -814,3 +814,16 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - The same rejection is therefore reproduced on a second independent v1 file, not only `runner.SNG`. This remains a static code/data comparison; jmplayer was not launched.
 
 **Sources:** private `testdata/ballade/v1/TEST.SNG` bytes; current jmplayer `sngmidi.cpp` `buildLayout()`. Static analysis only.
+
+
+## F-079 — pre-tempo output count depends on SNG2S command-line flags and initialized part-state data
+
+**Status:** conditional control flow confirmed; the runner invocation and initialized global values are not available in the current Ghidra text export.
+
+- `FUN_1000_184A` sets `0x6F8 = 1` and `0x6FA = 2` or `1` only when one of its command-line token comparisons succeeds. The same parser separately sets `0x622 = 1` when the two-byte token at string offset `0xF05` matches (F-069). The exact command line used to generate the reference `runner.MID` is not recorded in the available evidence.
+- `FUN_1000_2144` runs before `FUN_1000_1C70` for v1 and conditionally calls `FUN_1000_22A4`, `FUN_1000_23C0`, `FUN_1000_25B0`, and `FUN_1000_2554` based on global flags and per-part bytes at `0x923 + partIndex`. It always reaches `FUN_1000_265C`, which drains output and sets pending delta from `0x6EE`.
+- `FUN_1000_1CE4` emits two template messages when `0x6F8 == 0` or `0x6FA == 2`, and emits one additional template message when `0x6F8 != 0`. Each emitted message has its own queue drain and subsequent `0x6EE` pending-delta assignment.
+- Therefore, the number of pre-tempo queue drains cannot be computed from the function call graph alone. It depends on the initial values of `0x6F8`, `0x6FA`, `0x61E`, `0x620`, `0x62E`, `0x6FC`, the part-state array at `0x923`, and the actual command-line options. The current Ghidra text export omits initialized data-segment values, and the exact SNG2S invocation for the reference MIDI is unknown.
+- This is the concrete reason the tick-8 explanation remains incomplete: the queue-drain behavior is known (F-076), but the pre-drain pending delta and the exact preamble events are not yet grounded. Do not promote the likely `0x6EE = 4` / two-drain explanation to a fact until the data-segment values or a trace establish it.
+
+**Sources:** private SNG2S decompilation `FUN_1000_184A`, `FUN_1000_2144`, `FUN_1000_1CE4`, `FUN_1000_265C`; command-line and initialized data-segment values not fully available in the current export.
