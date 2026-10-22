@@ -366,3 +366,35 @@ runner 比較の失敗ログでは、比較対象の最初の差として、期�
 - [ ] 原因が Glosa の変換コードにあると確認された場合にのみ、修正と回帰テストを追加する。
 
 **現在の判断:** PR #9 は未マージのまま保留する。公開 CI の成功だけでは、private reference MIDI とのイベント単位の一致は保証できない。
+
+## 10. 追加調査結果（2026-10-22）：SNG2S の tempo / SysEx 経路と未確定点
+
+この節は、版別レイアウト比較から派生した追加の静的調査をまとめる。以下は private fixture / 逆解析資料による確認であり、private データ自体はこの公開リポジトリへ追加しない。
+
+### Tempo: 数値の生成式と出力 tick を分ける
+
+- v1 `runner.SNG` の tempo-record value word は 37、base-tempo byte は 120。SNG2S の正規化計算では 69 BPM になる。ただし 37 がユーザー向け UI slider 値と同じ意味だとは証明されていない。
+- 参照 `runner.MID` の tempo meta は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。869,000 は `floor(60,000 / 69) × 1,000`、869,565 は `floor(60,000,000 / 69)` に対応し、同じ 69 BPM の別々の整数丸め経路と整合する。
+- `FUN_1000_3406` が coarse 869,000 event を queue すること、192-tick grid path が exact 869,565 event を生成することは静的解析で支持される。tick 192 への grid alignment は説明できるが、tick 8 の pending-delta / absolute-tick state は未確定。数値の一致だけで tick placement の因果関係を証明したことにはしない。
+- `FUN_1000_33D4` 内の最初の `FUN_1000_3406` 呼び出しは、初期化フラグ `0xF96` により通常の scheduler `+1` 経路とは異なる。初回に通常ループの delta 規則を当てはめない。
+- `0x6EE = 4` は setup SysEx の tick 0 / 4 と条件付き queue drain を結びつける仮説であり、確認済み事実ではない。
+
+### Setup SysEx: producer は絞れたが payload mapping は未完了
+
+- SNG2S の `FUN_1000_3BA7` と helper routines は template bytes を走査し、明示 byte・計算値・checksum・`F7` を含む SysEx-style output を組み立てる経路を持つ。
+- 解析テキストに initialized data bytes at `0x3F82` / `0x3FA0` が含まれないため、template 全体の値と参照 MIDI の各 SysEx payload との byte-for-byte 対応はまだ取れない。
+- SNG2S v3.3 manual は `/1` (Format 1) と `/X2` (conductor の直後の dedicated SysEx track) を既定値として記載し、`/X1` は conductor track、`/XD` は SysEx conversion off とする。これは文書化された defaults であって、`runner.MID` / `TEST.MID` を作った実際の引数が確認されたわけではない。manual は timebase 48 ticks/quarter も記載する。
+
+### Option flag の修正
+
+以前の仮説 `0x622 ↔ /F` は撤回する。静的解析上、`0x622` は SysEx payload 出力の抑制、`0x626` は track-order table 選択に使われる。manual の説明との対応から、現時点の最良仮説は `0x622 ↔ /XD`、`0x626 ↔ /F`。option token bytes と reference invocation は未確認なので、確定事実として扱わない。
+
+### MIMPIV4 playback は別の未解決問題
+
+MIMPIV4 の legacy loader が conductor/header 内の base-tempo byte を timer-period parameter にコピーし、timer driver がそれを使用するところまでは確認できた。一方、binary SNG tempo-record の第2 word を消費する playback routine はまだ特定できていない。SNG2S が MIDI に出力する式を MIMPIV4 playback の式と同一視しない。
+
+### 検証境界
+
+- 参照 v1 MIDI の Note-on 3,295 件・Note-off 3,295 件の一致は、該当作業ブランチでのオフライン比較結果であり、tempo/meta、全 SysEx、物理 track-chunk order を含む byte-for-byte SMF equivalence を意味しない。
+- 現行 `main` での再変換や runtime trace はこの追加調査では実施していない。
+- converter の tempo 規則・SysEx のハードコード・3/4 BPM 補正は、追加の根拠が得られるまで変更しない。
