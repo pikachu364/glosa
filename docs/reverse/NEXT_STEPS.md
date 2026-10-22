@@ -345,3 +345,12 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] Keep converter behavior and tempo tests unchanged until this is grounded. The tick-8 state is supported by two reference files, but the exact internal delta sequence and generalization to every v1 file are not proven.
 
 **Current result:** exact grid-aligned tempo path is explained; the source of the coarse tick-8 placement remains open. This is a bounded static-analysis gap, not evidence that the recorded reference event is wrong.
+
+### Follow-up trace — scheduler calls are not yet a tempo-record consumer (2026-10-22)
+
+- Re-opened the full private MIMPIV4 export and inspected `FUN_1000_8888`, `FUN_1000_A3BB`, `FUN_1FF5_0DE1`, and `FUN_1FF5_0DFA`.
+- `FUN_1000_8888` is called from `FUN_1000_7E55`, a text-command parser that dispatches commands beginning with `@`. The handler parses a value from a text token, stores it at `0x43E`, then schedules `parsedValue + [0x440]` through `FUN_1FF5_0DE1`. This establishes a base-plus-relative scheduling mechanism for that command language; it does **not** establish that the binary SNG conductor tempo-record second word reaches this handler.
+- `FUN_1000_A3BB` is a UI/event-loop routine. When counter `0x43A` reaches threshold `0x3516`, it clears `0x43E` and `0x43A` and reschedules the base value at `0x440`. This looks like expiration/reset handling, not a tempo-record decode path.
+- `FUN_1FF5_0DE1` simply stores the requested count in `0x3390` (normalizing zero to one). The timer-divisor routine `FUN_1FF5_0DFA` uses its CX input to program the timer hardware; no conductor-record pointer or tempo-record field is present in these routines.
+- These traces narrow the known scheduling calls but still do not identify the binary conductor tempo-record consumer. The `FUN_1000_7E55` text-command path should not be conflated with the SNG binary parser without a proven caller/dataflow link.
+- CI recheck for head `1ff04bcb42700727f6963c464e8dc4d4deab730e`: both push run `39736654504` and PR run `39736659682` completed successfully. PR #9 remains open and unmerged.
