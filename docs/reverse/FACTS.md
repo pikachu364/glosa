@@ -894,3 +894,17 @@ For private `testdata/ballade/v1/runner.SNG`:
 - The SNG2S v3.3 manual documents `/1` and `/X2` as defaults, `/X1` as placing SysEx in the conductor track, and `/XD` as disabling SysEx conversion. This documents program defaults, not the actual command line used to create the saved reference MIDIs.
 
 **Sources:** private SNG2S static-analysis export and archived SNG2S v3.3 manual; reference `runner.MID` / `TEST.MID` event parsing. Static analysis only.
+
+## F-084 — MIMPIV4 tempo trace boundary: base timer input confirmed, binary tempo-record consumer not found
+
+**Status:** static disassembly trace; no runtime instrumentation.
+
+- In the legacy-loader path, MIMPIV4 copies the legacy header byte at offset `+0x1C` into both `0x7BF0` and `0x0440`. The timer initialization path later loads `0x0440` into `CX` before calling the timer-divisor routine.
+- The timer scheduler API `FUN_1FF5_0DE1` passes its requested count to the timer layer; the hardware setup path does not itself decode an SNG conductor record.
+- Other observed calls schedule a relative count plus `0x0440`, or reschedule the base `0x0440`. One such path is reached from an `@` text-command parser. This demonstrates a base-plus-relative timer mechanism, but does not show that the binary SNG tempo-record second word enters that path.
+- A scan of the exported disassembly found no established consumer that reads the binary SNG tempo-record second word and feeds it to the timer. This is a limit of the current trace, **not proof that MIMPIV4 lacks dynamic tempo support**.
+- `FUN_1000_3543` accumulates event deltas and updates a maximum absolute tick; it appears to be a pre-scan/duration calculation and does not directly reference `0x0440` or `0x7BF0`.
+
+**Implication:** do not use SNG2S MIDI-export tempo arithmetic as a substitute for the still-unidentified MIMPIV4 playback tempo path.
+
+**Source:** private MIMPIV4 static-analysis export. Private fixture/binary data remains outside this public repository.
