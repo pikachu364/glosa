@@ -693,3 +693,17 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - SNG2S の help text は `/F` を part-to-track order change、`/XD` を Exclusive disable と説明する。上記の変数の用途はそれぞれの説明と強く整合するため、以前の `0x622 ↔ /F` 仮説は誤りである可能性が高い。現時点の最良の対応は `0x626 ↔ /F`、`0x622 ↔ /XD` だが、token bytes の直接確認または runtime option trace は未実施。
 
 **根拠:** `sng2gs解析データ.txt` の `FUN_1000_0010`、`FUN_1000_08EC`、`FUN_1000_184A` と定義文字列 `1627:0147`、`1627:0261`。静的解析のみ。
+
+
+## F-071 — tempo slider curve is identical to SNG2S integer normalization
+
+**Status:** jmplayer's format notes and SNG2S static decompilation agree on the slider-to-BPM curve. The 3/4 output quirk and event scheduling remain separate concerns.
+
+- jmplayer's [Ballade SNG format notes](https://github.com/jihodaya/jmplayer/blob/main/docs/formats/en/sng-ballade.md) state that feeding SNG2S slider values (v=1..127) gives `BPM = 2v - ceil(v/8)`, e.g. 61→114, 72→135, 91→170. This is algebraically equivalent to `floor(120*v/64)`.
+- SNG2S `FUN_1000_3406` (1000:350E–3583), as documented in the private decompilation, computes `rawValue * baseTempo / 0x40`, then uses integer arithmetic. With baseTempo=120 this is `floor(120*v/64) = floor(15*v/8) = 2v - ceil(v/8)`.
+- The v1 `runner.SNG` tempo record value 37 therefore normalizes to 69 BPM, matching the reference MIDI's tempo values derived in F-065: `(60000 / 69) * 1000 = 869000` µs/quarter on the tempo-record path and `60000000 / 69 = 869565` µs/quarter on the 192-tick grid path. These are two integer-divided representations of the same 69 BPM, not evidence of a real tempo change from 69 to another BPM.
+- jmplayer's notes additionally report that a 3/4 song's SNG2S-generated MIDI measures one BPM higher for the same slider value, attributing it to SNG2S rounding. The hardware timer itself cannot inspect time signature, so this output quirk must not be conflated with the single slider-to-timer curve. The precise internal source of the 3/4 adjustment has not yet been isolated in the available decompilation.
+- **Implementation guidance:** keep slider normalization as `floor(120*v/64)` for the normal 120-base tempo curve; treat SNG2S's 3/4-specific MIDI rounding as a separate compatibility quirk only if tests show that Glosa must reproduce SNG2S-generated MIDI byte/event semantics. Do not alter the v1 event tick mapping merely to account for the 3/4 BPM difference.
+- **Open verification:** inspect the MIMPIV4/SNG2S initialization that sets the word at `0x2962` (base tempo), determine whether/where it differs for 3/4, and compare 3/4 reference MIDI tempo events at both record and bar-grid boundaries. The static evidence explains the 4/4 v1 sample but does not yet prove all metres.
+
+**Sources:** jmplayer `docs/formats/en/sng-ballade.md`; private SNG2S decompilation `FUN_1000_3406`; FACTS F-053, F-055, F-065, F-066.
