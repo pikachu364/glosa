@@ -396,3 +396,21 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - `FUN_1000_3406` directly reads 4-byte tempo records from the table at `0x21E0`; the second word is normalized using the base tempo at `0x2962`, divided by `0x40`, clamped to 1–480, and compared with `0x7BA` before emitting changed-tempo output.
 - `FUN_1000_3DE2` sets `0xF96 = 0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting `0xF96` to zero. This confirms the first-call exception path, but does not resolve the tick-8 queue/pending-delta state.
 - The unresolved work is now narrower: trace the state before the first coarse tempo queue drain and recover the initialized value of `0x6EE`; do not re-open the already-supported tempo arithmetic or 192-tick grid calculation.
+
+
+### Private Ballade reference-directory audit (2026-10-22)
+
+The full `glosa-private-data/testdata/ballade` tree has been inventoried and the text documentation / reverse-analysis exports reviewed. It contains versioned SNG fixtures for Ballade v1–v4, SNG2GS reference MIDIs for each version, saved pre-fix Glosa MIDI outputs for v2–v4, the SNG2S v3.3 manual and two SNG2S analysis exports, plus MIMPIV4 v4.27 documentation and its analysis export. The private repository also contains private fixture integration tests; keep all SNG/MID fixtures and private analysis dumps out of the public `glosa` repository.
+
+#### New findings
+- SNG2S manual: default SMF Format 1 and SysEx track placement `/X2`; `/X1` puts SysEx in the conductor track; `/XD` disables SysEx conversion; `/F` changes track ordering; `/N` omits parts with no notes; timebase is fixed at 48 PPQN. The actual options used to create the saved reference MIDIs remain unknown.
+- MIMPIV4 manual: playback tempo can be changed with Up/Down and fine-adjusted with `/Tn`; this is documentation of controls, not the SNG tempo-record conversion formula.
+- MIMPIV4 disassembly: `FUN_1FF5_0D61` hooks INT 8 and initializes timer state; `FUN_1FF5_0DFA` derives a hardware divisor from its `CX` input and writes timer-related I/O ports. `0x0440` and `0x7BF0` receive a byte from a format-dependent loaded record. This is a separate timer path, and no proven link from the binary SNG tempo-record table to that timer input has been established.
+
+#### Revised next actions
+1. For SNG2S, continue only with evidence that can recover the initialized data segment / aliases for `0x6EE`, or obtain a runtime trace. The text export's direct references are reads; do not assume `0x6EE = 4`.
+2. For MIMPIV4, identify the binary SNG parser path that loads `0x7BF0` / `0x0440`, then trace whether any SNG tempo-record data changes the timer input or a separate playback interval. Keep timer hardware initialization distinct from MIDI-export tempo meta handling.
+3. Record the reference MIDI generator version/options if recoverable; otherwise keep this as a comparison limitation.
+4. Keep tempo/meta and physical SMF track-order claims unverified until event-level comparisons or runtime evidence exist. Do not change converter/test behavior based only on numeric coincidence.
+
+**No converter or test code was changed by this audit.**
