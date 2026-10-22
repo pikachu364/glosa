@@ -1,6 +1,6 @@
 # v1 Tempo Event Investigation
 
-> **Current status (2026-10-22):** The integer conversion for the coarse tempo event and the separate 192-tick grid path are supported by static analysis. The remaining tick-8 issue is event placement: pending delta / absolute tick and prior queue drains. `0x6EE` is read by setup paths, but its initialized value and exact SysEx mapping are not known. Do not assume it equals 4 or change converter timing without new evidence. See [NEXT_STEPS.md](NEXT_STEPS.md), T-017.
+> **Current status (updated 2026-10-23):** The integer conversion for the coarse tempo event and the separate 192-tick grid path are supported by static analysis. The remaining tick-8 issue is event placement: pending delta / absolute tick and prior queue drains. `0x6EE` is read by setup paths, but its initialized value and exact SysEx mapping are not known. Do not assume it equals 4 or change converter timing without new evidence. See [NEXT_STEPS.md](NEXT_STEPS.md), T-017.
 
 ## Scope and current reference
 
@@ -189,3 +189,7 @@ The private Ballade directory includes the MIMPIV4 v4.27 manual and a Ghidra exp
 2. Search callers and writes around the loaded record for a path that updates the timer input during playback, distinguishing initialization from dynamic tempo changes.
 3. Keep this separate from the unresolved SNG2S tick-8 serialization question: the latter concerns queued MIDI meta output and pending delta state, not MIMPI's timer interrupt.
 4. No runtime trace has been captured; these findings are static only.
+
+## Validation boundary update (2026-10-23)
+
+Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) passed the v1 TEST.SNG tempo-event comparison and runner.SNG Note-event comparison (977 tests total) on Glosa commit `440000b971e72debcef72bb12407bcf4e944527a`. The earlier Note-event failure was a canonical list ordering issue for simultaneous Note-off events at tick 4012, channel 1, pitches 77 and 82; it was fixed in the test comparison ordering, not in tempo conversion. This does not resolve the separate SNG2S tick-8 serialization question, prove SysEx payload equality, or establish runtime playback behavior. Keep `0x6EE = 4` as unproven and do not change tempo conversion on this evidence alone.
