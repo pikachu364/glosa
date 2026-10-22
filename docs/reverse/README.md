@@ -31,3 +31,14 @@
 - SNG パート番号、内部スケジューラスロット、MIDI トラック番号を同一視しない。
 
 項目には安定した ID（例: F-001, H-001, T-001）を付け、内容を移動しても参照できるようにします。
+
+
+## Private fixture CI（重要）
+
+`pikachu364/glosa-private-data/.github/private-tests/PrivateBalladeFixtureTests.cs` は、private repo の Ballade 実データを用いて Glosa の変換結果を検証する専用テストです。公開リポジトリに fixture を置かず、private repo 側の [private-data-ci.yml](https://github.com/pikachu364/glosa-private-data/blob/main/.github/workflows/private-data-ci.yml) が Glosa の指定 ref を checkout し、SNG/MID fixture とテストコードを一時的に配置して build/test します。
+
+- `PrivateV1TestSngKeepsReferenceTempoEvents`: v1 `TEST.SNG` と `TEST.MID` の tempo events を track/tick/µs-per-quarter で比較。
+- `PrivateV1RunnerMatchesReferenceNoteEvents`: v1 `runner.SNG` と `runner.MID` の Note-on/off を tick/channel/pitch/velocity で比較。同 tick のトラック間順序に依存しないよう canonical order で比較。
+- private workflow の `glosa_ref` を確認し、検証したブランチ/commit と run 結果を記録する。公開 CI と private fixture CI は別の検証層として扱う。
+- 現状の2テストが保証するのは v1 tempo と note events。SysEx payload、物理 track/chunk order、controller/program/pitch bend、v2-v4 全体の正しさまで保証すると解釈しない。
+- private fixture と解析ダンプは公開リポジトリへコピーしない。
