@@ -272,6 +272,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 - [x] v1 の `FUN_1000_1C70` → `FUN_1000_1CE4` → `FUN_1000_33D4` → 初回 `FUN_1000_3406` → `FUN_1000_08EC` の呼び出し順を静的に追跡。
 - [x] `FUN_1000_3DE2` が `0xF96 = 0xFFFF` にし、`FUN_1000_33D4` が初回 `FUN_1000_3406` の後で `0xF96 = 0` に戻すため、初回 `FUN_1000_3406` は通常の pending delta `+1` 経路を通らないことを確認。
+- [x] `FUN_1000_08EC` の drain semantics を確認。`FF` tempo meta は必ず既存の `0xF9A:0xF9C` を絶対 tick `0x6F2:0x6F4` に加算してから出力し、pending delta をクリアする。`FUN_1000_3406` が1回の call 内で複数 event を queue した場合、同じ drain 内の後続 event は delta 0 で同じ tick になり得る（FACTS F-076）。
 - [x] 解析テキスト全体の命令行を検索し、`[0x6EE]` の29参照がすべて直接読み出しで、直接 store が見つからないことを確認。複数の event-output path で `0x1ED8:0x1EDA` への加算と `0xF9A:0xF9C` への設定に使われる（FACTS F-067）。
 - [ ] `0x6EE` の実値と初期化元を特定する。data segment、別名アドレス、間接書き込み、runtime memory trace は未確認。
 - [x] `FUN_1000_184A` → `FUN_1000_5EC8(input, 0xF05, 2)` の比較経路を確認。2-byte token の一致で `0x622=1`。下流用途との整合から `/XD` が最有力で、以前の `/F` 対応推定は撤回。ただし token bytes と文字列の直接対応は未確認（FACTS F-069）。
