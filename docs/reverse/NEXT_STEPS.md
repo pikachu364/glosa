@@ -250,7 +250,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **優先度:** 高
 
 - [ ] FUN_1000_33D4 の初回 record 消費から FUN_1000_08EC の queue drain まで、pending delta-time (0xF9A:0xF9C) と absolute tick (0x6F2:0x6F4) の更新をイベント出力点ごとに追う。
-- [ ] grid delta 計算（uVar11=192）後の FUN_1000_618A 呼び出しについて、キュー投入時刻と実際の MIDI tick を分けて整理する。
+- [x] grid delta 計算（`uVar11=192`）と `FUN_1000_618A` の exact-tempo meta 経路を対応付ける。v1 `runner.SNG` の meter record は絶対 offset 241 (`0x74+125`) の `C0 00 04 04` で、192-tick grid と4/4を与える。current tickから次のgridまでのdeltaを加えてtick 192の exact-tempo eventを出す（FACTS F-080）。
 - [x] tick 0 と tick 192 の経路を対応付ける。tick 0 は既定 500000 µs/quarter、tick 192 は grid-aligned exact tempo meta。v1/v3/v4 の cross-version values confirm the same integer path (FACTS F-071/F-072).
 - [x] coarse tempo meta の直接 producer を特定。`FUN_1000_3406` は v1 tempo-record の第2 word 37 と base tempo 120 から 69 BPM を算出し、`floor(60000/69)*1000=869000` を `FF 51 03` として queue に書く。第2 word が UI slider と同義かは未確認（FACTS F-073/F-078）。
 - [x] Call order confirms setup/output routines (`FUN_1000_2144`, `FUN_1000_1C70`) precede `FUN_1000_33D4`; the initial `FUN_1000_3406` queues the coarse tempo meta before the following shared `FUN_1000_08EC` drain. Reference SysEx events at ticks 0/4/8/8 precede the coarse tempo meta at tick 8 (FACTS F-081).
@@ -266,7 +266,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] `0x21E4` / `0x7DE` / `FUN_1000_3BA7` を FF 51 tempo path (`0x21E0`) から分離して確認。
 - [x] tempo-record 側の整数計算 `(60000 / 69) * 1000 = 869000` と、192-tick grid 側の `60000000 / 69 = 869565` を静的解析で照合。参照 tick 8 / 192 の tempo 値に一致する。
 - [ ] queue drain 時点の absolute tick が tick 8 であることを runtime trace で確認する。pending delta `0xF9A:0xF9C` と absolute tick `0x6F2:0x6F4` の値を、最初の queue drain 前後で追う。
-- [ ] `FUN_1000_3406` の1回の scheduler call で、`0x21E0` と `0x21E4` の両方が処理される順序を整理し、`FUN_1000_08EC` の queue drain 順序を確認する。
+- [x] `FUN_1000_3406` の1回の scheduler call 内で `0x21E0` tempo-record stream が `0x21E4` device-parameter stream より先に処理されることを静的確認。これらの生成済みイベントは後続の `FUN_1000_08EC` drain で直列化される（FACTS F-073/F-076/F-081）。
 
 **注意:** 数値の一致は強い静的根拠だが、tick 8 の割当は runtime 未確認。実行時トレースが済むまでは converter / regression test を変更しない。
 
