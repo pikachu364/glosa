@@ -511,3 +511,12 @@
 - 静的解析で `FUN_1FF5_1344` の driver dispatch、選択された初期化関数から `0x0438` → `0x0440` のコピー、`FUN_1FF5_0D61` の INT 8 hook、`FUN_1FF5_0DFA` の divisor 計算と I/O port 書き込みを整理した。
 - この経路は timer の初期化を示すが、SNG tempo record の第2 word が playback 中に timer globals を更新する呼び出し経路はまだ確認できていない。
 - FACTS F-086 と NEXT_STEPS に反映。静的解析のみで、runtime trace・実再生・converter 変更はなし。
+
+
+## 2026-10-23 — private v1 fixture mismatch の原因を確定
+
+- private repo の Actions run 一覧と job logs を取得し、`Private Ballade fixture validation` run #6（ID `39699711256`）が成功、build 成功・977 tests passed であることを確認した。workflow は Glosa commit `440000b971e72debcef72bb12407bcf4e944527a` を checkout していた。
+- 先行 run #4/#5 の `PrivateV1RunnerMatchesReferenceNoteEventsPerTrack` は、同 tick / channel の Note-off pitch 77 と 82 の順序だけが比較配列上で逆転して失敗していた。tick/channel/key/event type/velocity を安定化した canonical sort 後の run #6 では成功した。
+- したがって、この差分は converter の Note-event mismatch ではなく、テスト比較順序の問題と確認できた。v1 TEST.SNG tempo test も含めて pass。converter の追加変更は不要。
+- 現在の PR #9 head `3463baf2f59c2e31fc76c00846e88ac5e713f2b4` と private run の checkout を比較すると、後続の変更は docs のみで converter / tests に差分なし。PR #9 は引き続き open / unmerged。
+- 制約: tempo-event equality と Note-event signature equality の範囲を確認しただけで、SysEx payload、physical track/chunk order、全 controller/program/pitch-bend、runtime playback、byte-for-byte SMF equivalence は証明していない。
