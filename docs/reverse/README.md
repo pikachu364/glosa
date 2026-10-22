@@ -2,7 +2,7 @@
 
 このディレクトリは、Ballade SNG と SNG2S/SNG2GS の調査情報を、長い作業ログから切り離して整理するための入口です。
 
-## 現在の進捗（2026-10-23）
+## 現在の進捗（2026-10-23 更新）
 
 **最優先:** Ballade v1 の tempo meta（tick 8 / 192）の出力時刻を SNG2S の処理経路と対応付ける。
 
@@ -61,3 +61,8 @@ Static analysis identifies the driver-dispatch and INT 8 timer initialization pa
 - Private workflow run #6 passed: build succeeded and all 977 tests passed, including `PrivateV1TestSngKeepsReferenceTempoEvents` and `PrivateV1RunnerMatchesReferenceNoteEvents`.
 - The failed run immediately before it differed at one canonical list position because two Note-off events at tick 4012, channel 1, pitches 77 and 82 were ordered oppositely. The fix stabilized the test's canonical sort by pitch; no production converter change was needed for this discrepancy.
 - The validated Glosa checkout was `440000b971e72debcef72bb12407bcf4e944527a`. Comparing that commit with the current PR branch shows only documentation files changed since then, so the converter and test code under review are unchanged. This establishes Note-event signature and tempo-event test success for that code state, not full SMF byte equivalence or runtime playback.
+
+
+### Validation status correction (2026-10-23)
+
+Private workflow [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) checked out Glosa `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed 977 tests. The earlier private Note-event test failure was caused by same-tick Note-off events (channel 1, pitches 77 and 82) being ordered differently in the test's canonical list; sorting by pitch fixed the comparison without changing production conversion. The current PR head contains documentation-only changes after that tested checkout, so the converter and test code are unchanged relative to the private passing run. This is not full SMF equivalence. Current head public CI run #824 was cancelled; do not describe it as passing.
