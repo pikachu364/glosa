@@ -173,3 +173,19 @@ A full text search of the available SNG2S disassembly export finds repeated **re
 `FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` and resets `0xF96` only after that call. This confirms the first-call exception to the later pending-delta increment path.
 
 The remaining issue is narrower: why the coarse 869000 µs/qn event is serialized at absolute tick 8. That requires the pending-delta, absolute-tick and preceding queue-drain state. The initialized numeric value of `0x6EE` is still absent from the export, so interpreting it as 4 ticks remains unproven. No converter behavior is changed.
+
+## Cross-check against the MIMPIV4 reference directory (2026-10-22)
+
+The private Ballade directory includes the MIMPIV4 v4.27 manual and a Ghidra export of `MIMPIV4.EXE`, so the player-side timing path can be traced separately from SNG2S's MIDI-export path.
+
+- The manual documents playback tempo adjustment through Up/Down and `/Tn`; it does not specify the binary SNG tempo-record decoding formula.
+- Static disassembly shows `FUN_1FF5_0D61` saves and replaces the INT 8 vector and calls `FUN_1FF5_0DFA` using the timing value from `0x0440`. `FUN_1FF5_0DFA` calculates a divisor and writes to I/O ports `0x71` and `0x5F`.
+- The loader populates `0x0440` and `0x7BF0` from a byte in a format-dependent record. This identifies a concrete timer initialization path, but not the source of the playback tempo for Ballade SNG records.
+- No proven dataflow currently connects the SNG binary tempo-record table to `0x0440` / `0x7BF0`. Do not infer that MIMPIV4 uses the same 869000 / 869565 µs-per-quarter formulas as SNG2S MIDI export.
+
+### Next player-side trace
+
+1. Trace the v1 SNG parser's loaded record and identify the exact field copied to `0x7BF0` / `0x0440`.
+2. Search callers and writes around the loaded record for a path that updates the timer input during playback, distinguishing initialization from dynamic tempo changes.
+3. Keep this separate from the unresolved SNG2S tick-8 serialization question: the latter concerns queued MIDI meta output and pending delta state, not MIMPI's timer interrupt.
+4. No runtime trace has been captured; these findings are static only.
