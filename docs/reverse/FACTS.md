@@ -708,3 +708,16 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - **Still open:** trace the scheduler/tick accumulators that place the coarse and exact tempo meta events; identify the 3/4-specific export rounding branch; compare a 3/4 SNG2S reference if available. The current private fixture set has 4/4 samples for v1, v3, and v4 and a 6/4 v2 sample, but no 3/4 sample.
 
 **Sources:** jmplayer `docs/formats/en/sng-ballade.md`; private SNG2S decompilation `FUN_1000_3406`, `FUN_1000_0010`; private SNG2S reference MIDIs `runner.MID`, `START__0.MID`, `BOURREE0.MID`.
+
+## F-072 — SNG2S's exact tempo meta is aligned to the stored meter-grid boundary
+
+**Status:** static call/data flow confirmed from `FUN_1000_0010`, `FUN_1000_272a`, and `FUN_1000_61ec`; output tick positions are cross-checked against reference MIDI. No runtime trace.
+
+- The v1 conductor's grid/time-signature structure contains bytes `C0 00 04 04` at file offset 231: little-endian grid length 192, numerator 4, denominator 4. SNG2S copies this structure to `0x21DC`; `FUN_1000_0010` reads its first 16-bit value as `local_4c`, and its numerator/denominator bytes separately to write the FF 58 time-signature meta.
+- After the first scheduler/queue drain, `FUN_1000_0010` calls `FUN_1000_61EC(absTick, local_4c, 0)`. The zero fourth argument selects remainder calculation, so this is `absTick % gridLength`. It sets the pending delta to `gridLength - remainder` (or one full grid when already aligned), then writes an FF 51 tempo meta using `floor(60,000,000 / currentBpm)`.
+- For `runner.MID`, the exact tempo meta is at tick 192, and the grid length read from the SNG is 192. Given the preceding tempo event at tick 8, the grid-alignment path adds 184 ticks to reach tick 192. The exact tempo is `floor(60,000,000 / 69) = 869565` µs/quarter. This explains the tick-192 placement statically, without a runtime trace.
+- Cross-version corroboration: `START__0.MID` (v3) has the exact tempo value 361445 at tick 192 for 166 BPM; `BOURREE0.MID` (v4) has 260869 at tick 192 for 230 BPM. Both reference files are 4/4 and use a 192-tick grid at the start.
+- The earlier/coarse tempo meta (e.g. v1's 869000 at tick 8) is a separate path associated with the scheduler tempo update and millisecond-quantized representation `floor(60,000 / BPM) * 1000`. The queue-drain path and exact tick-8 origin still need a finer trace, but the two values are not two distinct musical BPM settings.
+- **3/4 implication:** because `local_4c` comes from the SNG's stored grid data, the exact-tempo meta is aligned to the 3/4 grid when that grid is 144 ticks. This alone does not prove the documented +1 BPM behavior; that would require tracing the coarse tempo conversion or having a 3/4 reference fixture. The core timer normalization in `FUN_1000_3406` remains meter-independent.
+
+**Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_272a`, `FUN_1000_61EC`; v1 `runner.SNG` bytes and reference `runner.MID`; v3 `START__0.MID`; v4 `BOURREE0.MID`.
