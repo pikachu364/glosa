@@ -14,6 +14,15 @@
 - **MIMPIV4 のタイマー経路:** legacy loader が base-tempo byte を `0x440` / `0x7BF0` に設定し、interrupt-8 hook と I/O timer divisor calculation (`FUN_1FF5_0D61` / `FUN_1FF5_0DFA`) を使用することを確認（FACTS F-077）。v1 tempo-record から実際の playback period / delta への経路は未確定。
 - **作業の種類:** ここまでの tempo / jmplayer 調査は静的解析。実行時トレース・実再生確認は未実施。
 
+## reverse 文書全体の監査（2026-10-22）
+
+- 対象: README、FACTS、HYPOTHESES、LOG、BALLADE_LAYOUT_COMPARISON、V1_TEMPO_INVESTIGATION、引継ぎ文書。
+- 古い調査メモは履歴として残し、現在の結論・TODO と混同しない。過去ログにある option flag の旧対応や `0x6EE = 4` は、後続の訂正・制約を優先する。
+- FACTS の F-078 / F-079 / F-084 は ID 重複あり。参照を壊す改番はせず、後続の整理タスクとして記録。新規 ID は重複を避ける。
+- 節番号の重複を比較文書で修正。コード、テスト、private fixture はこの文書監査では変更していない。
+
+---
+
 ## 調査項目の整理（2026-10-22）
 
 このファイルには、完了した解析履歴と現在の未解決事項が混在している。重複した TODO を別々に再調査しないため、以後は次の整理に従う。
