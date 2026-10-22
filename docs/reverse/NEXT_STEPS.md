@@ -8,7 +8,8 @@
 - **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
 - **オプションフラグ対応の再評価:** 下流の用途から `0x626 ↔ /F`（track-order table 選択）、`0x622 ↔ /XD`（SysEx 抑制）が最有力。以前の `0x622 ↔ /F` 仮説は撤回する。parser の比較 operand `0xF05` が `/XD` 文字列に対応すること、token bytes、参照生成時の実際の引数は未確認。FACTS F-069 を参照。
 - **実装への影響:** v1 の汎用 ReadTempi ガードと既存の v1 tempo regression tests を維持する。tick 8 の内部 delta 説明が未確定であることと、現在の実装が参照値を出力することは区別する。新しい tempo 挙動を推測で追加せず、v2–v4 の既存挙動も変更しない。
-- **PR / CI の最新確認 (2026-10-22):** [PR #9](https://github.com/pikachu364/glosa/pull/9) は open / unmerged、head は `3ce65a96cbd13d2f935719545152614e18eb2938`。この head に対する CI run [39764666646](https://github.com/pikachu364/glosa/actions/runs/39764666646) は completed / success。commit status API の statuses は空だが、workflow run 自体の成功を確認した。
+- **直近の実装側 CI:** head `3ce65a96` の CI run [39764666646](https://github.com/pikachu364/glosa/actions/runs/39764666646) は成功済み。
+- **今回の文書監査後 (2026-10-22):** branch head は `fbcd8e333245614bc20b423a5c1979b348b38663`。docs-only commit に対する CI run [39766036423](https://github.com/pikachu364/glosa/actions/runs/39766036423) は確認時点で queued のため、完了結果は未確認。PR #9 は open / unmerged。
 - **jmplayer の v1 layout rejection:** private `runner.SNG` の実バイト列と現在の `sngmidi.cpp` を照合し、3つの header candidate がすべて part 1 の後続版 offset validation で失敗することを確認（FACTS F-075）。これは静的再現であり、jmplayer を実行してエラーダイアログを採取したものではない。
 - **実データで再確認:** `runner.SNG` は 85,897 bytes、tableEnd=114、legacy headerEnd=116、part 1 start=1510。v1 の +80 block size、+115/+117 length fields、+119 の13 seek 値の合計は実データと一致（FACTS F-037–F-040/F-075）。
 - **MIMPIV4 のタイマー経路:** legacy loader が base-tempo byte を `0x440` / `0x7BF0` に設定し、interrupt-8 hook と I/O timer divisor calculation (`FUN_1FF5_0D61` / `FUN_1FF5_0DFA`) を使用することを確認（FACTS F-077）。v1 tempo-record から実際の playback period / delta への経路は未確定。
