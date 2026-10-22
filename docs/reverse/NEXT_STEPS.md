@@ -2,7 +2,7 @@
 
 ## 現在地
 
-- **進行中の最優先課題:** SNG2S の tempo queue drain で tick 8 が生じる pending-delta の出所を静的に説明する。tick 192 は stored meter-grid alignment で説明できる（FACTS F-072/F-073）。
+- **進行中の最優先課題:** SNG2S では setup 出力が `FUN_1000_33D4` より先にキューへ積まれ、初回 `FUN_1000_3406` が coarse tempo meta を追加してから `FUN_1000_08EC` がまとめて drain する呼び出し順を確認済み。これが tick 8 になる流れと整合するが、個々の SysEx payload と pending-delta 値の完全な対応は未確定。tick 192 は別経路の 192-grid alignment で説明できる（FACTS F-080/F-081）。
 - **参照 MIDI で確認済み:** tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。time signature は tick 0 の 4/4。
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
 - **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
@@ -253,7 +253,8 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] grid delta 計算（uVar11=192）後の FUN_1000_618A 呼び出しについて、キュー投入時刻と実際の MIDI tick を分けて整理する。
 - [x] tick 0 と tick 192 の経路を対応付ける。tick 0 は既定 500000 µs/quarter、tick 192 は grid-aligned exact tempo meta。v1/v3/v4 の cross-version values confirm the same integer path (FACTS F-071/F-072).
 - [x] coarse tempo meta の直接 producer を特定。`FUN_1000_3406` は raw slider 37 → 69 BPM を算出し、`floor(60000/69)*1000=869000` を `FF 51 03` として queue に書く（FACTS F-073）。
-- [ ] queue drain 前後の `0xF9A:0xF9C` / `0x6F2:0x6F4` を追い、なぜこの queued tempo event が tick 8 に置かれるかを静的に完全説明する。
+- [x] Call order confirms setup/output routines (`FUN_1000_2144`, `FUN_1000_1C70`) precede `FUN_1000_33D4`; the initial `FUN_1000_3406` queues the coarse tempo meta before the following shared `FUN_1000_08EC` drain. Reference SysEx events at ticks 0/4/8/8 precede the coarse tempo meta at tick 8 (FACTS F-081).
+- [ ] Fully map each setup routine to the reference SysEx payload and prove the per-event `0xF9A:0xF9C` / `0x6F2:0x6F4` values. Static queue ordering is consistent with tick 8 but not a runtime trace.
 - [ ] 実行時トレースができない場合は、静的推論と参照 MIDI の観測事実を明確に分離して記録する。
 
 **完了条件:** 3つの参照 tempo event の値・tick と SNG2S の各出力経路を根拠付きで説明できること。そこまでは converter / regression test を変更しない。
