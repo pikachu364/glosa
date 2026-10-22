@@ -46,3 +46,12 @@
 ## MIMPIV4 playback tempo investigation
 
 Static analysis identifies the driver-dispatch and INT 8 timer initialization path, but does **not** yet connect the binary SNG tempo-record value to a playback-time timer update. Treat the player-side tempo formula as unresolved; do not reuse SNG2S MIDI-export formulas. See [FACTS.md](FACTS.md) F-086 and [NEXT_STEPS.md](NEXT_STEPS.md).
+
+## 2026-10-23 — PR / CI 状態の確認
+
+- PR #10（停止時無音時間テストの CI scheduling jitter 対策）は merge 済み。merge commit: `6e99e68aa30a91f508c816b49cb8d7d214a4c5e6`。変更は `TheSilenceOnStoppingKeepsToTheCap` の上限を 200 ms から 300 ms に広げるテストのみで、再生・MIDI pacing の本体コードは変更していない。
+- PR #9（v1 legacy layout）は引き続き open / unmerged。公開 CI は head `8a9205be94dab21978a9624c031317d5c0c7e922` に対して成功しているが、これは private reference 比較の失敗を解消したことを意味しない。
+- PR #9 の branch は `main` と diverged し、`main` より 2 commits behind / 101 commits ahead と確認。PR #10 の merge を含む main の更新を取り込むかは、private fixture discrepancy と branch 差分を確認してから判断する。
+- private fixture validation では TEST.SNG tempo 比較は成功した一方、runner.SNG note-event comparison は失敗した記録がある。原因が track mapping だけだと決めつけず、track/channel/tick/pitch/velocity の差分を分離するまで PR #9 を merge しない。
+- 現在の次の実作業は、private runner 比較の失敗を診断し、公開 CI 成功と private fixture 互換性を別々に評価すること。private fixture / 解析ダンプは公開リポジトリへコピーしない。
+
