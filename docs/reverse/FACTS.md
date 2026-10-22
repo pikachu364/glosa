@@ -5,7 +5,8 @@
 ## F-001 — SNG2S Ver. 3.3 の出力オプション
 **状態:** リポジトリ内の `testdata/ballade/sng2gs/SNG2S.DOC` で確認（ユーザー提供マニュアル）
 
-- MIDI timebase は 48。
+- MIDI timebase は 48 ticks per quarter note。
+- `/1` (SMF Format 1) が既定、`/X2` (SysEx を conductor の直後に専用トラックへ出力) が既定。`/X1` は SysEx を conductor track に置き、`/XD` は SysEx 変換を無効化する。
 - Ballade Song Ver 1.00 は Ballade/Musi-kun、2.00 は Ballade2/Musirou、3.00 は Musirou2、4.00 は Ballade3 に対応する。
 - v1〜v3 は10パート、v4 は16パート。
 - 既定の出力トラック順は v1〜v3 が 10 9 8 7 6 5 4 3 2 1、v4 が 10 16 15 14 13 12 11 9 8 7 6 5 4 3 2 1。
@@ -729,7 +730,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 - In SNG2S `FUN_1000_3406` at 1000:350A–3583, the tempo stream record's second word is read; the value is multiplied by `0x2962` (base tempo), divided by `0x40`, clamped to 1..480, and compared with current tempo at `0x7BA`.
 - When the normalized tempo changes, the code computes `floor(60000 / BPM)` with `AX=0xEA60` and `DIV BX`, multiplies that integer millisecond interval by 1000, and queues the bytes `FF 51 03` followed by the resulting 24-bit microseconds-per-quarter value. This is direct source evidence for `floor(60000/BPM)*1000`, not just a numeric fit.
-- For the v1 raw slider value 37, base tempo 120 yields 69 BPM; the code therefore queues `floor(60000/69)*1000 = 869000` µs/quarter. The queue is consumed by `FUN_1000_08EC`, which serializes queued events to the SMF while advancing absolute tick `0x6F2:0x6F4`.
+- For the v1 tempo-record value 37 (not proven to be a user-facing slider value), base tempo 120 yields 69 BPM; the code therefore queues `floor(60000/69)*1000 = 869000` µs/quarter. The queue is consumed by `FUN_1000_08EC`, which serializes queued events to the SMF while advancing absolute tick `0x6F2:0x6F4`.
 - Separately, `FUN_1000_0010` aligns to the conductor grid and writes `floor(60000000/BPM)`; for 69 BPM this is 869565 at tick 192. F-072 records the grid alignment calculation.
 - **Remaining detail:** the source of the pending delta that makes the queued 869000 event land at tick 8 is not yet fully derived from the `0xF9A:0xF9C` and `0x6F2:0x6F4` updates. The producer and value are known; do not claim the tick-8 scheduling mechanism is fully closed.
 
@@ -882,3 +883,14 @@ For private `testdata/ballade/v1/runner.SNG`:
 - This independent v1 fixture strengthens the explanation that tick 8 is the point reached by the common setup-output sequence before the queued coarse tempo meta is serialized. It still does not prove every possible v1 file uses identical setup records or eliminate the need to map each payload producer.
 
 **Sources:** private `testdata/ballade/v1/TEST.SNG`, `testdata/ballade/v1/sng2gs/TEST.MID`, `testdata/ballade/v1/sng2gs/runner.MID`; private SNG2S decompilation. Static event parsing, not playback.
+
+## F-083 — SNG2S setup-template generation path is located, but reference SysEx payloads are not mapped
+
+**Status:** static control flow confirmed; exact template bytes and event-by-event payload mapping remain unavailable.
+
+- SNG2S helpers at `1000:3F79` and `1000:3F97` use template addresses `0x3F82` and `0x3FA0`, scanning until `0xFF`. One path sends bytes to `FUN_1000_4098`; another places bytes in the output byte queue through `FUN_1000_39C9`.
+- `FUN_1000_3BA7` combines these template paths with explicit bytes including `0x10`, `0x16`, a value derived from `0x7DE`, and an `0xF7` terminator. Branching depends on state including `0x6FA`, `0x6F8`, and format byte `0x25DA`.
+- The available disassembly text does not include initialized data bytes at `0x3F82` / `0x3FA0`. It therefore does not establish the full payloads or a byte-for-byte mapping to the four SysEx events in the private reference MIDIs.
+- The SNG2S v3.3 manual documents `/1` and `/X2` as defaults, `/X1` as placing SysEx in the conductor track, and `/XD` as disabling SysEx conversion. This documents program defaults, not the actual command line used to create the saved reference MIDIs.
+
+**Sources:** private SNG2S static-analysis export and archived SNG2S v3.3 manual; reference `runner.MID` / `TEST.MID` event parsing. Static analysis only.
