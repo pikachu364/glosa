@@ -428,3 +428,9 @@ The private repository's `.github/private-tests/PrivateBalladeFixtureTests.cs` c
 ### MIMPIV4 driver-dispatch cross-reference (2026-10-22)
 
 The six additional writers of `0x0440` are reached from the driver-dispatch routine `FUN_1FF5_1344` through its selected branches (`FUN_1FF5_2769`, `FUN_1FF5_3DD2`, `FUN_1FF5_44E0`, `FUN_1FF5_4CF8`, `FUN_1FF5_5114`, `FUN_1FF5_579C`). Their code initializes driver/scheduler state and copies `0x0438` to `0x0440`; this is evidence for a driver setup path, not a proven SNG tempo-record consumer. The unresolved work is to connect the SNG playback entry path to this dispatch, or document the missing static edge and retain runtime tracing as the required next step.
+
+### MIMPIV4 tempo consumer boundary (2026-10-22)
+
+Static tracing now establishes the driver-dispatch and timer-initialization path: `FUN_1FF5_1344` selects driver setup; selected branches copy `0x0438` to `0x0440`; `FUN_1FF5_0D61` installs the INT 8 handler and passes `0x0440` to `FUN_1FF5_0DFA`, which calculates the timer divisor and writes I/O ports. This is initialization evidence only. No static dataflow yet connects the binary SNG tempo-record second word to updates of `0x0438`, `0x0440`, or `0x7BF0` during playback.
+
+**Next action:** trace the playback record parser/caller chain and all writes to those timer globals after initialization. If the static export omits the relevant edge or initialized data, record that gap and require runtime tracing; do not infer the playback formula from SNG2S MIDI-export arithmetic. No converter changes are justified by this finding.
