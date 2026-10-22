@@ -920,3 +920,16 @@ For private `testdata/ballade/v1/runner.SNG`:
 - Therefore, neither the manual nor the currently traced code establishes that MIMPIV4 playback uses the same tempo conversion formula as SNG2S MIDI export.
 
 **Source:** private reverse-engineering reference `testdata/ballade/MIMPI427/MIMPIV4.DOC` (playback screen / key controls / `/Tn` option) and static disassembly export. The private files remain private.
+
+
+## F-085 — SNG2S tempo-record decoder dataflow (2026-10-22)
+
+**Status:** confirmed by static control flow for MIDI export only; not evidence for MIMPIV4 playback.
+
+- `FUN_1000_3406` reads 4-byte records through the table pointer at `0x21E0`, advancing the record offset at `0x10AC` by four bytes. The second word is the tempo value; values above `0xFE` terminate the scan. The first word controls repeat/count state.
+- For an active value, the routine computes `(value × baseTempo) / 0x40` using the low-word product, clamps results above 480 to 480, and changes zero to one. If the normalized value differs from `0x7BA`, it updates `0x7BA` and emits output through the queue helpers.
+- With base tempo 120, this matches `floor(value × 120 / 64)`: value 37 yields 69 BPM and value 64 yields 120 BPM. This does not prove that the field is a user-facing slider value.
+- `FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` and resets `0xF96` to zero only afterward. Thus the first call takes the special path that skips the normal pending-delta increment at the beginning of `FUN_1000_3406`.
+- The numeric tempo conversion is now explained. The remaining tick-8 question is the queue/pending-delta state and prior setup output; the 192-tick grid path remains a separate, already-supported path.
+
+**Source:** private SNG2S static-analysis export, functions `FUN_1000_3DE2`, `FUN_1000_33D4`, and `FUN_1000_3406`. No runtime trace.
