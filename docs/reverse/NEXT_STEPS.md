@@ -414,3 +414,9 @@ The full `glosa-private-data/testdata/ballade` tree has been inventoried and the
 4. Keep tempo/meta and physical SMF track-order claims unverified until event-level comparisons or runtime evidence exist. Do not change converter/test behavior based only on numeric coincidence.
 
 **No converter or test code was changed by this audit.**
+
+### MIMPIV4 header-field trace update (2026-10-22)
+
+Follow-up inspection of `FUN_1000_22FC` narrowed one previously open item: the initial timer base is copied from a format-dependent byte in the loaded header/record at `0x6568` into `0x7BF0` and `0x0440`. The old-format branch (`0x7800 == 0`) reads offset `+0x1C`; the nonzero format branch reads offset `+0x06`. `FUN_1000_314F` also contains a separate default initialization of `0x7BF0 = 120`.
+
+**Updated priority:** do not spend the next pass rediscovering the initial timer-base byte. Trace whether later SNG playback parsing or event processing changes `0x0440` / `0x7BF0`, and whether the loaded binary tempo-record stream is connected to that update. This connection is not established yet.
