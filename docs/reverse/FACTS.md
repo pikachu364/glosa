@@ -770,3 +770,17 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - This matches the source path where `toMidi()` immediately returns an empty `QByteArray` when `buildLayout()` fails. No interactive jmplayer launch or error dialog was captured.
 
 **Sources:** private `testdata/ballade/v1/runner.SNG` bytes; current jmplayer `sngmidi.cpp` `buildLayout()` and `toMidi()`. Static data/code comparison only.
+
+
+## F-076 — the tick-8 tempo meta uses pre-existing scheduler delta, not the first tempo record's step
+
+**Status:** static control-flow and instruction-level data flow confirmed; the numeric origin of the pending delta is still unresolved.
+
+- In SNG2S `FUN_1000_0010`, the preamble writes the time-signature meta and default tempo, processes optional setup/SysEx output, calls `FUN_1000_1c70`, then calls `FUN_1000_33d4`, and then calls `FUN_1000_08ec` to drain the queue.
+- `FUN_1000_33d4` calls `FUN_1000_3de2`, sets `0x7BA = 0x2962` (base tempo), initializes related comparison state, calls `FUN_1000_3406` once, calls `FUN_1000_3b68`, and only then clears `0xF96`. `FUN_1000_3de2` sets `0xF96 = 0xFFFF`; therefore the first `FUN_1000_3406` call does not enter its normal `0xF96 == 0` pending-delta increment/expiry path.
+- The first tempo record is consumed during that initial `FUN_1000_3406` call, and the coarse `FF 51 03` event is queued when its normalized BPM differs from the current value (F-073). The next `FUN_1000_08ec` consumes the queued meta.
+- In `FUN_1000_08ec`, status `0xFF` always enters the delta-flush path, even when `0x622` is nonzero: it encodes `0xF9A:0xF9C` as the event delta, adds it to absolute tick `0x6F2:0x6F4`, clears the pending delta, and then emits the meta event. Consequently, the tick of the first tempo meta is determined by the absolute tick plus the pending delta already present when the queue is drained.
+- This rules out treating the first record's interval word (48 in `runner.SNG`) as the direct explanation for the observed tick-8 tempo meta. The remaining task is to account for the preamble's absolute tick and pending delta immediately before the post-`FUN_1000_33d4` drain, including which setup routines emitted the reference SysEx events at ticks 0/4/8/8.
+- **Still unproven:** the value and initialization source of `0x6EE`, the exact mapping between the `FUN_1000_2144` / `FUN_1000_1CE4` output calls and each reference SysEx payload, and the resulting numeric pending-delta state at the tempo drain. No runtime trace was performed.
+
+**Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` and reference `runner.MID`. Static analysis only.
