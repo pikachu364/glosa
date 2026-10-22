@@ -355,7 +355,7 @@ runner 比較の失敗ログでは、比較対象の最初の差として、期�
 - 比較テストはトラック番号と tick を含むイベント列を直接比較している。参照 MIDI と変換 MIDI でトラック配置・イベント順序・チャンネルの対応が異なる場合も差分として検出されるため、まず両ファイルのトラック構成とイベントを対応付けて原因を切り分ける必要がある。
 - 逆に、トラック構成の違いだけだと決めつけることもできない。tick mapping、ノートの再構成、チャンネル割当など変換側の差である可能性も未解決である。
 - TEST.SNG の tempo 比較成功は、runner の可変 tempo 処理やノートイベントの完全一致を証明しない。
-- このワークフローは PR #9 のソースをビルド・テストしたが、private runner 比較が失敗しているため、参照 MIDI との完全な互換性を示す検証にはなっていない。
+- 初期の private runner 比較は失敗したが、差分は tick 4012 / channel 1 の Note-off pitch 77 と 82 の配列順序だけだった。canonical sort を安定化した private workflow run #6 では 977 tests passed。これは Note-event signature 比較の成功を示すが、参照 MIDI との完全な互換性を意味しない。
 
 ### 次の作業
 
@@ -365,7 +365,7 @@ runner 比較の失敗ログでは、比較対象の最初の差として、期�
 - [ ] 比較ロジックの前提が確認できるまではテストを緩めて成功扱いにせず、差分を保持する。
 - [ ] 原因が Glosa の変換コードにあると確認された場合にのみ、修正と回帰テストを追加する。
 
-**現在の判断:** PR #9 は未マージのまま保留する。公開 CI の成功だけでは、private reference MIDI とのイベント単位の一致は保証できない。
+**現在の判断（2026-10-23 更新）:** private workflow run #6 は Glosa commit `440000b971e72debcef72bb12407bcf4e944527a` で成功し、Note-event signature 比較の失敗原因は simultaneous Note-off の canonical order と判明した。現在の PR #9 head までの後続変更は docs のみ。PR #9 は未マージのまま。公開 CI と private event-level tests は成功しているが、SysEx / physical track-chunk order / 全メタイベント / runtime playback を含む完全互換性は未証明。
 
 ## 14. 追加調査結果（2026-10-22）：SNG2S の tempo / SysEx 経路と未確定点
 
@@ -418,3 +418,8 @@ The arithmetic is now supported by static evidence. Why the coarse event is seri
 Static tracing identifies the driver dispatch and timer initialization chain: `FUN_1FF5_1344` selects a driver setup path, several selected branches copy `0x0438` into `0x0440`, and `FUN_1FF5_0D61` installs the INT 8 handler before passing `0x0440` to `FUN_1FF5_0DFA`. The latter calculates a timer divisor and writes to I/O ports `0x71` and `0x5F`.
 
 This establishes how the timer is initialized, not how an SNG tempo record changes playback speed. The static export does not yet show a proven dataflow from the binary tempo-record second word to a playback-time update of `0x0438`, `0x0440`, or `0x7BF0`. Keep this question separate from SNG2S's MIDI tempo-meta conversion. No runtime trace or playback test was performed.
+
+
+## Private runner comparison follow-up (2026-10-23)
+
+The private fixture workflow's latest successful run is [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256). It checked out Glosa `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed all 977 tests. The previous failure's first differing signature was caused by two same-tick Note-off events (channel 1, pitches 77 and 82) appearing in opposite array order. Canonical ordering by pitch removed the test-only ordering discrepancy; no converter behavior change was needed. Current PR #9 adds only documentation changes after the tested checkout. This validation is limited to the specific tempo and Note-event signatures covered by private tests.
