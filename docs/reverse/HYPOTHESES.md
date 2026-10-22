@@ -216,3 +216,15 @@ Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includ
 - `FUN_1000_08EC` serializes pending delta through `FUN_1000_16E6` and advances output absolute tick `0x6F2:0x6F4`. This establishes the scheduler relationship, not the value of `0x6EE`.
 - The value 4 remains compatible with reference SysEx events at ticks 0/4/8, but the event-by-event mapping and initial value are not proven. Do not promote `0x6EE = 4` to a fact or use it to alter converter behavior.
 - Best next evidence: the original initialized data segment or a runtime trace that records `0x6EE` and the scheduler state at each setup emission.
+
+
+### H-017 — MIMPIV4 playback tempo controls are independent of the unresolved SNG tempo-record consumer (2026-10-22)
+
+**Status:** separation of evidence; no formula-level conclusion.
+
+- The MIMPIV4 v4.27 manual documents Up/Down keys for changing playback tempo and `/Tn` for fine adjustment. Those are user/runtime tempo controls; their existence does not show how a Ballade SNG tempo-record value is decoded.
+- Static tracing confirms a legacy header/base-tempo byte is copied to `0x7BF0` and `0x0440`, and `0x0440` is used by timer initialization and scheduling paths.
+- No proven dataflow currently connects the second word of the binary SNG tempo record to a playback-tempo update routine. It remains possible that the consumer is in an untraced path, but it must not be assumed.
+- Do not reuse the SNG2S MIDI-export curve `floor(120*v/64)` as the MIMPIV4 playback formula without locating that consumer or obtaining runtime evidence.
+
+**Next evidence:** identify the binary conductor/tempo-record parser's caller chain into playback scheduling, or trace a known SNG with a changed tempo record while observing the timer parameter and update path.
