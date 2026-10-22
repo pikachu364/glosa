@@ -327,3 +327,17 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] If the path cannot be proven statically, record the exact remaining dataflow gap; do not claim runtime behavior without a trace.
 
 **Current result:** the hardware-timer path is mapped, but the v1 tempo-record-to-playback timing path is not yet proven (FACTS F-077).
+
+
+## T-017 — distinguish coarse tick-8 tempo from exact grid-aligned tempo
+
+**Priority:** high; remaining SNG2S scheduler gap.
+
+- [x] Re-read the complete SNG2S `FUN_1000_0010` decompilation rather than relying on the summary wording. The code reads the first byte of the grid structure through `0x21DC` into `uVar11`; `runner.SNG` has `C0 00 04 04` at offset 231, so `uVar11 = 192`, not 8.
+- [x] Confirm `FUN_1000_61EC(absTick, uVar11, 0, 0)` computes the remainder modulo the grid operand and that the following delta aligns the **exact** tempo meta to the next 192-tick boundary. The 869565 event at tick 192 is this path (FACTS F-072/F-080).
+- [x] Correct FACTS F-080 to explicitly state that grid alignment does not explain the earlier coarse 869000 event at tick 8.
+- [ ] Continue tracing the preamble's last pending-delta assignment before the queue drain after `FUN_1000_33D4`. The 869000 event is queued by `FUN_1000_3406`; its output tick depends on the pending delta and absolute tick established by earlier queue drains.
+- [ ] Identify the initialized value/source of `0x6EE`, the exact preamble queue items, and the SNG2S command-line flags used for `runner.MID`. The current text export does not contain initialized data-segment bytes, and no runtime trace has been performed.
+- [ ] Keep converter behavior and tempo tests unchanged until this is grounded. The current v1 code's initial tick 8 is validated against one reference fixture, not proven as a universal rule for every v1 file.
+
+**Current result:** exact grid-aligned tempo path is explained; the source of the coarse tick-8 placement remains open. This is a bounded static-analysis gap, not evidence that the recorded reference event is wrong.
