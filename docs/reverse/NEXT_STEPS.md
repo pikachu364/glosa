@@ -424,3 +424,7 @@ Follow-up inspection of `FUN_1000_22FC` narrowed one previously open item: the i
 ### Private fixture metadata consistency check (2026-10-22)
 
 The private repository's `.github/private-tests/PrivateBalladeFixtureTests.cs` contains tests for v1 `TEST.SNG` tempo-event equality and v1 `runner.SNG` Note-event equality. Its `private-data-ci.yml` stages the private fixtures/tests into the requested Glosa ref and runs the full test project without publishing the fixture files. However, `testdata/ballade/README.md`, `manifest.json`, and `v1/sng2gs/README.md` still describe v1 as unsupported / excluded, which no longer matches the current v1 implementation and private tests. Treat those status strings as stale metadata; the actual CI result for the specific Glosa ref remains the authority. The private metadata files were not changed during this audit.
+
+### MIMPIV4 driver-dispatch cross-reference (2026-10-22)
+
+The six additional writers of `0x0440` are reached from the driver-dispatch routine `FUN_1FF5_1344` through its selected branches (`FUN_1FF5_2769`, `FUN_1FF5_3DD2`, `FUN_1FF5_44E0`, `FUN_1FF5_4CF8`, `FUN_1FF5_5114`, `FUN_1FF5_579C`). Their code initializes driver/scheduler state and copies `0x0438` to `0x0440`; this is evidence for a driver setup path, not a proven SNG tempo-record consumer. The unresolved work is to connect the SNG playback entry path to this dispatch, or document the missing static edge and retain runtime tracing as the required next step.
