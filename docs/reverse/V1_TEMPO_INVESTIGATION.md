@@ -141,3 +141,15 @@ The MIMPIV4 loader initializes its timer-period parameter from the legacy conduc
 3. Recover the option token/string mapping and actual SNG2S command line for the reference MIDI; the manual's defaults do not prove they were used.
 4. Prove the pending delta and absolute tick at the drain that emits the coarse tempo event at tick 8. No runtime trace has been performed.
 5. Keep the v1 converter's tempo guard and tests unchanged until those gaps are closed; do not claim full MIDI equivalence based only on the 3,295 Note-on/off matches.
+
+## Follow-up audit (2026-10-22): narrow the remaining tick-8 question
+
+The static trace has progressed beyond identifying candidate tempo producers:
+
+- The coarse value `869000` is produced by the tempo-record path; its arithmetic is no longer the open question.
+- The exact value `869565` and its 192-tick grid alignment are supported by the static path and match the reference event at tick 192.
+- The remaining tempo question is specifically **why the coarse event is serialized at absolute tick 8**. The needed evidence is the queue/pending-delta state immediately before and after the first tempo queue drain, including `0xF9A:0xF9C`, `0x6F2:0x6F4`, and preceding setup events.
+- The first `FUN_1000_3406` call takes an initialization exception path because `0xF96` starts at `0xFFFF`; it should not be reasoned about using the normal scheduler's later-call delta adjustment.
+- `0x6EE` is read and added into pending timing in setup-output paths, but the exported text disassembly omits initialized data bytes. Its value is therefore not established by the current static export; interpreting it as 4 ticks remains speculative.
+
+This narrows the next useful experiment to a runtime trace or a recovered initialized data segment. Re-reading the 192-tick grid calculation will not resolve the tick-8 placement. No converter behavior is changed by this finding.
