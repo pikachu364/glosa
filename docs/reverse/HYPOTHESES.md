@@ -205,3 +205,14 @@ This section replaces the earlier H-015 wording that associated `0x622` with `/F
 ### H-015 follow-up — string-table evidence found (2026-10-21)
 
 Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includes a `STRINGS / DEFINED DATA` section. It contains the `/F` help text at `1627:0147`: `Part 1-16 -> Track 2-11 (default=Track 16-2)`. This confirms that the executable's documented `/F` option text is present in the recovered string table, correcting the earlier statement that no option string was available in the analysis text. It does **not** yet prove that the parser's comparison operand `0xF05` points to that string; segment/offset mapping or a direct data cross-reference is still needed. The earlier `0x622 ↔ /F` claim is superseded: downstream use fits `0x622 ↔ /XD` and `0x626 ↔ /F`, but the token-to-string mapping and reference invocation remain unconfirmed.
+
+
+### H-016 follow-up — 0x6EE is a shared setup spacing value, but its initialized numeric value is unknown (2026-10-22)
+
+**Status:** repeated use confirmed by static control flow; numeric value and exact event mapping unconfirmed.
+
+- The SNG2S export contains repeated reads of `0x6EE` across setup/preamble emitters. Observed paths add it to `0x1ED8:0x1EDA` and set it as pending delta in `0xF9A:0xF9C`.
+- A text search found no direct write to `0x6EE` in the available export. The initialized data segment is not included, so the numeric value cannot be read from this artifact.
+- `FUN_1000_08EC` serializes pending delta through `FUN_1000_16E6` and advances output absolute tick `0x6F2:0x6F4`. This establishes the scheduler relationship, not the value of `0x6EE`.
+- The value 4 remains compatible with reference SysEx events at ticks 0/4/8, but the event-by-event mapping and initial value are not proven. Do not promote `0x6EE = 4` to a fact or use it to alter converter behavior.
+- Best next evidence: the original initialized data segment or a runtime trace that records `0x6EE` and the scheduler state at each setup emission.
