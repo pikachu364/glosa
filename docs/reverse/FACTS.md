@@ -721,3 +721,16 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - **3/4 implication:** because `local_4c` comes from the SNG's stored grid data, the exact-tempo meta is aligned to the 3/4 grid when that grid is 144 ticks. This alone does not prove the documented +1 BPM behavior; that would require tracing the coarse tempo conversion or having a 3/4 reference fixture. The core timer normalization in `FUN_1000_3406` remains meter-independent.
 
 **Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_272a`, `FUN_1000_61EC`; v1 `runner.SNG` bytes and reference `runner.MID`; v3 `START__0.MID`; v4 `BOURREE0.MID`.
+
+
+## F-073 — the coarse FF 51 tempo event is explicitly emitted by FUN_1000_3406
+
+**Status:** static instruction-level producer identified. The delta-time queue origin for the observed tick 8 remains a separate question.
+
+- In SNG2S `FUN_1000_3406` at 1000:350A–3583, the tempo stream record's second word is read; the value is multiplied by `0x2962` (base tempo), divided by `0x40`, clamped to 1..480, and compared with current tempo at `0x7BA`.
+- When the normalized tempo changes, the code computes `floor(60000 / BPM)` with `AX=0xEA60` and `DIV BX`, multiplies that integer millisecond interval by 1000, and queues the bytes `FF 51 03` followed by the resulting 24-bit microseconds-per-quarter value. This is direct source evidence for `floor(60000/BPM)*1000`, not just a numeric fit.
+- For the v1 raw slider value 37, base tempo 120 yields 69 BPM; the code therefore queues `floor(60000/69)*1000 = 869000` µs/quarter. The queue is consumed by `FUN_1000_08EC`, which serializes queued events to the SMF while advancing absolute tick `0x6F2:0x6F4`.
+- Separately, `FUN_1000_0010` aligns to the conductor grid and writes `floor(60000000/BPM)`; for 69 BPM this is 869565 at tick 192. F-072 records the grid alignment calculation.
+- **Remaining detail:** the source of the pending delta that makes the queued 869000 event land at tick 8 is not yet fully derived from the `0xF9A:0xF9C` and `0x6F2:0x6F4` updates. The producer and value are known; do not claim the tick-8 scheduling mechanism is fully closed.
+
+**Sources:** private SNG2S decompilation `FUN_1000_3406` (1000:350A–3583), `FUN_1000_08EC`, `FUN_1000_0010`; reference `runner.MID`.
