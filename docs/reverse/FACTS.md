@@ -798,3 +798,18 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - Do not infer that MIMPIV4's playback tempo curve is identical to SNG2S's MIDI-export curve merely because both contain a factor of 120. The timer divisor, record interpretation, and SNG2S MIDI rounding are separate paths.
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`, especially `FUN_1000_22FC`, `FUN_1000_A3BB`, `FUN_1FF5_0D61`, `FUN_1FF5_0DFA`, and `FUN_1FF5_0DE1`. Static analysis only.
+
+
+## F-078 — TEST.SNG independently confirms the same legacy layout and jmplayer rejection
+
+**Status:** static calculation from the private fixture bytes and the current jmplayer validation rules.
+
+- `TEST.SNG` is 9,089 bytes, version `1.00`. Its table end is 114, correct legacy header end is 116, conductor entry is 1,528, and part 1 begins at 1,644.
+- With v1 rules, part 1 has size `222 + 80 = 302`, used length 16 at +115, controller length 32 at +117, and the 13 seek values sum to 174. The sum is 222, matching its table entry. All ten part blocks validate with the v1 offsets and sizes; the expected trailing region is 65 bytes.
+- jmplayer's candidates fail at part 1 again:
+  - H=208 starts part 1 at 1,736 and reads used=255, controller=0, index=0, capacity=145; the used-length alignment check fails.
+  - H=116 starts part 1 at the correct 1,644 but reads used=0, controller=4,096, index=8,192, capacity=145; the length sum exceeds capacity.
+  - H=114 starts part 1 at 1,642 and reads used=0, controller=0, index=4,096, capacity=145; the length sum exceeds capacity.
+- The same rejection is therefore reproduced on a second independent v1 file, not only `runner.SNG`. This remains a static code/data comparison; jmplayer was not launched.
+
+**Sources:** private `testdata/ballade/v1/TEST.SNG` bytes; current jmplayer `sngmidi.cpp` `buildLayout()`. Static analysis only.
