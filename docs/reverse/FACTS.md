@@ -784,3 +784,17 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - **Still unproven:** the value and initialization source of `0x6EE`, the exact mapping between the `FUN_1000_2144` / `FUN_1000_1CE4` output calls and each reference SysEx payload, and the resulting numeric pending-delta state at the tempo drain. No runtime trace was performed.
 
 **Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` and reference `runner.MID`. Static analysis only.
+
+
+## F-077 — MIMPIV4 playback uses a hardware-timer path distinct from SNG2S MIDI export
+
+**Status:** the timer setup and period calculation are statically confirmed; the path from v1 tempo-stream records into the playback period is not yet identified.
+
+- In MIMPIV4's loader `FUN_1000_22fc`, the legacy branch is selected for the older format family (`0x7800 == 0`). It loads the legacy base-tempo byte into both `0x7BF0` (saved value) and `0x0440` (current period parameter). The same branch reads the legacy part-count field separately. This is not the SNG2S MIDI-export path.
+- MIMPIV4's timer setup `FUN_1FF5_0D61` saves and replaces the DOS interrupt-8 vector, initializes timer state, and writes `0x36` to I/O port `0x77`. The handler is installed at `1FF5:0E71` (the target is within the timer-driver code segment).
+- `FUN_1FF5_0DFA` computes a timer reload from the current parameter in CX, the clock value at `0x3386`, a factor of 120 (`0x78`), and the timebase value `0x3392`; it applies a power-of-two prescaler and writes the resulting divisor bytes to ports `0x71` and `0x5F`. `FUN_1FF5_0DE1` updates the timer driver's scheduled count `0x3390`.
+- In the main application, `FUN_1000_A3BB` checks the playback timer counters and calls `FUN_1FF5_0DE1(0x0440)` when its scheduled threshold is reached. This establishes a hardware-timer scheduling path, unlike SNG2S, which serializes tempo as SMF `FF 51` meta events.
+- A static reference scan of the exported MIMPIV4 decompilation finds `0x0440` initialized from the loaded base-tempo byte and reset from saved/default values in mode setup paths, but does **not** identify a direct write from the v1 conductor tempo records into `0x0440`. This is not proof that tempo records are ignored: the remaining work is to trace the v1 record reader and any alternate state that affects the scheduled period.
+- Do not infer that MIMPIV4's playback tempo curve is identical to SNG2S's MIDI-export curve merely because both contain a factor of 120. The timer divisor, record interpretation, and SNG2S MIDI rounding are separate paths.
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`, especially `FUN_1000_22FC`, `FUN_1000_A3BB`, `FUN_1FF5_0D61`, `FUN_1FF5_0DFA`, and `FUN_1FF5_0DE1`. Static analysis only.
