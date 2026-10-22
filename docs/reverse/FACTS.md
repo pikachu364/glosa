@@ -827,3 +827,20 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - This is the concrete reason the tick-8 explanation remains incomplete: the queue-drain behavior is known (F-076), but the pre-drain pending delta and the exact preamble events are not yet grounded. Do not promote the likely `0x6EE = 4` / two-drain explanation to a fact until the data-segment values or a trace establish it.
 
 **Sources:** private SNG2S decompilation `FUN_1000_184A`, `FUN_1000_2144`, `FUN_1000_1CE4`, `FUN_1000_265C`; command-line and initialized data-segment values not fully available in the current export.
+
+
+## F-078 — runner.SNG v1 tempo records: 37 is the value word; 48/144/192 are interval words
+
+**Status:** directly verified against the private fixture bytes; semantics cross-checked against the SNG2S reader.
+
+For private `testdata/ballade/v1/runner.SNG`:
+
+- Conductor block starts at file offset 116 (0x74), size 1,394 bytes, ending at 1,510.
+- The six-byte heap marker `FF 7F FF FF FF FF` is at file offset 761; the v1 tempo stream starts at marker +10 = 771.
+- The first records are little-endian 16-bit pairs `(step, value)`: offset 771 = `(48, 37)`; 775 = `(144, 37)`; 779 = `(192, 37)`; subsequent records continue with `(192, 37)`.
+- The v1 base-tempo byte at absolute offset 143 is 120.
+- Therefore 37 is the second word (tempo-record value), while 48/144/192 are first-word step/interval fields. The available static evidence does **not** establish that 37 is a user-facing slider value; it must not be described as such.
+- SNG2S's export conversion uses `floor(baseTempo * value / 64)`, clamped to 1..480. For base tempo 120 and value 37, this yields 69 BPM. The running export path's millisecond-rounded tempo is 869,000 µs/quarter; the bar-start tempo event uses exact integer division, 869,565 µs/quarter.
+- The parser's initial scheduler tick of 8 is a separate preamble state. The first record's step 48 advances the schedule *after* the tempo record is considered; it does not explain why the first tempo event is at tick 8. Repeated value 37 records do not create further tempo changes. The special bar-start emission accounts for the reference event at tick 192.
+
+**Sources:** direct byte inspection of private `runner.SNG`; SNG2S Ghidra export `FUN_1000_3406` and `FUN_1000_08EC`; reference tempo facts recorded for private `runner.MID`. Static analysis; no SNG2S runtime trace.
