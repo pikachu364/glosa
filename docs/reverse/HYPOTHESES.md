@@ -186,7 +186,9 @@ This section replaces the earlier H-015 wording that associated `0x622` with `/F
 **次の確認:** 実行ファイルの data segment / relocation / 文字列領域を含むダンプ、または runtime memory trace を得る。解析テキストの xref scan だけでは値の由来は確定しない。
 
 
-### H-016 follow-up — 0x6EE の数値候補は4 ticks（暫定）
+### H-016 follow-up — 0x6EE の数値候補は4 ticks（旧仮説・後続調査で未証明）
+
+**更新状態（2026-10-22）:** この項目は履歴として保持するが、4 ticks を `0x6EE` の実値とみなしてはならない。後続の H-016 follow-up が示すとおり、初期値と各 SysEx への対応は未確定。
 
 参照 `runner.MID` を SMF として直接解析すると、track 1 の SysEx event は tick 0 / 4 / 8 / 8 に出力されている（FACTS F-068）。一方、v1 の `FUN_1000_1CE4` は条件成立時に2回 SysEx-style event を生成して drain し、各 drain 後に `0x6EE` を pending delta `0xF9A:0xF9C` に設定する。`FUN_1000_3F79` の共通 byte 列、`FUN_1000_5FAA` のデータ生成、`FUN_1000_3F54` の checksum 用和計算、`FUN_1000_3EED` の checksum + `F7` 追加から、これらが SysEx 形式であることは静的に支持される。
 
