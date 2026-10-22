@@ -958,3 +958,12 @@ In `FUN_1000_22FC`, MIMPIV4 classifies the loaded Ballade-family header using th
 This narrows the source of the initial timer base but does not show that tempo records encountered during playback update it. The loaded record's role and the dynamic tempo path still require separate tracing.
 
 **Source:** private MIMPIV4 static-analysis export, `FUN_1000_22FC` (1000:22FC onward) and `FUN_1000_314F`; no runtime trace.
+
+## F-086 — MIMPIV4 driver setup is not yet a proven SNG tempo-record consumer
+**状態:** 静的逆アセンブルで確認（再生時のデータフローは未確定）
+
+- 起動経路は形式別 loader の後に `FUN_1FF5_1344` で driver を選び、`FUN_1FF5_0D61` で INT 8 timer handler を設定する。
+- `FUN_1FF5_0D61` は `0x0440` を使って `FUN_1FF5_0DFA` を呼び、後者は timer divisor を計算して I/O port `0x71` / `0x5F` に書く。
+- driver 分岐先の複数関数は初期化時に `0x0438` を `0x0440` へコピーする。別経路では `0x7BF0` と `0x0440` に format-dependent な header/base-tempo byte を設定する。
+
+**制約:** これらは driver/timer の初期化経路を示すが、SNG 再生中に tempo record の第2 word を読む処理や、それが `0x0438` / `0x0440` / `0x7BF0` を更新するデータフローは確認できていない。SNG2S の MIDI export 式を MIMPIV4 の playback tempo 式として流用しない。解析ダンプに基づく静的確認のみで、runtime trace・実再生は未実施。
