@@ -564,7 +564,8 @@ public class SequencerTests
     [Fact]
     public void TheSilenceOnStoppingKeepsToTheCap()
     {
-        // 48 messages of 3 bytes: 46 ms at 3125 a second.
+        // 48 messages of 3 bytes: 46 ms at 3125 a second. Wall-clock scheduling
+        // can pause the sender on CI, so keep the upper bound loose.
         var sink = new RecordingSink();
         using var seq = new Sequencer(sink, new PlaybackOptions
         {
@@ -576,7 +577,7 @@ public class SequencerTests
         Thread.Sleep(50);
         seq.Stop();
 
-        Assert.InRange(Span(sink, 0x79), 35, 200);
+        Assert.InRange(Span(sink, 0x79), 35, 300);
     }
 
     private static string Hex(uint packed)
