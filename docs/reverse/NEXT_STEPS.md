@@ -361,3 +361,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - FUN_1000_3BA7 uses the 0x3F82/0x3FA0 template paths and also emits explicit bytes including 0x10, 0x16, the current low byte of 0x7DE, a derived 7-bit value, and 0xF7. The branch conditions depend on 0x6FA, 0x6F8, and format byte 0x25DA.
 - This narrows the setup-message construction logic, but the exported disassembly does not include the initialized data bytes at 0x3F82 and 0x3FA0. Consequently the actual template payloads cannot be recovered from these text exports alone, and a one-to-one mapping to runner.MID SysEx payloads is not yet supported. Do not infer full payload bytes from the helper names or the F7 terminator.
 - CI for 67f2dcd completed successfully for both push and PR workflows. PR #9 is still open and unmerged.
+
+### SNG2S option documentation cross-check (2026-10-22)
+
+- Read the archived SNG2S v3.3 manual (`testdata/ballade/sng2gs/SNG2S.DOC` in the private reference repository). It documents `/1` as the default (Format 1), `/X2` as the default SysEx placement (a dedicated track immediately after the conductor track), and `/XD` as disabling SysEx conversion. `/X1` instead puts SysEx into the conductor track; `/F` changes SNG-track ordering, and `/N` omits parts without notes.
+- This narrows the documented defaults for a normal SNG2S invocation, but the exact command line that produced `runner.MID` / `TEST.MID` is still not recorded. The manual does not include the binary template bytes at 0x3F82/0x3FA0, so it cannot close the payload mapping by itself.
+- The SNG2S manual also states output timebase is fixed at 48 ticks per quarter note. That is consistent with the reference MIDI's PPQN but does not explain the coarse tempo meta at tick 8 or the pending-delta value 0x6EE.
+- CI for commit 608e731 completed successfully on both push and PR workflows (runs 39738048630 and 39738058337). PR #9 remains open and unmerged.
