@@ -412,3 +412,9 @@ The arithmetic is now supported by static evidence. Why the coarse event is seri
 - 本文の v1 layout と tempo 調査は静的解析・保存済み fixture 比較の記録であり、SNG2S runtime trace や MIDI 実再生を意味しない。
 - 直近の優先項目は [NEXT_STEPS.md](NEXT_STEPS.md) の T-017。既に説明できた tempo の整数計算や 192-tick grid を再調査せず、tick 8 の pending-delta / absolute-tick 状態、`0x6EE` の初期値、setup SysEx の payload 対応に絞る。
 - 節番号の重複を解消した。既存の結果や未解決事項を削除・格上げしていない。
+
+### 14.2 MIMPIV4 playback timer: evidence boundary (2026-10-22)
+
+Static tracing identifies the driver dispatch and timer initialization chain: `FUN_1FF5_1344` selects a driver setup path, several selected branches copy `0x0438` into `0x0440`, and `FUN_1FF5_0D61` installs the INT 8 handler before passing `0x0440` to `FUN_1FF5_0DFA`. The latter calculates a timer divisor and writes to I/O ports `0x71` and `0x5F`.
+
+This establishes how the timer is initialized, not how an SNG tempo record changes playback speed. The static export does not yet show a proven dataflow from the binary tempo-record second word to a playback-time update of `0x0438`, `0x0440`, or `0x7BF0`. Keep this question separate from SNG2S's MIDI tempo-meta conversion. No runtime trace or playback test was performed.
