@@ -858,14 +858,14 @@ For private `testdata/ballade/v1/runner.SNG`:
 **Sources:** private MIMPIV4 Ghidra export, `FUN_1000_22FC`, `FUN_1FF5_1409`, `FUN_1000_A3BB`; complete text scan for literal references to `0x0440`. Static analysis only.
 
 
-## F-080 — SNG2S explicitly aligns the first non-default tempo meta to the next grid boundary
+## F-080 — SNG2S explicitly aligns the exact-tempo meta to the next bar/grid boundary
 
-**Status:** the control-flow and arithmetic are confirmed; the grid operand's exact value for runner.SNG still needs to be traced to its source bytes.
+**Status:** the control-flow and arithmetic are confirmed; the coarse tick-8 event has a separate queue-delta path.
 
-- In `FUN_1000_0010`, after `FUN_1000_33D4` and the queue drain, SNG2S calls `FUN_1000_61EC(currentAbsoluteTick, uVar11, 0, 0)`. That helper returns the remainder of the current absolute tick divided by `uVar11`.
-- The caller computes `delta = uVar11 - remainder`; if that is zero, it substitutes a full `uVar11`. It then places the pending delta before the first non-default tempo meta when `0x7BA != 120`.
-- Therefore the first non-default tempo meta is deliberately scheduled at the *next multiple of the grid operand*, not at the first tempo record's step word. If the fixture's operand is 8 and current tick is 0, this yields tick 8. This is consistent with `runner.MID`, but the exact dataflow proving `uVar11 == 8` for this fixture is not yet closed.
-- The subsequent exact-tempo event at tick 192 is a separate bar-start emission. The observed interval field 48 is consumed later by `FUN_1000_3406` to advance the tempo-record scheduler; it is not the source of the initial tick-8 alignment.
-- **Still unproven:** which bytes initialize the pointer at `0x21DC` used to obtain `uVar11`, and whether the queue drain leaves absolute tick 0 for every relevant v1 file. Do not hardcode tick 8 for all v1 files solely from this one fixture.
+- In `FUN_1000_0010`, after `FUN_1000_33D4` and its queue drain, SNG2S calls `FUN_1000_61EC(currentAbsoluteTick, uVar11, 0, 0)`. That helper returns the current absolute tick modulo `uVar11`.
+- The caller computes `delta = uVar11 - remainder`; if that is zero, it substitutes a full `uVar11`. It then writes an exact-microsecond tempo meta when `0x7BA != 120`. With grid operand 192 and current absolute tick 8, the delta is 184 and the event lands at tick 192, matching `runner.MID`'s 869565 µs/quarter event.
+- This is the **bar-start exact-tempo event**, not the coarse 869000 µs/quarter event at tick 8. The coarse event is queued by `FUN_1000_3406` and its tick depends on the pending delta already present when the earlier queue drain emits it (F-076).
+- The tempo record's step word 48 is consumed by `FUN_1000_3406` to advance the tempo-record scheduler. It is not the source of the tick-192 grid alignment.
+- **Still unproven:** the full source-byte initialization path for `uVar11`/the `0x21DC` stream and whether all v1 files use the same grid operand. Do not generalize the tick-192 event to arbitrary meter without tracing the meter/grid input.
 
 **Sources:** private SNG2S Ghidra export `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`; private `runner.SNG` and reference tempo facts. Static analysis only.
