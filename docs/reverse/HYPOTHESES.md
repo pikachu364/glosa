@@ -159,22 +159,21 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 これは tick-8 の既存仮説を強める/確定する証拠ではなく、通常 scheduler loop の `+1` を初回呼び出しに誤適用しないための制約である。runtime trace がなく、`0x6EE` の値も確定していないため、tick 8 は未確認のまま扱い、converter guard を維持する。
 
 
-## H-015 — 0x622 は SNG2S の /F オプションに対応する可能性
+## H-015 — SNG2S option flags: 0x622 likely maps to /XD and 0x626 likely maps to /F
 
-**状態:** 有力な推定。SNG2S の定義データには `/F` の説明文字列が存在するが、比較先 `0xF05` とその文字列位置の対応、および参照実行条件は未確定。
+**Status:** best-fit static interpretation; neither option token has been verified byte-for-byte against its parser operand, and the reference invocation is unknown.
 
-- `FUN_1000_184A` は `0xF05` の2-byte option token を比較し、一致時に `0x622` を設定する。
-- 解析テキスト末尾の `STRINGS / DEFINED DATA` セクションには `1627:0147` の `/F` 説明文字列（`Part 1-16 -> Track 2-11`）が収録されている。したがって `/F` という文字列自体が資料にない、という以前の記述は訂正する。ただし、定義データ上の `1627:0147` と比較先 `0xF05` が同一データを指すことは、このテキストだけでは確認できていない。
-- SNG2S.DOC は /F を MIDI track generation order の変更オプションとして説明する。逆アセンブルで観測した 0x622 の下流利用（alternate track-order selection と queue drain 前の pending-delta reset）はこの説明と整合する。
-- したがって 0x622 ↔ /F は有力な推定だが、実文字列の照合なしに確定扱いしない。また reference runner.MID 生成時に /F が指定されたかは不明。
-- 0x6EE は複数の event-output path で pending delta として読み出されるが、利用可能な解析テキスト内では直接書き込みを見つけられていない。値・由来を未解決として維持し、tick 8 の根拠に推測で使わない。
+- `FUN_1000_184A` compares a two-byte option token at operand `0xF05` and sets `0x622 = 1` on a match. The recovered strings include `/F` help text, but the current text export does not prove that operand `0xF05` points to that string.
+- Downstream use is the key discriminator: `0x622` suppresses SysEx payload output in `FUN_1000_08EC`, which fits `/XD` (disable Exclusive/SysEx conversion); `0x626` selects an alternate track-order table in `FUN_1000_0010`, which fits `/F` (change part-to-track order).
+- Therefore the older claim `0x622 ↔ /F` is withdrawn. The current best-fit mapping is `0x622 ↔ /XD` and `0x626 ↔ /F`, pending direct token/data-segment confirmation.
+- The saved reference MIDIs contain SysEx events, so `/XD` was probably not active for those runs. This is an inference from output, not proof of the actual command line or flag state.
+- Separately, `0x6EE` remains an unresolved delta/interval value. Its possible value of 4 is a hypothesis only; do not use it as a confirmed tick conversion or alter converter behavior on that basis.
 
-**次の確認:** 文字列テーブルを含むバイナリ／データダンプ、実際の SNG2S 呼び出し条件、0x6EE の初期値または間接書き込みを確認する。0x622 の対応が確定するまでは H-015 の推定状態を維持する。
+**Next verification:** recover the initialized data/string mapping or obtain a runtime option trace; record the actual SNG2S invocation if it can be recovered. Until then, retain the mapping as a hypothesis.
 
+### H-015 correction note (2026-10-22)
 
-### H-015 follow-up — 0xF05 token の比較長を確認（2026-10-21）
-
-`FUN_1000_184A` から `FUN_1000_5EC8(local_56, 0xF05, 2)` が呼ばれ、比較結果が一致（戻り値 0）の場合に `0x622 = 1` となる。`FUN_1000_5EC8` の命令列は指定長の文字列比較と整合するため、0xF05 は2-byte token の候補位置である。これは H-015 の parser 経路を具体化するが、token の文字そのものは文字列データ未収録のため確認できず、/F 対応は依然として推定。
+This section replaces the earlier H-015 wording that associated `0x622` with `/F`. The earlier mapping contradicted the observed downstream uses and should not be used as a current conclusion. The most consistent mapping is now `0x622` → `/XD` (SysEx suppression) and `0x626` → `/F` (track-order selection), still at hypothesis level.
 
 ### H-016 — 0x6EE は複数の出力経路で使う delta/間隔値の可能性
 
@@ -205,4 +204,4 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 
 ### H-015 follow-up — string-table evidence found (2026-10-21)
 
-Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includes a `STRINGS / DEFINED DATA` section. It contains the `/F` help text at `1627:0147`: `Part 1-16 -> Track 2-11 (default=Track 16-2)`. This confirms that the executable's documented `/F` option text is present in the recovered string table, correcting the earlier statement that no option string was available in the analysis text. It does **not** yet prove that the parser's comparison operand `0xF05` points to that string; segment/offset mapping or a direct data cross-reference is still needed. The relationship `0x622 ↔ /F` remains a strong hypothesis, not a confirmed fact, and the reference MIDI's invocation options remain unknown.
+Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includes a `STRINGS / DEFINED DATA` section. It contains the `/F` help text at `1627:0147`: `Part 1-16 -> Track 2-11 (default=Track 16-2)`. This confirms that the executable's documented `/F` option text is present in the recovered string table, correcting the earlier statement that no option string was available in the analysis text. It does **not** yet prove that the parser's comparison operand `0xF05` points to that string; segment/offset mapping or a direct data cross-reference is still needed. The earlier `0x622 ↔ /F` claim is superseded: downstream use fits `0x622 ↔ /XD` and `0x626 ↔ /F`, but the token-to-string mapping and reference invocation remain unconfirmed.
