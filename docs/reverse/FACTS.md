@@ -908,3 +908,15 @@ For private `testdata/ballade/v1/runner.SNG`:
 **Implication:** do not use SNG2S MIDI-export tempo arithmetic as a substitute for the still-unidentified MIMPIV4 playback tempo path.
 
 **Source:** private MIMPIV4 static-analysis export. Private fixture/binary data remains outside this public repository.
+
+
+## F-084 — MIMPIV4 manual documents playback tempo controls, but not the binary SNG tempo-record decoder (2026-10-22)
+
+**Status:** documentation fact; the runtime implementation path remains unresolved.
+
+- The archived MIMPIV4 v4.27 manual describes the playback screen as displaying title, tempo and 16-channel performance information. It says the Up/Down keys increase/decrease playback tempo, and lists `/Tn` as a playback-tempo fine adjustment option.
+- The same manual notes that measure/beat display is accurate for formats that carry time-signature information, including Ballade-family data. This confirms that MIMPIV4 recognizes Ballade-family meter information for display, but it does not identify how the SNG tempo-record second word affects playback timing.
+- Static disassembly confirms that the legacy loader copies a base-tempo byte from the legacy header to `0x7BF0` and `0x0440`, and timer initialization uses `0x0440`. A separate binary tempo-record consumer has not yet been identified.
+- Therefore, neither the manual nor the currently traced code establishes that MIMPIV4 playback uses the same tempo conversion formula as SNG2S MIDI export.
+
+**Source:** private reverse-engineering reference `testdata/ballade/MIMPI427/MIMPIV4.DOC` (playback screen / key controls / `/Tn` option) and static disassembly export. The private files remain private.
