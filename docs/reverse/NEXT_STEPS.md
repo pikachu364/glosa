@@ -420,3 +420,7 @@ The full `glosa-private-data/testdata/ballade` tree has been inventoried and the
 Follow-up inspection of `FUN_1000_22FC` narrowed one previously open item: the initial timer base is copied from a format-dependent byte in the loaded header/record at `0x6568` into `0x7BF0` and `0x0440`. The old-format branch (`0x7800 == 0`) reads offset `+0x1C`; the nonzero format branch reads offset `+0x06`. `FUN_1000_314F` also contains a separate default initialization of `0x7BF0 = 120`.
 
 **Updated priority:** do not spend the next pass rediscovering the initial timer-base byte. Trace whether later SNG playback parsing or event processing changes `0x0440` / `0x7BF0`, and whether the loaded binary tempo-record stream is connected to that update. This connection is not established yet.
+
+### Private fixture metadata consistency check (2026-10-22)
+
+The private repository's `.github/private-tests/PrivateBalladeFixtureTests.cs` contains tests for v1 `TEST.SNG` tempo-event equality and v1 `runner.SNG` Note-event equality. Its `private-data-ci.yml` stages the private fixtures/tests into the requested Glosa ref and runs the full test project without publishing the fixture files. However, `testdata/ballade/README.md`, `manifest.json`, and `v1/sng2gs/README.md` still describe v1 as unsupported / excluded, which no longer matches the current v1 implementation and private tests. Treat those status strings as stale metadata; the actual CI result for the specific Glosa ref remains the authority. The private metadata files were not changed during this audit.
