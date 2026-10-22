@@ -281,6 +281,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] 参照 MIDI 生成時に `/XD` が指定されたか確認し、`0x622 != 0` の pending-delta reset が実際に適用されたかを絞る。SysEx 4件の存在は `/XD` 無効を強く示唆するが、生成条件の直接証拠ではない。
 - [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
 
+
+- [x] Public `SngConverterTests.cs` has no explicit assertions for v1 tempo meta values/ticks (500000 at tick 0, 869000 at tick 8, 869565 at tick 192); the 977-event result covers normalized note-event equivalence, not full tempo/SysEx/SMF equality.
+- [ ] After the tick-8 pending-delta source is proven, add focused tempo-meta regression assertions against the private reference MIDI in private CI; do not copy reference MIDI or private fixtures into the public repository.
+
 **注意:** 初回 `FUN_1000_3406` に通常経路の +1 を当てはめない。tick 8 が説明できるまで `SngConverter.cs` と tempo regression tests は変更しない。
 
 
