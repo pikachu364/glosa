@@ -368,3 +368,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - This narrows the documented defaults for a normal SNG2S invocation, but the exact command line that produced `runner.MID` / `TEST.MID` is still not recorded. The manual does not include the binary template bytes at 0x3F82/0x3FA0, so it cannot close the payload mapping by itself.
 - The SNG2S manual also states output timebase is fixed at 48 ticks per quarter note. That is consistent with the reference MIDI's PPQN but does not explain the coarse tempo meta at tick 8 or the pending-delta value 0x6EE.
 - CI for commit 608e731 completed successfully on both push and PR workflows (runs 39738048630 and 39738058337). PR #9 remains open and unmerged.
+
+
+### Latest continuation note (2026-10-22)
+
+- `FUN_1000_3406` directly reads 4-byte tempo records from the table at `0x21E0`; the second word is normalized using the base tempo at `0x2962`, divided by `0x40`, clamped to 1–480, and compared with `0x7BA` before emitting changed-tempo output.
+- `FUN_1000_3DE2` sets `0xF96 = 0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting `0xF96` to zero. This confirms the first-call exception path, but does not resolve the tick-8 queue/pending-delta state.
+- The unresolved work is now narrower: trace the state before the first coarse tempo queue drain and recover the initialized value of `0x6EE`; do not re-open the already-supported tempo arithmetic or 192-tick grid calculation.
