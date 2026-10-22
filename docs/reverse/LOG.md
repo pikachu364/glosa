@@ -495,3 +495,13 @@
 - help text の説明（`/XD`: Exclusive disable、`/F`: part-to-track order change）と照合し、最有力対応を `0x622 ↔ /XD`、`0x626 ↔ /F` に修正。旧 `0x622 ↔ /F` 仮説は撤回する（FACTS F-069）。token bytes の直接対応・参照実行時の引数とフラグ値は未確認。
 - 参照 MIDI に SysEx が4件あることは `/XD` 無効を示唆するが、生成時の引数を証明するものではない。tick 8 の pending-delta 説明は静的推定のまま維持し、converter / tests は変更しない。
 - `NEXT_STEPS.md` と `V1_TEMPO_INVESTIGATION.md` を更新。HYPOTHESES.md の H-015 には旧対応の記述が残っており、文書間の同期が未完了である点に注意。
+
+
+## 2026-10-22 — reverse 文書全体の整合性監査
+
+- `docs/reverse/` 以下の README、FACTS、HYPOTHESES、LOG、NEXT_STEPS、V1_TEMPO_INVESTIGATION、BALLADE_LAYOUT_COMPARISON、引継ぎ文書を読み直した。
+- 現在の結論は、SNG2S の tempo-record 数値計算と 192-tick grid 経路は静的解析で説明できる一方、tick 8 の delta / absolute-tick 状態、`0x6EE` の初期値、SysEx payload の対応、参照生成時の実オプションは未解決というもの。
+- README に残っていた「H-015 の同期未完了」という記述は更新。HYPOTHESES の `0x6EE = 4` は旧仮説として明示し、後続の否定的な制約を優先するよう注記した。
+- FACTS には F-078 / F-079 / F-084 の ID 重複がある。既存参照を壊す一括改番は行わず、重複の存在を明記。次回は参照先を全件検索してから ID を整理する。
+- 比較文書の節番号が「10」で重複していたため、後続の tempo/SysEx 追加節を 14 に整理する。過去の調査ログは削除せず、履歴として残す。
+- 文書だけの監査であり、converter / regression tests は変更していない。private fixture は公開せず、PR #9 はマージしていない。
