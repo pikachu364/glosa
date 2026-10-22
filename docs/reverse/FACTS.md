@@ -734,3 +734,23 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - **Remaining detail:** the source of the pending delta that makes the queued 869000 event land at tick 8 is not yet fully derived from the `0xF9A:0xF9C` and `0x6F2:0x6F4` updates. The producer and value are known; do not claim the tick-8 scheduling mechanism is fully closed.
 
 **Sources:** private SNG2S decompilation `FUN_1000_3406` (1000:350A–3583), `FUN_1000_08EC`, `FUN_1000_0010`; reference `runner.MID`.
+
+
+## F-074 — v1 tempo-stream start is marker +10; later versions use marker +12
+
+**Status:** confirmed by SNG2S record consumer, the private v1 bytes, and v3/v4 reference MIDI. This is an additional version-specific incompatibility in jmplayer's current shared parser.
+
+- jmplayer `sngmidi.cpp` currently scans the conductor block for the final `FF 7F FF FF FF FF` sentinel and always starts tempo records at `last + 12`.
+- In v1 `runner.SNG`, the bytes after the sentinel are:
+  - `+6: 59`, `+8: 66` (legacy allocator/header words)
+  - `+10: step 48, value 37`
+  - `+14: step 144, value 37`
+  - `+18: step 192, value 37`
+  SNG2S's `FUN_1000_3406` treats the second word of each tempo record as the raw slider value. Value 37 with base tempo 120 gives 69 BPM, matching the v1 reference tempo event. Therefore v1 tempo records begin at `last + 10`.
+- If jmplayer's shared `last + 12` is applied to that same v1 byte sequence, the records instead begin `step 37, value 144`, then `step 37, value 192`; these are not the v1 tempo records and do not match the reference MIDI.
+- The later-version offset `last + 12` is supported by cross-checks: v3 `START__0.SNG` has a record value 89, which normalizes to 166 BPM at base tempo 120 and matches its reference MIDI; v4 `BOURREE0.SNG` has value 123, normalizing to 230 BPM and matching its reference MIDI. The v2 sample uses base tempo 60 and value 64, producing 60 BPM, showing that the base-tempo field must also be respected rather than universally assumed to be 120.
+- Glosa's `ReadLegacyV1Tempi()` already uses `last + 10` and reads the v1 base-tempo byte; the later-version `ReadTempi()` uses `last + 12`. Keep these branches separate.
+- **Impact on jmplayer:** fixing only `buildLayout()` is not sufficient to reproduce v1 tempo events; its tempo-stream offset must also branch by version. This is independent of the part-block offsets documented in F-070.
+- **Scope note:** this does not resolve the documented 3/4 +1 BPM export-rounding observation. The core `FUN_1000_3406` tempo normalization is independent of meter; the 3/4 behavior remains a separate export/grid question.
+
+**Sources:** jmplayer `sngmidi.cpp` tempo parser; private SNG2S `FUN_1000_3406`; v1 `runner.SNG` bytes / `runner.MID`; v2 `SHIZUME0.SNG` / `SHIZUME0.MID`; v3 `START__0.SNG` / `START__0.MID`; v4 `BOURREE0.SNG` / `BOURREE0.MID`.
