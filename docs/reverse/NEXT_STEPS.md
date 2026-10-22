@@ -354,3 +354,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - `FUN_1FF5_0DE1` simply stores the requested count in `0x3390` (normalizing zero to one). The timer-divisor routine `FUN_1FF5_0DFA` uses its CX input to program the timer hardware; no conductor-record pointer or tempo-record field is present in these routines.
 - These traces narrow the known scheduling calls but still do not identify the binary conductor tempo-record consumer. The `FUN_1000_7E55` text-command path should not be conflated with the SNG binary parser without a proven caller/dataflow link.
 - CI recheck for head `1ff04bcb42700727f6963c464e8dc4d4deab730e`: both push run `39736654504` and PR run `39736659682` completed successfully. PR #9 remains open and unmerged.
+
+### Setup-template trace follow-up (2026-10-22)
+
+- The SNG2S text exports show that helper routines at 1000:3F79 and 1000:3F97 load BX with 0x3F82 and 0x3FA0 respectively, then scan bytes until 0xFF. One path sends each byte to the output-byte routine (FUN_1000_4098); the other writes bytes into the queued output buffer (FUN_1000_39C9).
+- FUN_1000_3BA7 uses the 0x3F82/0x3FA0 template paths and also emits explicit bytes including 0x10, 0x16, the current low byte of 0x7DE, a derived 7-bit value, and 0xF7. The branch conditions depend on 0x6FA, 0x6F8, and format byte 0x25DA.
+- This narrows the setup-message construction logic, but the exported disassembly does not include the initialized data bytes at 0x3F82 and 0x3FA0. Consequently the actual template payloads cannot be recovered from these text exports alone, and a one-to-one mapping to runner.MID SysEx payloads is not yet supported. Do not infer full payload bytes from the helper names or the F7 terminator.
+- CI for 67f2dcd completed successfully for both push and PR workflows. PR #9 is still open and unmerged.
