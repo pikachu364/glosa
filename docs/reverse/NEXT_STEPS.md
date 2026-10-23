@@ -424,3 +424,12 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 4. Continue only on genuine equivalence gaps: setup SysEx payload byte equality, physical SMF track/chunk order, controller/program/pitch-bend coverage, and later changing-tempo reference fixtures.
 5. Keep the SNG2S tick-8 pending-delta / `0x6EE` initialization question and MIMPIV4 runtime tempo-consumer question separate. `0x6EE = 4` remains unproven; no runtime trace or actual playback test has been performed.
 6. PR #9 remains open. Do not merge without explicit user authorization; before merging, review the two commits behind `main` and resolve any conflict deliberately.
+
+
+### T-016 progress update (2026-10-24)
+
+- [x] Inspect `FUN_1000_341E`, `FUN_1000_3543`, and `FUN_1000_2D27` as candidate binary-record/event consumers; their shown bodies do not update `0x0438`, `0x0440`, or `0x7BF0`.
+- [x] Inspect `FUN_1000_8888`: it parses a text argument and schedules parsed relative count + `0x0440`; no link to the binary SNG tempo table is established.
+- [ ] Trace the actual playback event dispatcher and any alternate interval/scaling state for the SNG tempo-record second word, or obtain a runtime trace with a known changing-tempo fixture.
+
+Do not close T-016 as “tempo records ignored.” The static scan has narrowed candidate paths but has not identified the consumer.
