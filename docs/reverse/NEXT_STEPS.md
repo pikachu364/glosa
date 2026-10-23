@@ -2,7 +2,9 @@
 
 ## 現在地
 
-- **進行中の最優先課題:** SNG2S では setup 出力が `FUN_1000_33D4` より先にキューへ積まれ、初回 `FUN_1000_3406` が coarse tempo meta を追加してから `FUN_1000_08EC` がまとめて drain する呼び出し順を確認済み。これが tick 8 になる流れと整合するが、個々の SysEx payload と pending-delta 値の完全な対応は未確定。tick 192 は別経路の 192-grid alignment で説明できる（FACTS F-080/F-081）。
+> **作業境界:** 未完了作業の正本は T-017（tick-8 queue state / 0x6EE / setup SysEx mapping / reference invocation）、T-014（3/4 rounding）、T-015（v2 tempo audit）、T-016（MIMPIV4 playback tempo）。T-011〜T-013 は静的解析の記録として扱い、同じ残件を重複管理しない。
+
+- **進行中の最優先課題:** SNG2S では setup 出力が `FUN_1000_33D4` より先にキューへ積まれ、初回 `FUN_1000_3406` が coarse tempo meta を追加してから `FUN_1000_08EC` がまとめて drain する呼び出し順を確認済み。これが tick 8 になる流れと整合するが、個々の SysEx payload と pending-delta 値の完全な対応は未確定。tick 192 は別経路の 192-grid alignment で説明できる（FACTS F-080/F-073/F-076/F-082）。
 - **参照 MIDI で確認済み:** `runner.MID` は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。`TEST.MID` は tick 0 の 500,000 のみ。両方とも setup SysEx は track 1 の tick 0/4/8/8 にある（FACTS F-082）。time signature は tick 0 の 4/4。
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
 - **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
@@ -19,7 +21,7 @@
 
 - 対象: README、FACTS、HYPOTHESES、LOG、BALLADE_LAYOUT_COMPARISON、V1_TEMPO_INVESTIGATION、引継ぎ文書。
 - 古い調査メモは履歴として残し、現在の結論・TODO と混同しない。過去ログにある option flag の旧対応や `0x6EE = 4` は、後続の訂正・制約を優先する。
-- FACTS の F-078 / F-079 / F-084 は ID 重複あり。参照を壊す改番はせず、後続の整理タスクとして記録。新規 ID は重複を避ける。
+- FACTS の重複 ID は F-089〜F-092 に整理し、参照先も更新した。
 - 節番号の重複を比較文書で修正。コード、テスト、private fixture はこの文書監査では変更していない。
 
 ---
@@ -271,10 +273,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **優先度:** 高
 
 - [ ] FUN_1000_33D4 の初回 record 消費から FUN_1000_08EC の queue drain まで、pending delta-time (0xF9A:0xF9C) と absolute tick (0x6F2:0x6F4) の更新をイベント出力点ごとに追う。
-- [x] grid delta 計算（`uVar11=192`）と `FUN_1000_618A` の exact-tempo meta 経路を対応付ける。v1 `runner.SNG` の meter record は絶対 offset 241 (`0x74+125`) の `C0 00 04 04` で、192-tick grid と4/4を与える。current tickから次のgridまでのdeltaを加えてtick 192の exact-tempo eventを出す（FACTS F-080）。
+- [x] grid delta 計算（`uVar11=192`）と `FUN_1000_618A` の exact-tempo meta 経路を対応付ける。v1 `grid record の値は192、拍子は4/4。絶対 offset は F-062 の `0x00B5` (=181)、旧記述の231、`0x74+125` (=241) が食い違うため未確定として扱う。current tickから次のgridまでのdeltaを加えてtick 192の exact-tempo eventを出す（FACTS F-080）。
 - [x] tick 0 と tick 192 の経路を対応付ける。tick 0 は既定 500000 µs/quarter、tick 192 は grid-aligned exact tempo meta。v1/v3/v4 の cross-version values confirm the same integer path (FACTS F-071/F-072).
 - [x] coarse tempo meta の直接 producer を特定。`FUN_1000_3406` は v1 tempo-record の第2 word 37 と base tempo 120 から 69 BPM を算出し、`floor(60000/69)*1000=869000` を `FF 51 03` として queue に書く。第2 word が UI slider と同義かは未確認（FACTS F-073/F-078）。
-- [x] Call order confirms setup/output routines (`FUN_1000_2144`, `FUN_1000_1C70`) precede `FUN_1000_33D4`; the initial `FUN_1000_3406` queues the coarse tempo meta before the following shared `FUN_1000_08EC` drain. Reference SysEx events at ticks 0/4/8/8 precede the coarse tempo meta at tick 8 (FACTS F-081).
+- [x] Call order confirms setup/output routines (`FUN_1000_2144`, `FUN_1000_1C70`) precede `FUN_1000_33D4`; the initial `FUN_1000_3406` queues the coarse tempo meta before the following shared `FUN_1000_08EC` drain. Reference SysEx events at ticks 0/4/8/8 precede the coarse tempo meta at tick 8 (FACTS F-073/F-076/F-082).
 - [x] Compare a second private v1 fixture: `TEST.SNG` has value 64 with base tempo 120 and `TEST.MID` has no changed-tempo meta; both `TEST.MID` and `runner.MID` show the same setup SysEx ticks 0/4/8/8 (FACTS F-082).
 - [ ] Fully map each setup routine to each reference SysEx payload and prove the per-event `0xF9A:0xF9C` / `0x6F2:0x6F4` values. Static queue ordering and a second fixture support the tick-8 explanation but do not replace a runtime trace.
 - [ ] 実行時トレースができない場合は、静的推論と参照 MIDI の観測事実を明確に分離して記録する。
@@ -287,7 +289,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] `0x21E4` / `0x7DE` / `FUN_1000_3BA7` を FF 51 tempo path (`0x21E0`) から分離して確認。
 - [x] tempo-record 側の整数計算 `(60000 / 69) * 1000 = 869000` と、192-tick grid 側の `60000000 / 69 = 869565` を静的解析で照合。参照 tick 8 / 192 の tempo 値に一致する。
 - [ ] queue drain 時点の absolute tick が tick 8 であることを runtime trace で確認する。pending delta `0xF9A:0xF9C` と absolute tick `0x6F2:0x6F4` の値を、最初の queue drain 前後で追う。
-- [x] `FUN_1000_3406` の1回の scheduler call 内で `0x21E0` tempo-record stream が `0x21E4` device-parameter stream より先に処理されることを静的確認。これらの生成済みイベントは後続の `FUN_1000_08EC` drain で直列化される（FACTS F-073/F-076/F-081）。
+- [x] `FUN_1000_3406` の1回の scheduler call 内で `0x21E0` tempo-record stream が `0x21E4` device-parameter stream より先に処理されることを静的確認。これらの生成済みイベントは後続の `FUN_1000_08EC` drain で直列化される（FACTS F-073/F-076/F-073/F-076/F-082）。
 
 **注意:** 数値の一致は強い静的根拠だが、tick 8 の割当は runtime 未確認。実行時トレースが済むまでは converter / regression test を変更しない。
 
@@ -305,7 +307,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
 
 
-- [x] Public `SngConverterTests.cs` has no explicit assertions for v1 tempo meta values/ticks (500000 at tick 0, 869000 at tick 8, 869565 at tick 192); the 977-event result covers normalized note-event equivalence, not full tempo/SysEx/SMF equality.
+- [x] Public `SngConverterTests.cs` now has explicit byte-sequence assertions for tempo values 500000, 869000 and 869565, including the encoded delta to tick 192. These tests do not prove complete tempo-event enumeration, SysEx payload equality, full SMF byte equality, or runtime playback.
 - [ ] After the tick-8 pending-delta source is proven, add focused tempo-meta regression assertions against the private reference MIDI in private CI; do not copy reference MIDI or private fixtures into the public repository.
 
 **注意:** 初回 `FUN_1000_3406` に通常経路の +1 を当てはめない。tick 8 が説明できるまで `SngConverter.cs` と tempo regression tests は変更しない。
@@ -319,7 +321,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [ ] SNG2S の 3/4 固有 +1 BPM 説明について、time-signature input と MIDI tempo-meta generation の間に条件分岐があるか、decompilation の全 call/data flow を調べる。
 - [ ] 3/4 の SNG と SNG2S 参照 MIDI が得られた場合、slider 値ごとに実際の tempo meta と time-signature meta を比較する。現在の private fixture tree には 3/4 の参照 fixture が見つかっていないため、未確認のまま数値補正を実装しない。
 - [x] v1/v3/v4 reference MIDIs show the same two integer paths: v1 869000 at tick 8 and 869565 at tick 192 (69 BPM); v3 361000 at tick 92 and 361445 at tick 192 (166 BPM); v4 260000 at tick 116 and 260869 at tick 192 (230 BPM). This confirms the values are coarse millisecond and exact microsecond representations of the same normalized tempo, not two actual BPM changes (FACTS F-071).
-- [ ] Keep T-011/T-012 open for the exact queue-drain/tick placement explanation, especially why the first event lands at tick 8 and the exact-tempo event at tick 192. Keep the 3/4 +1 BPM quirk separate.
+- [ ] The remaining tick-8 queue-drain question is tracked in T-017. Keep the separate 3/4 +1 BPM investigation here; do not duplicate the same queue task.
 
 **完了条件:** slider-to-timer curve と SNG2S MIDI-export rounding を別の処理として説明し、3/4 の補正は参照 fixture で確認できるまで実装しない。
 
@@ -357,7 +359,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 **Priority:** high; remaining SNG2S scheduler gap.
 
-- [x] Re-read the complete SNG2S `FUN_1000_0010` decompilation rather than relying on the summary wording. The code reads the first byte of the grid structure through `0x21DC` into `uVar11`; `runner.SNG` has `C0 00 04 04` at offset 231, so `uVar11 = 192`, not 8.
+- [x] Re-read the complete SNG2S `FUN_1000_0010` decompilation rather than relying on the summary wording. The code reads the first byte of the grid structure through `0x21DC` into `uVar11`; the grid buffer yields `uVar11 = 192`, not 8. The absolute source offset is unresolved (FACTS F-062/F-072/F-080).
 - [x] Confirm `FUN_1000_61EC(absTick, uVar11, 0, 0)` computes the remainder modulo the grid operand and that the following delta aligns the **exact** tempo meta to the next 192-tick boundary. The 869565 event at tick 192 is this path (FACTS F-072/F-080).
 - [x] Correct FACTS F-080 to explicitly state that grid alignment does not explain the earlier coarse 869000 event at tick 8.
 - [ ] Continue tracing the preamble's last pending-delta assignment before the queue drain after `FUN_1000_33D4`. The 869000 event is queued by `FUN_1000_3406`; its output tick depends on the pending delta and absolute tick established by earlier queue drains.
