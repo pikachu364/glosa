@@ -520,3 +520,12 @@
 The latest static pass inspected `FUN_1000_341E`, `FUN_1000_3543`, `FUN_1000_2D27`, and `FUN_1000_8888`. The first three are special-record/event pre-scan or Program Change processing paths and do not show writes to `0x0438`, `0x0440`, or `0x7BF0`. The text-command path does schedule a parsed relative value plus `0x0440`, but its connection to binary SNG tempo records is unproven.
 
 Keep T-016 open: the consumer is still unidentified, and static analysis is not runtime proof. Do not transfer SNG2S MIDI-export tempo formulas to MIMPIV4 playback.
+
+
+### Documentation structure correction (2026-10-24)
+
+- MIMPIV4 の追加調査結果を末尾の独立節から既存の項目へ移動した。`NEXT_STEPS.md` は既存の `T-016 — MIMPIV4 legacy tempo records to playback timer` に調査済み経路・未解決点・次の検証手順を統合。
+- `FACTS.md` の既存 F-084、`HYPOTHESES.md` の H-017、`README.md`、tempo investigation、layout comparison、引継ぎ文書の既存セクションへ内容を統合し、重複した追記節は削除した。
+- 今回の静的解析で除外できた候補は `FUN_1000_341E`、`FUN_1000_3543`、`FUN_1000_2D27`。`FUN_1000_8888` は text-command delay + `0x0440` の経路だが、binary SNG tempo record との接続は未確認。
+- T-016 は未完了。tempo record を無視するとの結論にはせず、実際の playback event dispatcher の追跡、または既知の tempo 変化 fixture による runtime trace を次の根拠とする。
+- `docs/reverse/` の9文書を再確認。private fixture / 解析 dump は公開 repository に追加していない。実装変更、テスト、実再生は未実施。
