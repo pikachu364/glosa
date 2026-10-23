@@ -26,3 +26,8 @@ Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI�
 公開テスト、private fixture CI、静的解析、実行時トレース、実再生は別の検証段階である。private workflow の成功は、その run が checkout した commit と実行したテスト範囲に限る。Note-event signature や tempo byte sequence の一致を、SMF 全体の byte-for-byte 一致、SysEx payload の一致、または再生結果の完全一致と言い換えない。
 
 private fixture と逆解析 dump は private repository 内に保持し、この公開 repository に追加しない。PR #9 は明示的な許可なしに merge しない。
+
+
+## MIMPIV4 playback tempo — latest evidence (2026-10-24)
+
+The latest static pass excluded several candidate routines: the special-record scan (`FUN_1000_341E`), event/duration pre-scan (`FUN_1000_3543`), Program Change remapper (`FUN_1000_2D27`), and text-command scheduler (`FUN_1000_8888`). The last routine adds a parsed text-command delay to `0x0440`, but no binary SNG tempo-record connection is shown. This narrows the search without proving tempo records are ignored. See [FACTS.md](FACTS.md) F-093 and [NEXT_STEPS.md](NEXT_STEPS.md) T-016.
