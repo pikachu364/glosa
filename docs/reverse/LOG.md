@@ -513,3 +513,10 @@
 - したがって、この差分は converter の Note-event mismatch ではなく、テスト比較順序の問題と確認できた。v1 TEST.SNG tempo test も含めて pass。converter の追加変更は不要。
 - 現在の PR #9 head `3463baf2f59c2e31fc76c00846e88ac5e713f2b4` と private run の checkout を比較すると、後続の変更は docs のみで converter / tests に差分なし。PR #9 は引き続き open / unmerged。
 - 制約: tempo-event equality と Note-event signature equality の範囲を確認しただけで、SysEx payload、physical track/chunk order、全 controller/program/pitch-bend、runtime playback、byte-for-byte SMF equivalence は証明していない。
+
+
+### MIMPIV4 tempo investigation update (2026-10-24)
+
+The latest static pass inspected `FUN_1000_341E`, `FUN_1000_3543`, `FUN_1000_2D27`, and `FUN_1000_8888`. The first three are special-record/event pre-scan or Program Change processing paths and do not show writes to `0x0438`, `0x0440`, or `0x7BF0`. The text-command path does schedule a parsed relative value plus `0x0440`, but its connection to binary SNG tempo records is unproven.
+
+Keep T-016 open: the consumer is still unidentified, and static analysis is not runtime proof. Do not transfer SNG2S MIDI-export tempo formulas to MIMPIV4 playback.
