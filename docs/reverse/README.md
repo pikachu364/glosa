@@ -1,68 +1,28 @@
-# SNG → MIDI 逆解析ノート
+# Ballade SNG 逆解析資料
 
-このディレクトリは、Ballade SNG と SNG2S/SNG2GS の調査情報を、長い作業ログから切り離して整理するための入口です。
+## 目的
+Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI・実装・テスト・静的解析の根拠に沿って整理する。調査項目を増やすことではなく、確認済み事項と未解決事項を区別する。
 
-## 現在の進捗（2026-10-23 更新）
+## 現在の結論
+- **v1 レイアウト:** v1 専用のパート構造（サイズ +80、長さフィールド +115/+117、13個の相対 seek 値、ノート開始 +145）を支持する静的根拠があり、別 fixture でも容量条件が一致する。jmplayer の後続版共通検証では候補が失敗する。これは静的照合であり、jmplayer 実行時の再現とは区別する。
+- **v1 tempo:** `SngConverter.cs` に `ReadLegacyV1Tempi()` がある。公開テスト `BalladeV1RunnerProducesReferenceTempoEvents()` は参照値 500000 / 869000 / 869565 の byte sequence を確認し、`BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()` は変化しない tempo stream の既定値維持を確認する。
+- **SNG2S の tempo 計算:** raw tempo 37 と base tempo 120 から 69 BPM、粗い経路の 869000 µs/qn と grid 経路の 869565 µs/qn を静的解析で説明できる。tick 8 の pending-delta / absolute-tick の完全な因果関係は未解決。
+- **grid offset:** 192-tick grid と 4/4 は解析対象だが、絶対 offset は記録間で不一致（0x00B5=181、231、0x74+125=241）。未解決として扱い、根拠なく統一しない。
+- **MIMPIV4:** timer 初期化経路は確認済みだが、SNG tempo-record の値が再生中の timer / event interval に入る経路は未特定。SNG2S の MIDI export 式を流用しない。
 
-**最優先:** Ballade v1 の tempo meta（tick 8 / 192）の出力時刻を SNG2S の処理経路と対応付ける。
+## 次の作業
+未完了作業の正本は [NEXT_STEPS.md](NEXT_STEPS.md) の T-017（tick-8 queue state、`0x6EE` 初期値、4件の setup SysEx payload 対応、参照 MIDI の生成オプション）、T-014（3/4 固有丸め）、T-015（v2 tempo audit）、T-016（MIMPIV4 再生 tempo）とする。T-011〜T-013 は完了した静的解析の記録として扱い、同じ作業を重複させない。
 
-- tempo の数値計算と初回 scheduler の例外経路は静的解析で説明できている。`FUN_1000_1CE4` / `FUN_1000_3BA7` は参照 SysEx を生成し得る経路だが、payload の byte-for-byte 対応は未確認。`0x6EE = 4` は後続調査で未証明と確認され、実値・初期化元・tick 8 の割当はいずれも未解決。
-- 初回 scheduler の例外経路は確認済み。0x6EE の全29命令参照は直接読み出しで、複数の出力経路で delta/間隔値として使われるが、値・初期化元は未解決。
-- オプションフラグの最有力対応は `0x622 ↔ /XD`（SysEx 抑制）、`0x626 ↔ /F`（track-order table 選択）。旧 `0x622 ↔ /F` 仮説は撤回。token bytes と参照生成時の引数は未確認（FACTS F-069）。
-- `HYPOTHESES.md` の H-015 correction note で旧対応を明示的に撤回済み。履歴ログ中の古い記述は当時の記録として残し、現行結論は訂正ノートを優先する。
-- SNG2S の tempo-record 数値計算と 192-tick grid 経路は静的解析で説明できた。tick 8 の pending-delta / absolute-tick 状態、`0x6EE` の初期値、SysEx payload 対応は未解決。
-- converter / regression tests はこの調査更新では未変更。SNG2S の実行時トレースと実再生は未実施。
-- まず [NEXT_STEPS.md](NEXT_STEPS.md) の進捗サマリーと優先順を確認してください。
+## 文書の役割
+1. [FACTS.md](FACTS.md) — 根拠付きの確認事項。事実 ID の正本。
+2. [HYPOTHESES.md](HYPOTHESES.md) — 未確定の仮説、反証状況、必要な確認。
+3. [NEXT_STEPS.md](NEXT_STEPS.md) — 実行する未完了作業と完了条件の正本。
+4. [V1_TEMPO_INVESTIGATION.md](V1_TEMPO_INVESTIGATION.md) — v1 tempo の詳細。
+5. [BALLADE_LAYOUT_COMPARISON_2026-10-21.md](BALLADE_LAYOUT_COMPARISON_2026-10-21.md) — レイアウト比較と履歴。
+6. [LOG.md](LOG.md) — 時系列の調査履歴。旧仮説は現状の根拠として扱わない。
+7. [引継ぎ文書_20261022.txt](引継ぎ文書_20261022.txt) — 現状と次の作業の引継ぎ。
 
-## 読む順番
-1. [FACTS.md](FACTS.md) — 根拠が確認できている事実
-2. [HYPOTHESES.md](HYPOTHESES.md) — 有力候補・未確定事項
-3. [NEXT_STEPS.md](NEXT_STEPS.md) — 次の調査と完了条件
-4. [LOG.md](LOG.md) — 日付順の調査履歴
-5. [旧・詳細引き継ぎ](../DEVELOPMENT_HANDOFF.md) — 詳細な経緯と過去のメモ
+## 検証上の制約
+公開テスト、private fixture CI、静的解析、実行時トレース、実再生は別の検証段階である。private workflow の成功は、その run が checkout した commit と実行したテスト範囲に限る。Note-event signature や tempo byte sequence の一致を、SMF 全体の byte-for-byte 一致、SysEx payload の一致、または再生結果の完全一致と言い換えない。
 
-## 記録ルール
-- **確認済み**: 根拠となるソース、オフセット、データ比較を記す。
-- **一部確認**: 一部の条件やサンプルでのみ確認できた範囲を明示する。
-- **仮説**: 事実と同じ段落に混ぜず、反証・検証方法を添える。
-- **未確認**: バイナリがない、実行していない、参照出力条件が不明などの制約を明記する。
-- 静的解析、テスト実行、MIDI 再生を別の検証段階として扱う。
-- SngConverter.cs は、制御フローと参照 MIDI のイベント単位の検証が揃うまで変更しない。
-- SNG パート番号、内部スケジューラスロット、MIDI トラック番号を同一視しない。
-
-項目には安定した ID（例: F-001, H-001, T-001）を付け、内容を移動しても参照できるようにします。
-
-
-## Private fixture CI（重要）
-
-`pikachu364/glosa-private-data/.github/private-tests/PrivateBalladeFixtureTests.cs` は、private repo の Ballade 実データを用いて Glosa の変換結果を検証する専用テストです。公開リポジトリに fixture を置かず、private repo 側の [private-data-ci.yml](https://github.com/pikachu364/glosa-private-data/blob/main/.github/workflows/private-data-ci.yml) が Glosa の指定 ref を checkout し、SNG/MID fixture とテストコードを一時的に配置して build/test します。
-
-- `PrivateV1TestSngKeepsReferenceTempoEvents`: v1 `TEST.SNG` と `TEST.MID` の tempo events を track/tick/µs-per-quarter で比較。
-- `PrivateV1RunnerMatchesReferenceNoteEvents`: v1 `runner.SNG` と `runner.MID` の Note-on/off を tick/channel/pitch/velocity で比較。同 tick のトラック間順序に依存しないよう canonical order で比較。
-- private workflow の `glosa_ref` を確認し、検証したブランチ/commit と run 結果を記録する。公開 CI と private fixture CI は別の検証層として扱う。
-- 現状の2テストが保証するのは v1 tempo と note events。SysEx payload、物理 track/chunk order、controller/program/pitch bend、v2-v4 全体の正しさまで保証すると解釈しない。
-- private fixture と解析ダンプは公開リポジトリへコピーしない。
-
-## MIMPIV4 playback tempo investigation
-
-Static analysis identifies the driver-dispatch and INT 8 timer initialization path, but does **not** yet connect the binary SNG tempo-record value to a playback-time timer update. Treat the player-side tempo formula as unresolved; do not reuse SNG2S MIDI-export formulas. See [FACTS.md](FACTS.md) F-086 and [NEXT_STEPS.md](NEXT_STEPS.md).
-
-## 2026-10-23 — PR / CI 状態の再確認
-
-- PR #10（停止時無音時間テストの CI scheduling jitter 対策）は merge 済み。merge commit: `6e99e68aa30a91f508c816b49cb8d7d214a4c5e6`。変更は `TheSilenceOnStoppingKeepsToTheCap` の上限を 200 ms から 300 ms に広げるテストのみで、再生・MIDI pacing の本体コードは変更していない。
-- PR #9（v1 legacy layout）は引き続き open / unmerged。現在の head は `81f5dccedd4f4df390f8d454accbbd98436e658f`。この head の公開 CI run #824（run ID `39873998025`）は確認時点で pending。直前の head `3463baf2f59c2e31fc76c00846e88ac5e713f2b4` の run #815 は success。private fixture CI run #6 も成功しているが、対象範囲は tempo と Note-event signature に限られる。
-- PR #9 branch は `main` と diverged し、`main` より 2 commits behind / 107 commits ahead。base `main` の SHA は PR #10 merge commit `6e99e68aa30a91f508c816b49cb8d7d214a4c5e6`。branch への取り込みは private fixture 比較が解決したことを踏まえつつ、2 commits の差分を確認してから判断する。
-- private fixture CI run #6（[run 39699711256](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256)）は成功。Glosa branch checkout は `440000b971e72debcef72bb12407bcf4e944527a`、build 成功、977 tests passed。現在の PR #9 head はこの検証済み commit の後続で、比較差分は docs のみ（converter / tests は変更なし）。
-- 先行 run #4/#5 の失敗は同 tick・同 channel の Note-off 2件（pitch 77/82）の順序だけが異なっていた。Note-event signature の canonical sort に `Key` を含めて順序を安定化した後、private run #6 が成功した。これは変換コードの修正ではなく比較テストの正規化。private fixture / 解析ダンプは公開リポジトリへコピーしない。
-
-
-## Private v1 fixture validation update (2026-10-23)
-
-- Private workflow run #6 passed: build succeeded and all 977 tests passed, including `PrivateV1TestSngKeepsReferenceTempoEvents` and `PrivateV1RunnerMatchesReferenceNoteEvents`.
-- The failed run immediately before it differed at one canonical list position because two Note-off events at tick 4012, channel 1, pitches 77 and 82 were ordered oppositely. The fix stabilized the test's canonical sort by pitch; no production converter change was needed for this discrepancy.
-- The validated Glosa checkout was `440000b971e72debcef72bb12407bcf4e944527a`. Comparing that commit with the current PR branch shows only documentation files changed since then, so the converter and test code under review are unchanged. This establishes Note-event signature and tempo-event test success for that code state, not full SMF byte equivalence or runtime playback.
-
-
-### Validation status correction (2026-10-23)
-
-Private workflow [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) checked out Glosa `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed 977 tests. The earlier private Note-event test failure was caused by same-tick Note-off events (channel 1, pitches 77 and 82) being ordered differently in the test's canonical list; sorting by pitch fixed the comparison without changing production conversion. The current PR head contains documentation-only changes after that tested checkout, so the converter and test code are unchanged relative to the private passing run. This is not full SMF equivalence. Current head public CI run #824 was cancelled; do not describe it as passing.
+private fixture と逆解析 dump は private repository 内に保持し、この公開 repository に追加しない。PR #9 は明示的な許可なしに merge しない。
