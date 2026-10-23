@@ -1,204 +1,36 @@
-【最新状況の追記：2026-10-22】
-
-最初に docs/reverse/NEXT_STEPS.md の進捗サマリーと T-017 を読むこと。現在の主課題は SNG2S の tempo 値の計算ではなく、tick 8 の pending-delta / absolute-tick の説明、0x6EE の初期値、4件の setup SysEx payload の対応、参照 MIDI 生成時の実オプションである。0x6EE = 4 は未証明の仮説であり、実装に使わない。
-
-文書監査で FACTS.md の F-078 / F-079 / F-084 に ID 重複が見つかった。既存の参照を壊さないため一括改番は未実施。各 ID は見出し名と合わせて参照し、今後の整理では参照箇所を検索してから修正する。
-
-調査ブランチ：fix/ballade-v1-layout-2026-10-22。PR #9 はユーザーの明示的な許可なしにマージしない。private fixture や解析データを公開リポジトリへコピーしない。converter / tests は根拠が揃うまで変更しない。
-
----
-
-引継ぎお願いします
-
-引継ぎ：Glosa SNG 対応化 — Ballade SNG v1 の解析と jmplayer 読み込み問題
-
-1. 最優先の司令
-
-大元のプロジェクトは Glosa SNG 対応化。
-
-リポジトリ：
-https://github.com/pikachu364/glosa
-
-調査ブランチ：
-https://github.com/pikachu364/glosa/tree/fix/ballade-v1-layout-2026-10-22/docs/reverse
-
-PR #9：
-https://github.com/pikachu364/glosa/pull/9
-
-今回の司令は、jmplayer が Ballade SNG v1 に問題を抱えていることを前提に、SNG2GS/SNG2S と MIMPIV4 の逆解析資料を使って、正しい SNG コンバーターをどう実装すべきか解明すること。
-
-単にノートイベントを比較するだけではなく、次の3点が中心。
-
-1. Ballade SNG v1 のブロックテーブル・パート構造を正しく解明する。
-2. jmplayer の v1 読み込み失敗の原因を、ソースコードと実データから特定する。
-3. SNG2S / MIMPIV4 の挙動を解明し、Glosa の変換実装に根拠を与える。
-
-ユーザーは「解析完了まで進めていい」と許可済み。逐一許可を求めず、調査を継続すること。ただし、PR #9 はユーザーの明示的な承認なしにマージしないこと。
-
-2. 重要な調査資料
-
-jmplayer の形式仕様：
-https://github.com/jihodaya/jmplayer/blob/main/docs/formats/en/sng-ballade.md
-
-jmplayer の実装：
-https://github.com/jihodaya/jmplayer/blob/main/sngmidi.cpp
-
-Glosa の逆解析資料：
-https://github.com/pikachu364/glosa/tree/fix/ballade-v1-layout-2026-10-22/docs/reverse
-
-プライベートデータリポジトリ：
-https://github.com/pikachu364/glosa-private-data
-
-特に調べるファイル：
-
-* testdata/ballade/sng2gs/sng2gs_mimpiv4解析java使用.txt
-* testdata/ballade/MIMPI427/mimpiv427解析データ.txt
-* testdata/ballade/sng2gs/sng2gs解析データ.txt
-
-これらは Ghidra による逆解析資料。SNG2S のファイル読み込み・tempo 計算・MIDI 変換と、MIMPIV4 の再生処理を比較している。
-
-実際の fixture はプライベートリポジトリ内にある。バイナリや機密データを公開リポジトリへコピーしないこと。
-
-3. jmplayer の v1 読み込み失敗：現在までの重要な発見
-
-jmplayer の sngmidi.cpp の buildLayout() は、SNG バージョンごとのパート数を認識する。
-
-* v1/v2/v3：10パート
-* v4：16パート
-
-テーブル開始位置は 0x46。v1 の場合は11個の little-endian 32-bit エントリーで、テーブル終端は 0x72。v1 の設定領域は2バイトなので、ヘッダー終端候補は 0x74。
-
-jmplayer は tableEnd + 94、tableEnd + 2、tableEnd の候補を試すため、v1 の tableEnd + 2 自体は候補に含まれている。
-
-問題は、その後のパート構造を後続版の形式で一律に検証すること。
-
-jmplayer は各バージョンに対し、次のような後続版のオフセットを使う。
-
-* パートサイズ：テーブル値 +81
-* used length：+112
-* controller length：+114
-* index：+116
-* パートストリーム開始：+158
-
-一方、Glosa の v1 専用パーサーと、SNG2S/MIMPIV4 の旧版解析は異なる構造を示す。
-
-* パートサイズ：テーブル値 +80
-* used length：+115
-* controller length：+117
-* 13個の相対 seek 値
-* ノートストリーム開始：+145
-
-runner.SNG では、正しい v1 ヘッダー終端候補は 0x74、part 1 開始位置は byte 1510。jmplayer の後続版オフセットで検証すると容量チェックに失敗する。別 fixture の TEST.SNG でも同様に3候補すべてが失敗する。
-
-これにより、jmplayer のソース上では buildLayout() が有効な v1 layout を受理できず、toMidi() が空の QByteArray を返す経路として説明できる。
-
-ただし、これはソースと実データの静的照合。jmplayer を実行してエラーダイアログまで再現したわけではない。
-
-4. v1 の変換検証状況
-
-プライベートテストでは、参照 MIDI と Glosa のノートイベントを track/tick/channel/note/velocity/on-off で比較するテストがある。
-
-以前の厳密比較では 977 件中1件の失敗があったが、同 tick の独立イベントを正規化する比較へ更新した後、プライベート CI で977件成功したとの記録がある。
-
-ただし、この成功はノートイベント集合の一致を示すもので、以下を含む完全一致を保証するものではない。
-
-* SMF の物理 track chunk 順
-* SysEx
-* すべての tempo meta の位置と値
-* SNG2S と完全に同じバイト列
-
-以前の CI 記録：
-https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256
-
-公開側の CI は成功したとの記録があるが、最新状態は GitHub で再確認すること。
-
-5. Tempo slider の重要な仕様
-
-jmplayer のドキュメントに記載：
-
-BPM = 2v − ceil(v / 8)
-
-例：
-
-* 61 → 114 BPM
-* 72 → 135 BPM
-* 91 → 170 BPM
-
-これは次の式と同じ。
-
-floor(120 * v / 64)
-
-SNG2S の FUN_1000_3406 の逆解析にも、raw value と base tempo を乗算し、0x40 で整数除算する計算がある。結果は1〜480に制限される。base tempo が120なら jmplayer の slider 曲線と一致する。
-
-重要な訂正： 現在の v1 conductor parser が読んだ 37 は step/delay の候補値であり、slider value と確定していない。したがって「37 → 69 BPM が runner.SNG の slider value」という以前の推定は未証明。これを事実として扱わないこと。
-
-参照 MIDI には以下の tempo meta が記録されているとの調査記録がある。
-
-* tick 0：500000 µs/quarter
-* tick 8：869000 µs/quarter
-* tick 192：869565 µs/quarter
-
-869000 と869565は69 BPMに関連する整数除算の結果として説明できるが、どの SNG レコードがそれぞれを生成し、なぜその tick に置かれるかは未解決。tempo 値とノート tick のスケジューラは別々に調査すること。
-
-3/4 の +1 BPM 問題
-
-jmplayer の説明では、同じ slider value でも3/4曲は SNG2S 出力 MIDI 上で1 BPM高くなる場合があり、SNG2S 独自の丸めと説明されている。実際の再生タイマーは拍子を知らないので、タイマー向けの基本曲線は一つと考えられる。
-
-この +1 BPM を v1 ノート tick 変換へ混ぜないこと。SNG2S の MIDI export 時の丸め問題として独立させる。
-
-現時点で、プライベート fixture tree 内に3/4の参照 MIDI が確認できていない。実データなしで補正を実装しないこと。
-
-6. その他の互換性問題
-
-jmplayer の仕様メモには、2曲が SNG2S と一致しない理由として次が挙げられている。
-
-* MAGICAL0.SNG：ファイルが約126KBで途切れ、リズムパートが欠けている。
-* 3X3EYES2.SNG：SNG2S と一致させるには途中に10,029 ticksを挿入する必要があるが、ファイルに根拠がなく、各パートの小節数も自己整合している。
-
-これらは v1 の基本変換が正しいかという問題とは切り離す。破損ファイルの例外対応を先にやらない。
-
-7. GitHub の更新と直近のチャット切断
-
-ユーザーは今日、新しいチャットに移行した直後に「新しいチャットに切り替えろ」という表示が出て、チャットが取り消された可能性を心配している。GitHub 側だけ更新されたかもしれないため、まず次を確認する。
-
-* ブランチの最新 SHA と直近10コミット
-* docs/reverse/FACTS.md と docs/reverse/NEXT_STEPS.md の最新内容
-* PR #9 の state、merged_at、head SHA
-* 直近 CI の結果
-
-調査ブランチは fix/ballade-v1-layout-2026-10-22。以前の確認では PR #9 は open、merged_at は null だったが、必ず現在の状態を再取得すること。
-
-以前の記録には、FACTS.md の tempo 説明を訂正し、NEXT_STEPS.md に T-014 を追加したとの報告がある。報告されたコミット SHA は f81d80e4 だが、これが実在する最新コミットかは未確認。API で確認する。
-
-注意： 前回のチャットでは GitHub の更新結果を確認する途中で切断された可能性がある。推測で「更新済み」と断定せず、まず実際の GitHub 状態を確認する。
-
-8. 次に実施する作業
-
-優先順：
-
-1. GitHub の最新コミット、FACTS.md、NEXT_STEPS.md、PR #9、CI を確認する。
-2. runner.SNG の tempo record の構造を実データと照合し、37/144/192がどのフィールドなのか確定する。slider value と step/delay を混同しない。
-3. SNG2S FUN_1000_3406 の呼び出し元とデータフローを追い、基準テンポと slider value がどこで設定されるかを特定する。
-4. tempo meta の500000 / 869000 / 869565の生成元と tick 配置を説明する。
-5. その後、MIMPIV4 の timer/scheduler と SNG2S の MIDI export の処理を比較する。
-6. 新しい確定事実・未解決事項を docs/reverse/FACTS.md / NEXT_STEPS.md に記録する。
-7. private fixture は private CI のみで検証する。公開リポジトリへコピーしない。
-8. PR #9 はユーザーの明示的な許可があるまでマージしない。
-
-9. 作業方針
-
-ユーザーは調査を完了まで進める許可を出している。毎回「次はこれを調べてもよいか」と聞かず、実際の解析を進める。
-
-同時に、確定事項・推測・未検証を明確に分ける。検証していないことを完了と報告しない。作業が複数の壁に分かれても、Glosa で v1 を正しく変換するというゴールを見失わない。
-
-最終ゴール： SNG2S/MIMPIV4 の仕様に根拠を持つ Ballade SNG v1 converter を完成させ、jmplayer の v1 読み込み問題を説明できる状態にする。
-
-【最新状況の追記：2026-10-23】
-
-private workflow run #6（https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256）は Glosa commit 440000b971e72debcef72bb12407bcf4e944527a を checkout し、build 成功・977 tests passed。PrivateV1TestSngKeepsReferenceTempoEvents と PrivateV1RunnerMatchesReferenceNoteEvents も pass。
-
-先行する Note-event 比較失敗は、tick 4012 / channel 1 の Note-off pitch 77 と 82 が canonical list 内で逆順になった比較テスト上の問題。pitch を含めて canonical sort を安定化したことで解消し、converter 本体の修正は不要だった。現 PR #9 head までの追加変更は docs のみで、検証済み converter/test code と同じ。
-
-現 PR #9 head 81f5dccedd4f4df390f8d454accbbd98436e658f の public CI run #824 は cancelled。旧 head の run #815 success を現 head の成功と混同しない。PR #9 は open / unmerged のまま維持し、明示許可なく merge しない。
-
-残課題：setup SysEx payload の byte equality、SMF physical track/chunk order、controller/program/pitch bend の網羅、変化する tempo を含む独立 fixture、SNG2S tick 8 / 0x6EE 初期値、MIMPIV4 playback tempo consumer の特定。0x6EE=4 は未証明。runtime trace と実再生は未実施。private fixture や解析 dump は public repo に置かない。
+# 引継ぎ — Glosa Ballade SNG v1 文書監査（2026-10-23）
+
+## 目的
+対象ブランチ `fix/ballade-v1-layout-2026-10-22` の `docs/reverse/` 文書を、既存根拠・実装・テストに合わせて整理する。新しい調査を広げず、根拠のない事項は未解決のまま残す。
+
+## 現在の結論
+- v1 のレイアウトは後続版と異なる。サイズ +80、length fields +115/+117、13個の相対 seek 値、ノート開始 +145 を支持する静的根拠があり、TEST.SNG でも容量条件が一致する。
+- `SngConverter.cs` には `ReadLegacyV1Tempi()` がある。公開テスト `BalladeV1RunnerProducesReferenceTempoEvents()` は 500000 / 869000 / 869565 の参照 byte sequence を検査し、`BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()` は変化しない tempo stream の既定値を検査する。
+- SNG2S の静的解析では、raw tempo 37 と base tempo 120 から 69 BPM、粗い整数経路で 869000 µs/qn、192-tick grid 経路で 869565 µs/qn が得られる。tick 8 の pending-delta / absolute-tick の完全な因果関係は未解決。
+- grid 構造の絶対 offset は記録間で不一致。0x00B5 (=181)、231、0x74+125 (=241) を同じ位置とみなさず、元データとの再照合までは未解決とする。
+- `0x6EE = 4` は仮説であり、事実・実装条件として扱わない。
+- MIMPIV4 の timer 初期化は確認済みだが、SNG tempo-record から playback timer への経路は未特定。SNG2S の MIDI-export 式を流用しない。
+
+## 次に行う作業
+[NEXT_STEPS.md](NEXT_STEPS.md) を作業一覧の正本とする。
+1. **T-017:** tick 8 の pending-delta / absolute-tick、`0x6EE` の初期値、4件の setup SysEx payload と producer の対応、参照 MIDI の生成オプションを調査する。
+2. **T-014:** 3/4 固有の +1 BPM 丸め。参照 fixture がない場合は未解決のままにする。
+3. **T-015:** v2 tempo-stream audit。
+4. **T-016:** MIMPIV4 playback tempo-record consumer の特定。
+
+T-011〜T-013 は完了した静的解析の記録であり、残件は T-017 に集約する。既に説明できた整数計算や 192-tick grid を繰り返し調査しない。
+
+## 文書の役割
+- `FACTS.md`: 根拠付きの事実と一意な F-ID。
+- `HYPOTHESES.md`: 未確定の仮説。
+- `NEXT_STEPS.md`: 未完了作業と完了条件。
+- `LOG.md`: 時系列履歴。旧仮説と現在の結論を混同しない。
+- `README.md`: 概要、現在の結論、資料への案内。
+- `V1_TEMPO_INVESTIGATION.md`: tempo 経路の詳細。
+- `BALLADE_LAYOUT_COMPARISON_2026-10-21.md`: レイアウト比較と履歴。
+
+## 検証・運用上の注意
+- 静的解析、公開テスト、private fixture CI、実行時トレース、実再生は区別する。
+- private CI の結果は対象 commit とテスト範囲に限定する。Note-event signature / tempo byte sequence の一致を SMF 全体の byte-for-byte 一致とは言わない。
+- private fixture や解析 dump を公開 repository にコピーしない。
+- PR #9 は明示的な許可なしに merge しない。
