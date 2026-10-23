@@ -34,3 +34,6 @@ T-011〜T-013 は完了した静的解析の記録であり、残件は T-017 �
 - private CI の結果は対象 commit とテスト範囲に限定する。Note-event signature / tempo byte sequence の一致を SMF 全体の byte-for-byte 一致とは言わない。
 - private fixture や解析 dump を公開 repository にコピーしない。
 - PR #9 は明示的な許可なしに merge しない。
+
+
+2026-10-24 追記: MIMPIV4 解析データの追加調査では、`FUN_1000_341E`（special-record payload scan）、`FUN_1000_3543`（event/duration pre-scan）、`FUN_1000_2D27`（Program Change remap）から timer base 更新への経路は見つからなかった。`FUN_1000_8888` はテキスト引数の相対値に `0x0440` を加えて予約するが、binary SNG tempo record との接続は未確認。T-016 は未解決のまま。これは tempo record を無視する証明ではなく、実再生イベント経路か runtime trace が次の根拠となる。
