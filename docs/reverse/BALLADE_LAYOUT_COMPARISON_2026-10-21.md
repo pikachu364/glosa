@@ -423,3 +423,10 @@ This establishes how the timer is initialized, not how an SNG tempo record chang
 ## Private runner comparison follow-up (2026-10-23)
 
 The private fixture workflow's latest successful run is [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256). It checked out Glosa `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed all 977 tests. The previous failure's first differing signature was caused by two same-tick Note-off events (channel 1, pitches 77 and 82) appearing in opposite array order. Canonical ordering by pitch removed the test-only ordering discrepancy; no converter behavior change was needed. Current PR #9 adds only documentation changes after the tested checkout. This validation is limited to the specific tempo and Note-event signatures covered by private tests.
+
+
+## 2026-10-24 — MIMPIV4 candidate-path review
+
+- Full-export static inspection of `FUN_1000_341E` (special-record scan), `FUN_1000_3543` (event/duration pre-scan), and `FUN_1000_2D27` (Program Change remap) found no writes to the timer base fields in those routines.
+- `FUN_1000_8888` schedules a parsed text-command value plus `0x0440`; no evidence connects that text path to the binary SNG tempo-record table.
+- T-016 remains open. This does not prove tempo records are ignored; next step is actual playback event-dispatch tracing or a runtime trace with a changing-tempo fixture. SNG2S export arithmetic remains separate.
