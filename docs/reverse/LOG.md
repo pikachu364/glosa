@@ -514,10 +514,11 @@
 - 現在の PR #9 head `3463baf2f59c2e31fc76c00846e88ac5e713f2b4` と private run の checkout を比較すると、後続の変更は docs のみで converter / tests に差分なし。PR #9 は引き続き open / unmerged。
 - 制約: tempo-event equality と Note-event signature equality の範囲を確認しただけで、SysEx payload、physical track/chunk order、全 controller/program/pitch-bend、runtime playback、byte-for-byte SMF equivalence は証明していない。
 
-## 2026-10-23 — 解析資料リンクを Ghidra 12.2 に統一
+## 2026-10-23 — private Ballade testdata の構成整理と参照先更新
 
-- `docs/reverse/FACTS.md` の解析資料参照を見直し、SNG2S の曖昧なファイル名・旧パス・「private SNG2S decompilation」表記を Ghidra 12.2 の解析エクスポートへの明示リンクに統一した。
-- MIMPIV4 の FACTS F-077 も Ghidra 12.2 の解析エクスポートへのリンクに変更した。
-- これにより、参照する解析資料のバージョンを読み違えにくくした。事実記述や解析結論を変更したものではなく、リンクと出典表記の明確化である。
-- 更新後の `FACTS.md` を GitHub から再取得し、旧 `sng2gs解析データ.txt` 表記、曖昧な `private SNG2S decompilation`、`static disassembly export` 表記が残っていないことを確認した。
-- コミット: `6d931405fe00edf7a3b40dfd16672d01f4b4f979`（MIMPIV4 link）、`5d9e5aa72d8087a1c549514af86a1aff94f8ad7c`（SNG2S / FACTS source references）。converter / regression tests は変更していない。
+- private リポジトリの `testdata/ballade/` を整理し、Ballade のサンプルをバージョン別の `v1/`〜`v4/` 配下に配置した。各バージョンの SNG fixture、SNG2GS の参照 MIDI、保存済み Glosa 出力を、どのサンプルに属するか分かる構成にした。
+- 逆解析資料もツールのバージョンが分かるディレクトリに整理した。SNG2S は `testdata/ballade/sng2gs/Ghidra 12.2/`、MIMPIV4 は `testdata/ballade/MIMPI427/Ghidra_12.2/` の解析エクスポートを参照先とする。
+- private 側の配置変更に合わせて、公開リポジトリの引継ぎ文書と `BALLADE_LAYOUT_COMPARISON_2026-10-21.md` の解析資料リンクを新しいパスへ更新した。
+- `FACTS.md` では SNG2S の旧パス・ファイル名のみの参照・曖昧な「private SNG2S decompilation」表記を、Ghidra 12.2 の解析エクスポートへの明示リンクに統一した。MIMPIV4 の F-077 も同様に Ghidra 12.2 のリンクへ変更した。
+- この作業はテストデータと解析資料の配置整理、および文書の参照先更新である。解析上の結論を新たに実証したものではなく、converter / regression tests は変更していない。
+- 公開側の関連コミット: `297671052a4b3b5cfbd94489dbf330dc3bcc7e79`、`3a737f693364e59ab8c1c3c123f6cd16d3e8e85a`（引継ぎ文書のリンク更新）、`4cb4db02e17aea4bbae181376a1e3b32faa6c216`（比較文書）、`6d931405fe00edf7a3b40dfd16672d01f4b4f979`（MIMPIV4 / FACTS）、`5d9e5aa72d8087a1c549514af86a1aff94f8ad7c`（SNG2S / FACTS）。
