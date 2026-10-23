@@ -269,49 +269,20 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 
 
-## T-011 — v1 tempo queue と 192-tick grid の対応付け
-**優先度:** 高
+## T-011〜T-013 — v1 tempo queue / grid / preamble（静的解析は完了）
 
-- [ ] FUN_1000_33D4 の初回 record 消費から FUN_1000_08EC の queue drain まで、pending delta-time (0xF9A:0xF9C) と absolute tick (0x6F2:0x6F4) の更新をイベント出力点ごとに追う。
-- [x] grid delta 計算（`uVar11=192`）と `FUN_1000_618A` の exact-tempo meta 経路を対応付ける。v1 `grid record の値は192、拍子は4/4。絶対 offset は F-062 の `0x00B5` (=181)、旧記述の231、`0x74+125` (=241) が食い違うため未確定として扱う。current tickから次のgridまでのdeltaを加えてtick 192の exact-tempo eventを出す（FACTS F-080）。
-- [x] tick 0 と tick 192 の経路を対応付ける。tick 0 は既定 500000 µs/quarter、tick 192 は grid-aligned exact tempo meta。v1/v3/v4 の cross-version values confirm the same integer path (FACTS F-071/F-072).
-- [x] coarse tempo meta の直接 producer を特定。`FUN_1000_3406` は v1 tempo-record の第2 word 37 と base tempo 120 から 69 BPM を算出し、`floor(60000/69)*1000=869000` を `FF 51 03` として queue に書く。第2 word が UI slider と同義かは未確認（FACTS F-073/F-078）。
-- [x] Call order confirms setup/output routines (`FUN_1000_2144`, `FUN_1000_1C70`) precede `FUN_1000_33D4`; the initial `FUN_1000_3406` queues the coarse tempo meta before the following shared `FUN_1000_08EC` drain. Reference SysEx events at ticks 0/4/8/8 precede the coarse tempo meta at tick 8 (FACTS F-073/F-076/F-082).
-- [x] Compare a second private v1 fixture: `TEST.SNG` has value 64 with base tempo 120 and `TEST.MID` has no changed-tempo meta; both `TEST.MID` and `runner.MID` show the same setup SysEx ticks 0/4/8/8 (FACTS F-082).
-- [ ] Fully map each setup routine to each reference SysEx payload and prove the per-event `0xF9A:0xF9C` / `0x6F2:0x6F4` values. Static queue ordering and a second fixture support the tick-8 explanation but do not replace a runtime trace.
-- [ ] 実行時トレースができない場合は、静的推論と参照 MIDI の観測事実を明確に分離して記録する。
+**状態:** 静的な呼び出し順、tempo-record の整数計算、192-tick grid の exact-tempo 経路、初回 `FUN_1000_3406` の例外経路と queue-drain semantics は記録済み（FACTS F-065〜F-068、F-073、F-076、F-080、F-082、F-085）。
 
-**完了条件:** 3つの参照 tempo event の値・tick と SNG2S の各出力経路を根拠付きで説明できること。そこまでは converter / regression test を変更しない。
+これらの節は調査履歴として残す。残件を重複して管理しないため、次の作業は T-017 に集約する。
 
+- tick 8 の pending-delta / absolute-tick の実際の値と因果関係
+- `0x6EE` の初期値・設定元
+- 4件の setup SysEx payload と producer の対応
+- 参照 `runner.MID` を生成した実際のオプション
 
-## T-012 — tempo と device-parameter queue を分離
+**検証境界:** `SngConverterTests.cs` の公開テストは 500000 / 869000 / 869565 の期待 byte sequence を検査する。これは変換出力の回帰確認であり、元実行ファイルの実行時挙動全体、SysEx payload、SMF 全体のバイト一致、実再生を証明するものではない。
 
-- [x] `0x21E4` / `0x7DE` / `FUN_1000_3BA7` を FF 51 tempo path (`0x21E0`) から分離して確認。
-- [x] tempo-record 側の整数計算 `(60000 / 69) * 1000 = 869000` と、192-tick grid 側の `60000000 / 69 = 869565` を静的解析で照合。参照 tick 8 / 192 の tempo 値に一致する。
-- [ ] queue drain 時点の absolute tick が tick 8 であることを runtime trace で確認する。pending delta `0xF9A:0xF9C` と absolute tick `0x6F2:0x6F4` の値を、最初の queue drain 前後で追う。
-- [x] `FUN_1000_3406` の1回の scheduler call 内で `0x21E0` tempo-record stream が `0x21E4` device-parameter stream より先に処理されることを静的確認。これらの生成済みイベントは後続の `FUN_1000_08EC` drain で直列化される（FACTS F-073/F-076/F-073/F-076/F-082）。
-
-**注意:** 数値の一致は強い静的根拠だが、tick 8 の割当は runtime 未確認。実行時トレースが済むまでは converter / regression test を変更しない。
-
-## T-013 — preamble delta と初回 tempo queue drain の状態を確定
-
-- [x] v1 の `FUN_1000_1C70` → `FUN_1000_1CE4` → `FUN_1000_33D4` → 初回 `FUN_1000_3406` → `FUN_1000_08EC` の呼び出し順を静的に追跡。
-- [x] `FUN_1000_3DE2` が `0xF96 = 0xFFFF` にし、`FUN_1000_33D4` が初回 `FUN_1000_3406` の後で `0xF96 = 0` に戻すため、初回 `FUN_1000_3406` は通常の pending delta `+1` 経路を通らないことを確認。
-- [x] `FUN_1000_08EC` の drain semantics を確認。`FF` tempo meta は必ず既存の `0xF9A:0xF9C` を絶対 tick `0x6F2:0x6F4` に加算してから出力し、pending delta をクリアする。`FUN_1000_3406` が1回の call 内で複数 event を queue した場合、同じ drain 内の後続 event は delta 0 で同じ tick になり得る（FACTS F-076）。
-- [x] 解析テキスト全体の命令行を検索し、`[0x6EE]` の29参照がすべて直接読み出しで、直接 store が見つからないことを確認。複数の event-output path で `0x1ED8:0x1EDA` への加算と `0xF9A:0xF9C` への設定に使われる（FACTS F-067）。
-- [ ] `0x6EE` の実値と初期化元を特定する。data segment、別名アドレス、間接書き込み、runtime memory trace は未確認。
-- [x] Private `testdata/ballade/sng2gs/sng2s33.lzh` contains an LH5-compressed `SNG2S.EXE` member (uncompressed size 32,383 bytes); no standalone EXE exists at the obvious fixture paths. The current Ghidra text export does not include the initialized data-segment bytes needed to read `0x6EE` directly.
-- [ ] Extract `SNG2S.EXE` only in a private/local analysis environment and map the DOS data segment to inspect the initialized value/source of `0x6EE` and the `/XD` flag. Never commit the EXE, extracted data, or private fixtures to the public repository.
-- [x] `FUN_1000_184A` → `FUN_1000_5EC8(input, 0xF05, 2)` の比較経路を確認。2-byte token の一致で `0x622=1`。下流用途との整合から `/XD` が最有力で、以前の `/F` 対応推定は撤回。ただし token bytes と文字列の直接対応は未確認（FACTS F-069）。
-- [ ] 参照 MIDI 生成時に `/XD` が指定されたか確認し、`0x622 != 0` の pending-delta reset が実際に適用されたかを絞る。SysEx 4件の存在は `/XD` 無効を強く示唆するが、生成条件の直接証拠ではない。
-- [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
-
-
-- [x] Public `SngConverterTests.cs` now has explicit byte-sequence assertions for tempo values 500000, 869000 and 869565, including the encoded delta to tick 192. These tests do not prove complete tempo-event enumeration, SysEx payload equality, full SMF byte equality, or runtime playback.
-- [ ] After the tick-8 pending-delta source is proven, add focused tempo-meta regression assertions against the private reference MIDI in private CI; do not copy reference MIDI or private fixtures into the public repository.
-
-**注意:** 初回 `FUN_1000_3406` に通常経路の +1 を当てはめない。tick 8 が説明できるまで `SngConverter.cs` と tempo regression tests は変更しない。
-
+---
 
 ## T-014 — tempo slider curve と 3/4 の MIDI 出力丸めを分離
 **優先度:** 中（v1 の読み込み失敗を直すブロッカーではない）
