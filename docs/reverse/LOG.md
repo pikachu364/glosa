@@ -283,13 +283,6 @@
 - `SngConverter.cs` とテストは変更していない。
 
 
-## 2026-10-19 — SNG2S のパート情報バッファを追加調査
-
-- `FUN_1000_272a` の版分岐を続けて確認。各パートについて 0x50 byte の情報バッファを確保する経路があり、旧版クラスではフィールド参照基準 `local_64=0x32`、後続版では `0x23` に切り替わる。また後続版経路は `+0x0F` / `+0x13` の値を参照する。
-- 版ごとにパート情報の解釈位置が違う点を FACTS F-035 に記録。これは v1 の別レイアウト仮説を支えるが、SNG ファイル上の絶対オフセットや候補 +80 レイアウトとの同一性はまだ示せない。
-- `SngConverter.cs` とテストは変更していない。
-
-
 ## 2026-10-19 — SNG2S のバイナリ読込と版別パート幅を確認
 
 - FUN_1000_272a が FUN_1000_572a(..., 0x8000) でファイルを開く経路を追跡。open wrapper のフラグ設定と FUN_1000_58ce の条件分岐から、この経路ではテキスト用 CR/LF・Ctrl-Z 処理が有効にならないことを確認した。
@@ -502,7 +495,7 @@
 - `docs/reverse/` 以下の README、FACTS、HYPOTHESES、LOG、NEXT_STEPS、V1_TEMPO_INVESTIGATION、BALLADE_LAYOUT_COMPARISON、引継ぎ文書を読み直した。
 - 現在の結論は、SNG2S の tempo-record 数値計算と 192-tick grid 経路は静的解析で説明できる一方、tick 8 の delta / absolute-tick 状態、`0x6EE` の初期値、SysEx payload の対応、参照生成時の実オプションは未解決というもの。
 - README に残っていた「H-015 の同期未完了」という記述は更新。HYPOTHESES の `0x6EE = 4` は旧仮説として明示し、後続の否定的な制約を優先するよう注記した。
-- FACTS には F-078 / F-079 / F-084 の ID 重複がある。既存参照を壊す一括改番は行わず、重複の存在を明記。次回は参照先を全件検索してから ID を整理する。
+- FACTS の重複 ID を F-089〜F-092 に改番し、参照を更新。
 - 比較文書の節番号が「10」で重複していたため、後続の tempo/SysEx 追加節を 14 に整理する。過去の調査ログは削除せず、履歴として残す。
 - 文書だけの監査であり、converter / regression tests は変更していない。private fixture は公開せず、PR #9 はマージしていない。
 
@@ -510,7 +503,7 @@
 
 - 静的解析で `FUN_1FF5_1344` の driver dispatch、選択された初期化関数から `0x0438` → `0x0440` のコピー、`FUN_1FF5_0D61` の INT 8 hook、`FUN_1FF5_0DFA` の divisor 計算と I/O port 書き込みを整理した。
 - この経路は timer の初期化を示すが、SNG tempo record の第2 word が playback 中に timer globals を更新する呼び出し経路はまだ確認できていない。
-- FACTS F-086 と NEXT_STEPS に反映。静的解析のみで、runtime trace・実再生・converter 変更はなし。
+- FACTS F-092 と NEXT_STEPS に反映。静的解析のみで、runtime trace・実再生・converter 変更はなし。
 
 
 ## 2026-10-23 — private v1 fixture mismatch の原因を確定
