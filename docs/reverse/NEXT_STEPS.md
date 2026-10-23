@@ -91,20 +91,14 @@
 
 **完了条件:** 候補がソース解析または参照 MIDI と一致する。整合性だけを根拠に実装へ反映しない。
 
-## T-003 — 参照 MIDI の生成条件を確認する
-**優先度:** 中
+## T-003 — 参照 MIDI の生成条件を確認する（残件は T-017 に集約）
 
-- [x] リポジトリ内の `testdata/ballade/sng2gs/SNG2S.DOC` を確認し、SNG2S Ver. 3.3 の対応バージョン、timebase 48、/F・/N などの出力オプションを FACTS F-001 に整理した。
-- [ ] 既存の参照 MIDI を生成した実行ファイル名・版・指定オプションを確認する。
-- [ ] 参照 MIDI の作成条件が不明なら、未確認として明記する。
-- [ ] +128 tick の根拠をコンダクタ情報と出力イベントから追跡する。
+- [x] リポジトリ内の `SNG2S.DOC` を確認し、SNG2S Ver. 3.3 の対応バージョン、timebase 48、出力オプションの説明を FACTS F-001 に記録した。
+- [x] tempo-record の整数計算と v1/v3/v4 の参照値を静的解析で対応付けた（FACTS F-071/F-073/F-085）。
+- [ ] 保存済み参照 MIDI の実際の実行ファイル・バージョン・オプションは未特定。残件は T-017 で一元管理する。
+- [x] 以前の汎用 `ReadTempi` 適用が v1 に不適切な候補を出す問題をガードし、後続の `ReadLegacyV1Tempi()` と tempo regression tests を追加した。過去の CI 記録は当時の commit に対する結果であり、現在の branch head の CI 成功を意味しない。
 
-- [x] 静的解析で `FUN_1000_3406` が内部バッファ `0x21DC` から `FF 58` time-signature meta、`0x21E0` から `FF 51` tempo meta を出力することを確認（FACTS F-055）。`0x21E4` は別のレコード列として `0x7DE` と `FUN_1000_3B78` に接続するが、意味は未確定。
-- [ ] `0x21DC` / `0x21E0` / `0x21E4` は SNG 内絶対オフセットではなく内部 far-pointer。各バッファの充填元を SNG 読込側へ逆追跡する。
-- [ ] v1 `runner.MID` の tempo meta（tick 0 / 8 / 192）と、v1 conductor に現行 `ReadTempi` を適用した値列の不一致を解消する。`0x7BA` の設定元と内部 tempo buffer の各レコードを対応付ける（FACTS F-053 / F-055 / HYPOTHESES H-012）。
-- [x] 作業ブランチで v1 に後続版向け `ReadTempi` を適用しないガードと回帰テストを追加。これにより誤った tempo 候補は出さないが、tick 8 / 192 の参照 tempo change は未実装。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功（FACTS F-056）。
-
-**完了条件:** 生成条件とオフセット差の説明が、根拠付きで記録される。
+**完了条件:** マニュアルに書かれたオプション説明と、参照 MIDI を実際に生成したオプションを区別する。実行条件が特定できなければ未確認のまま記録し、推測で埋めない。
 
 ## T-004 — スケジューラ表と slot 対応を回収する
 **優先度:** 中
