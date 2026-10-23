@@ -603,7 +603,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `runner.MID` の conductor track には tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter の tempo meta がある。time signature は tick 0 の 4/4（payload `04 02 18 08`）。
 - v1 の `runner.SNG` では、汎用 `ReadTempi` が sentinel offset 761 の後を step/value = 37/144、37/192 と読む。後続版向けの式では 270/360 BPM 相当となり、参照 MIDI と一致しない（F-053）。
 - 作業ブランチ `docs/ballade-version-testdata` の `SngConverter` は、v1 に対してこの汎用パーサーを適用せず、根拠のない tempo change を出さないように変更した。回帰テストは参照 MIDI の3つの tempo meta と、現時点の converter が既定の 500,000 のみを出力することをそれぞれ固定する。
-- これは完全互換化ではない。参照 MIDI の tick 8 / 192 の tempo change は converter に未実装のままであり、正しい v1 record mapping が分かるまで未解決として扱う。
+- **当時の状態:** この記録を作成した時点では tick 8 / 192 の tempo change は converter に未実装だった。後続の実装・テスト状況は [V1_TEMPO_INVESTIGATION.md](V1_TEMPO_INVESTIGATION.md) と現在の `SngConverter.cs` / `SngConverterTests.cs` を参照する。これは完全互換化や元実行ファイルの挙動全体を証明するものではない。
 - 変更コミット: `ca99066649e5a5341e820486fd526c4d5ed4ac31`（converter）、`cf77ba8736e36aa68bc9caa14d122136fc0a7b48`（tests）。後続の branch HEAD `28a668fe56485f03fb571c692717bdbb5162797c` に対する CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で、converter・テスト・README を含む HEAD の build/test が3 OSで成功。
 - 参照 MIDI の物理 track layout を記録する回帰テストも作業ブランチに追加した。12 track、track-name を持つ chunk index、Note-on を持つ track の順序・channel・件数、および末尾の part-1/Keyboard track が Note-on を持たないことを固定する。これは参照 fixture の構造テストであり、現行 Glosa 出力との物理 chunk 順一致を証明しない。テストコミット b03cebb06a27c9efe509447d8bb369c8fa89c499。最新 branch HEAD の CI run 39400722489 で3 OSの build/test 成功を確認。
 
