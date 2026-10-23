@@ -136,7 +136,7 @@ v1 のテーブル終端は `0x72`（114）で、テーブル直後の2 byte を
 
 ## 6. SNG2S.EXE と MIMPIV427 の対応
 
-参照した SNG2S 側の解析資料: [sng2gs解析データ.txt](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)。資料中の実行ファイル文字列は **SNG -> Standard Midi File Converter SNG2S Ver 3.3**、著作権表示は **M.Saito (Master-net AAD102), 1991–1993** となっている。したがって、これは Ballade `.SNG` を標準 MIDI ファイルへ変換する別プログラムの静的解析資料であり、MIMPIV427 の解析と相互照合する価値がある。
+参照した SNG2S 側の解析資料: [Ghidra 12.2 の sng2gs解析データ.txt](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)。 MIMPIV427 側の照合資料: [Ghidra 12.2 の mimpiv4解析データ.txt](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/MIMPI427/Ghidra_12.2/mimpiv4%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)。資料中の実行ファイル文字列は **SNG -> Standard Midi File Converter SNG2S Ver 3.3**、著作権表示は **M.Saito (Master-net AAD102), 1991–1993** となっている。したがって、これは Ballade `.SNG` を標準 MIDI ファイルへ変換する別プログラムの静的解析資料であり、MIMPIV427 の解析と相互照合する価値がある。
 
 ### 読み込み入口と共通点
 
