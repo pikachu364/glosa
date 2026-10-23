@@ -288,7 +288,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **優先度:** 中（v1 の読み込み失敗を直すブロッカーではない）
 
 - [x] jmplayer の仕様メモと SNG2S `FUN_1000_3406` を照合し、`rawValue * baseTempo / 64` の整数除算、1..480 の clamp、baseTempo=120 の場合の `floor(15*v/8) = 2v - ceil(v/8)` を確認（FACTS F-071）。
-- [x] `runner.SNG` の v1 tempo stream を実バイトで再確認。レコードは `(step, value)` の little-endian word pair で、`37` は第2 word、`48/144/192` は第1 word の interval fields。baseTempo 120 で SNG2S の式に入れると 69 BPM になるが、37 をユーザー向け slider 値と同一視できる根拠は未確認（FACTS F-071/F-078）。
+- [x] `runner.SNG` の v1 tempo stream を実バイトで再確認。レコードは `(step, value)` の little-endian word pair で、`37` は第2 word、`48/144/192` は第1 word の interval fields。baseTempo 120 で SNG2S の式に入れると 69 BPM になるが、37 をユーザー向け slider 値と同一視できる根拠は未確認（FACTS F-071/F-089）。
 - [ ] SNG2S の 3/4 固有 +1 BPM 説明について、time-signature input と MIDI tempo-meta generation の間に条件分岐があるか、decompilation の全 call/data flow を調べる。
 - [ ] 3/4 の SNG と SNG2S 参照 MIDI が得られた場合、slider 値ごとに実際の tempo meta と time-signature meta を比較する。現在の private fixture tree には 3/4 の参照 fixture が見つかっていないため、未確認のまま数値補正を実装しない。
 - [x] v1/v3/v4 reference MIDIs show the same two integer paths: v1 869000 at tick 8 and 869565 at tick 192 (69 BPM); v3 361000 at tick 92 and 361445 at tick 192 (166 BPM); v4 260000 at tick 116 and 260869 at tick 192 (230 BPM). This confirms the values are coarse millisecond and exact microsecond representations of the same normalized tempo, not two actual BPM changes (FACTS F-071).
@@ -300,7 +300,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 ## T-015 — versioned tempo-stream start offsets
 **Priority:** completed for v1; keep later-version base-tempo semantics as a separate audit.
 
-- [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S consumes the second word in its base-tempo scaling calculation, so 37 at baseTempo120 yields 69 BPM. Whether this word is semantically the same as the UI slider remains unproven (FACTS F-078).
+- [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S consumes the second word in its base-tempo scaling calculation, so 37 at baseTempo120 yields 69 BPM. Whether this word is semantically the same as the UI slider remains unproven (FACTS F-089).
 - [x] Verify v3/v4 use sentinel +12: value 89 gives 166 BPM in `START__0.SNG`, and value 123 gives 230 BPM in `BOURREE0.SNG`, matching their reference MIDIs.
 - [x] Confirm Glosa already has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` implementations.
 - [ ] Separate audit: v2 `SHIZUME0.SNG` has a different base-tempo setting and a 6/4 grid. Verify its full tempo-stream-to-MIDI tick scaling before changing shared later-version code; do not infer it from the v1 rule.
@@ -313,9 +313,9 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **Priority:** high; required for the SNG2S/MIMPIV4 comparison.
 
 - [x] Retrieve the complete private MIMPIV4 Ghidra export via its blob; the file is larger than the ordinary file-content response and must remain private.
-- [x] Confirm `FUN_1000_22FC` legacy branch reads the byte at `+0x1C` of the loaded conductor structure and stores it in `0x7BF0` and `0x0440`; the timer parameter is not calculated from the tempo record's second word at this point (FACTS F-079).
+- [x] Confirm `FUN_1000_22FC` legacy branch reads the byte at `+0x1C` of the loaded conductor structure and stores it in `0x7BF0` and `0x0440`; the timer parameter is not calculated from the tempo record's second word at this point (FACTS F-090).
 - [x] Trace timer setup: `FUN_1FF5_0D61` installs the interrupt-8 handler and initializes timer state; `FUN_1FF5_0DFA` calculates a hardware timer divisor using the current CX parameter, a factor of 120, and `0x3392` timebase; `FUN_1FF5_0DE1` updates the scheduled count.
-- [x] Scan the full available MIMPIV4 Ghidra export for direct `0x0440` references: only loader initialization and timer-driver initialization write it; playback later passes it to `FUN_1FF5_0DE1` (FACTS F-079).
+- [x] Scan the full available MIMPIV4 Ghidra export for direct `0x0440` references: only loader initialization and timer-driver initialization write it; playback later passes it to `FUN_1FF5_0DE1` (FACTS F-090).
 - [x] Re-open the full private export and verify the call sites: legacy `FUN_1000_22FC` copies conductor byte `header+0x1C` to both `0x7BF0` and `0x0440`; `FUN_1FF5_0D61` loads `0x0440` into `CX` before calling the timer-divisor calculation, and `FUN_1FF5_1409` restores `0x0440` from `0x7BF0`. Other playback scheduling paths call `FUN_1FF5_0DE1` with an event-relative count plus `0x0440`. This confirms the base timer input and additive scheduling path, but does not identify a consumer for the SNG tempo-record second word; do not infer that MIMPIV4 applies SNG2S's `rawValue * baseTempo / 64` formula.
 - [x] Inspect `FUN_1000_341E`, the early special-record scan: it accepts record types `0x01`, `0x02`, and `0x03`, copies bounded payloads into fixed buffers at `0x3BA` / `0x400`, and does not itself read the tempo-record `(step,value)` pairs or reference `0x0440` / `0x7BF0`. This narrows the search but does not identify a dynamic-tempo consumer; do not treat this pre-scan as proof that tempo records are ignored.
 - [x] Follow the `0x3BA` / `0x400` buffers to `FUN_1000_9D75`: it iterates their NUL-terminated bytes and passes text-like values to `FUN_1000_BF17` with fixed screen coordinates/attributes. These buffers are therefore consistent with UI/display labels, not the missing playback-tempo record consumer. This is a static interpretation of call arguments, not a verified function name.
