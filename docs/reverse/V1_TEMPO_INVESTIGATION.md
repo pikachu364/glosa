@@ -10,12 +10,12 @@ This note tracks the unresolved v1 tempo conversion in `runner.SNG` compared wit
 - tick 8: 869,000 µs per quarter note
 - tick 192: 869,565 µs per quarter note
 
-The current converter does not yet reproduce the latter two events. Do not change tempo conversion until the mapping is evidence-backed.
+The current converter has a dedicated v1 tempo path, and the public regression test asserts byte sequences for all three reference tempo values. The unresolved item is the original SNG2S tick-8 scheduling explanation, not absence of all v1 tempo implementation.
 
 ## Confirmed static-analysis findings
 
 - The explicit 500,000 µs/quarter tempo is emitted during startup, before `FUN_1000_33D4` initializes tempo-record processing.
-- `FUN_1000_272a` reads 590 bytes from SNG offset `0x00B5` into the internal buffer referenced by `0x21DC`. The source bytes begin `C0 00 04 04`.
+- `FUN_1000_272a` is documented as reading 590 bytes into the internal buffer referenced by `0x21DC`; the grid/time-signature bytes are `C0 00 04 04`. Notes disagree on their absolute source offset: `0x00B5` (=181), 231, and `0x74 + 125` (=241) are all recorded. Treat the 192-tick grid as supported, but the absolute offset as unresolved until raw file coordinates are reconciled.
 - `FUN_1000_0010` reads the first byte of `0x21DC` as `uVar11`; in this sample it is 192. The following `04 04` values contribute to the 4/4 time-signature meta event.
 - After initial event handling, the entry path computes a remainder using `FUN_1000_61EC(currentTick, uVar11, 0)`. If nonzero, the caller calculates `uVar11 - remainder` as the delta to the next boundary. This is consistent with a 192-tick grid.
 - `FUN_1000_3406` processes 4-byte records through internal pointer `0x21E0`. The second word is normalized using the tempo base at memory address `0x2962`; raw value 37 with base 120 gives 69 BPM after integer arithmetic, corresponding to 869,565 µs/quarter.
@@ -30,9 +30,8 @@ The current converter does not yet reproduce the latter two events. Do not chang
 
 ## Next steps
 
-1. Trace `FUN_1000_33D4` through the first `FUN_1000_3406` call and the following `FUN_1000_08EC` queue drain.
-2. Record pending delta `0xF9A:0xF9C` and absolute tick `0x6F2:0x6F4` at each tempo-event output point.
-3. Trace the grid-delta calculation and `FUN_1000_618A` separately from tempo-record countdown processing.
+1. Continue only the remaining queue-state work listed in [NEXT_STEPS.md](NEXT_STEPS.md), T-017: pending delta / absolute tick before the tick-8 event, `0x6EE` initialization, and SysEx producer-to-payload mapping.
+2. Keep the 192-tick exact-tempo path separate from the coarse tick-8 tempo path; do not reopen completed integer-arithmetic analysis without contradictory evidence.
 4. Compare each proven output event with reference ticks 0, 8, and 192.
 5. Keep static deductions clearly distinguished from runtime-trace evidence.
 
