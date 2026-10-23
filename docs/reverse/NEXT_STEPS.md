@@ -313,11 +313,13 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Re-open the full private export and verify the call sites: legacy `FUN_1000_22FC` copies conductor byte `header+0x1C` to both `0x7BF0` and `0x0440`; `FUN_1FF5_0D61` loads `0x0440` into `CX` before calling the timer-divisor calculation, and `FUN_1FF5_1409` restores `0x0440` from `0x7BF0`. Other playback scheduling paths call `FUN_1FF5_0DE1` with an event-relative count plus `0x0440`. This confirms the base timer input and additive scheduling path, but does not identify a consumer for the SNG tempo-record second word; do not infer that MIMPIV4 applies SNG2S's `rawValue * baseTempo / 64` formula.
 - [x] Inspect `FUN_1000_341E`, the early special-record scan: it accepts record types `0x01`, `0x02`, and `0x03`, copies bounded payloads into fixed buffers at `0x3BA` / `0x400`, and does not itself read the tempo-record `(step,value)` pairs or reference `0x0440` / `0x7BF0`. This narrows the search but does not identify a dynamic-tempo consumer; do not treat this pre-scan as proof that tempo records are ignored.
 - [x] Follow the `0x3BA` / `0x400` buffers to `FUN_1000_9D75`: it iterates their NUL-terminated bytes and passes text-like values to `FUN_1000_BF17` with fixed screen coordinates/attributes. These buffers are therefore consistent with UI/display labels, not the missing playback-tempo record consumer. This is a static interpretation of call arguments, not a verified function name.
+- [x] Check further candidate paths in the complete export: `FUN_1000_3543` pre-scans event streams and computes maximum absolute tick; `FUN_1000_2D27` rewrites Program Change records; neither shows a timer-base update. `FUN_1000_8888` schedules a parsed text-command delay plus `0x0440`, but no link to the binary SNG tempo table is established.
 - [ ] Identify which MIMPIV4 routine consumes the v1 conductor tempo records and determine whether it changes another timer parameter or per-event delta scaling.
 - [ ] Reconcile that routine against the actual v1 `runner.SNG` records without assuming the SNG2S MIDI-export curve applies to MIMPIV4 playback.
 - [ ] If the path cannot be proven statically, record the exact remaining dataflow gap; do not claim runtime behavior without a trace.
+- [ ] If static tracing cannot identify the consumer, run a runtime trace on a known changing-tempo SNG and compare timer/scheduler state immediately before and after the tempo record.
 
-**Current result:** the hardware-timer path is mapped, but the v1 tempo-record-to-playback timing path is not yet proven (FACTS F-077).
+**Current result:** the loader and hardware-timer path are mapped, and several likely parser/pre-scan candidates have been excluded. The actual consumer of the SNG tempo-record second word remains unidentified. This does not prove that MIMPIV4 ignores tempo records (FACTS F-077/F-084).
 
 
 ## T-017 — distinguish coarse tick-8 tempo from exact grid-aligned tempo
@@ -424,12 +426,3 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 4. Continue only on genuine equivalence gaps: setup SysEx payload byte equality, physical SMF track/chunk order, controller/program/pitch-bend coverage, and later changing-tempo reference fixtures.
 5. Keep the SNG2S tick-8 pending-delta / `0x6EE` initialization question and MIMPIV4 runtime tempo-consumer question separate. `0x6EE = 4` remains unproven; no runtime trace or actual playback test has been performed.
 6. PR #9 remains open. Do not merge without explicit user authorization; before merging, review the two commits behind `main` and resolve any conflict deliberately.
-
-
-### T-016 progress update (2026-10-24)
-
-- [x] Inspect `FUN_1000_341E`, `FUN_1000_3543`, and `FUN_1000_2D27` as candidate binary-record/event consumers; their shown bodies do not update `0x0438`, `0x0440`, or `0x7BF0`.
-- [x] Inspect `FUN_1000_8888`: it parses a text argument and schedules parsed relative count + `0x0440`; no link to the binary SNG tempo table is established.
-- [ ] Trace the actual playback event dispatcher and any alternate interval/scaling state for the SNG tempo-record second word, or obtain a runtime trace with a known changing-tempo fixture.
-
-Do not close T-016 as “tempo records ignored.” The static scan has narrowed candidate paths but has not identified the consumer.
