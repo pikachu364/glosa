@@ -979,3 +979,17 @@ This narrows the source of the initial timer base but does not show that tempo r
 - Comparing the validated checkout with the current PR #9 branch shows only documentation changes after that checkout; converter and test source are unchanged from the passing code state.
 
 **Limitations:** this establishes the scoped tempo-event and Note-event tests, not byte-for-byte SMF equivalence, SysEx payload identity, physical track/chunk ordering, complete controller/program/pitch-bend equivalence, or actual player playback. The current PR head's public CI run #824 was cancelled; do not mark that run as passed.
+
+
+## F-093 — Additional MIMPIV4 candidate paths do not expose a tempo-record-to-timer write (2026-10-24)
+
+**Status:** verified by static inspection of the complete available Ghidra text export; runtime behavior remains unverified.
+
+- `FUN_1000_341E` walks the special-record stream and handles record types `0x01`, `0x02`, and `0x03` by copying bounded payloads into buffers at `0x03BA` / `0x0400`. Its shown control flow does not write the timer globals `0x0438`, `0x0440`, or `0x7BF0`.
+- `FUN_1000_3543` walks the per-part event streams, accumulates variable-length deltas, handles MIDI-like status families, and updates the maximum absolute tick at `0x7818:0x781A`. Its body does not reference `0x0440` or `0x7BF0`.
+- `FUN_1000_2D27` scans fixed four-byte event records until `0xFC` and rewrites the third byte for `0xC0` Program Change events through a lookup table. It does not update the timer globals.
+- `FUN_1000_8888` accepts a text argument and uses parser key `0x2ABB`; it schedules the parsed value plus `0x0440` through `FUN_1FF5_0DE1`. This is evidence for an additive text-command scheduling path, not evidence that the binary SNG tempo-record table feeds that path.
+
+**Conclusion boundary:** these inspections eliminate several tempting candidate routines, but they do not prove that MIMPIV4 ignores tempo records or lacks dynamic tempo. The actual playback consumer, any alternate interval/scaling state, and runtime behavior remain unresolved.
+
+**Source:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`, functions `FUN_1000_341E`, `FUN_1000_3543`, `FUN_1000_2D27`, and `FUN_1000_8888`. Static analysis only.
