@@ -1,6 +1,6 @@
 # 確認済み事実
 
-> **ID 管理メモ（2026-10-22）:** このファイルには過去の追記時に F-078 / F-079 / F-084 が重複して付与された箇所がある。既存の cross-reference を壊さないため、この監査では本文の ID を一括改番していない。参照時は ID だけでなく見出し名も確認する。新しい事実は F-086 以降の未使用 ID を使い、次回の整理で参照先を全件検索してから重複 ID を解消する。
+> **ID 管理ルール（2026-10-23）:** 各 F-ID は一意とし、最大の既存 ID の次から採番する。ID を変更するときは対象8文書の参照を検索して同じ変更内で更新する。欠番は再利用せず、根拠が不明な参照は推測で割り当てない。
 
 ここには、根拠を追跡できる情報だけを置きます。ソースコードの静的解析結果は、実行時の動作検証と区別します。
 
@@ -716,7 +716,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 **Status:** static call/data flow confirmed from `FUN_1000_0010`, `FUN_1000_272a`, and `FUN_1000_61ec`; output tick positions are cross-checked against reference MIDI. No runtime trace.
 
-- The v1 conductor's grid/time-signature structure contains bytes `C0 00 04 04` at file offset 231: little-endian grid length 192, numerator 4, denominator 4. SNG2S copies this structure to `0x21DC`; `FUN_1000_0010` reads its first 16-bit value as `local_4c`, and its numerator/denominator bytes separately to write the FF 58 time-signature meta.
+- `FUN_1000_0010` reads the copied grid/time-signature structure through `0x21DC`; its grid value is 192 and its meter bytes are 4/4. The absolute source offset is unresolved: F-062 records `runner.SNG` bytes `C0 00 04 04` at `0x00B5` (=181), while earlier notes cite 231 and another calculation gives `0x74 + 125` (=241). These offsets must not be treated as interchangeable until the raw source bytes and coordinate origin are reconciled.
 - After the first scheduler/queue drain, `FUN_1000_0010` calls `FUN_1000_61EC(absTick, local_4c, 0)`. The zero fourth argument selects remainder calculation, so this is `absTick % gridLength`. It sets the pending delta to `gridLength - remainder` (or one full grid when already aligned), then writes an FF 51 tempo meta using `floor(60,000,000 / currentBpm)`.
 - For `runner.MID`, the exact tempo meta is at tick 192, and the grid length read from the SNG is 192. Given the preceding tempo event at tick 8, the grid-alignment path adds 184 ticks to reach tick 192. The exact tempo is `floor(60,000,000 / 69) = 869565` µs/quarter. This explains the tick-192 placement statically, without a runtime trace.
 - Cross-version corroboration: `START__0.MID` (v3) has the exact tempo value 361445 at tick 192 for 166 BPM; `BOURREE0.MID` (v4) has 260869 at tick 192 for 230 BPM. Both reference files are 4/4 and use a 192-tick grid at the start.
@@ -832,7 +832,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 **Sources:** private SNG2S decompilation `FUN_1000_184A`, `FUN_1000_2144`, `FUN_1000_1CE4`, `FUN_1000_265C`; command-line and initialized data-segment values not fully available in the current export.
 
 
-## F-078 — runner.SNG v1 tempo records: 37 is the value word; 48/144/192 are interval words
+## F-089 — runner.SNG v1 tempo records: 37 is the value word; 48/144/192 are interval words
 
 **Status:** directly verified against the private fixture bytes; semantics cross-checked against the SNG2S reader.
 
@@ -849,7 +849,7 @@ For private `testdata/ballade/v1/runner.SNG`:
 **Sources:** direct byte inspection of private `runner.SNG`; SNG2S Ghidra export `FUN_1000_3406` and `FUN_1000_08EC`; reference tempo facts recorded for private `runner.MID`. Static analysis; no SNG2S runtime trace.
 
 
-## F-079 — MIMPIV4's legacy base-tempo byte is loaded from the conductor structure, not inferred from the tempo record value
+## F-090 — MIMPIV4's legacy base-tempo byte is loaded from the conductor structure, not inferred from the tempo record value
 
 **Status:** direct loader data flow and all literal references to the timer parameter confirmed in the available Ghidra export.
 
@@ -865,7 +865,7 @@ For private `testdata/ballade/v1/runner.SNG`:
 
 **Status:** source control flow and the grid operand's source bytes are confirmed. This path explains the exact-tempo event at tick 192; it does not explain the earlier coarse tempo event at tick 8.
 
-- At the start of `FUN_1000_0010`, SNG2S reads the conductor/grid structure through the pointer at `0x21DC`. The first byte is assigned to `uVar11`; the next bytes supply the time-signature numerator and denominator. In v1 `runner.SNG`, file offset 241 (`0x74 + 125`) contains `C0 00 04 04`, so the grid operand is 192 ticks and the meter is 4/4.
+- At the start of `FUN_1000_0010`, SNG2S reads the conductor/grid structure through the pointer at `0x21DC`. The first byte is assigned to `uVar11`; the next bytes supply the time-signature numerator and denominator. The copied grid structure supplies a grid operand of 192 ticks and meter 4/4. The exact absolute source offset is unresolved: F-062 records `0x00B5` (=181), while other notes cite 231 or `0x74 + 125` (=241). Do not claim 231 or 241 as verified until the raw bytes are independently reconciled.
 - After the first scheduler call and queue drain, `FUN_1000_0010` calls `FUN_1000_61EC(currentAbsoluteTick, uVar11, 0, 0)`. With the fourth argument zero, the helper calculates the remainder of the current absolute tick modulo `uVar11`. The caller sets pending delta to `uVar11 - remainder`, substituting a full grid if the result is zero.
 - The code then writes the exact-microsecond tempo meta using `floor(60,000,000 / currentBpm)`. With a 192-tick grid and the normalized 69 BPM tempo, the value is 869565 µs/quarter. The reference `runner.MID` places this event at tick 192.
 - The earlier 869000 µs/quarter event is queued by `FUN_1000_3406` through the millisecond-rounded calculation `floor(60,000 / BPM) * 1000` and is drained before this grid-alignment block. It is already present at tick 8 in the reference MIDI. Do **not** describe the 192-tick grid calculation as the cause of the tick-8 event.
@@ -912,7 +912,7 @@ For private `testdata/ballade/v1/runner.SNG`:
 **Source:** private MIMPIV4 static-analysis export. Private fixture/binary data remains outside this public repository.
 
 
-## F-084 — MIMPIV4 manual documents playback tempo controls, but not the binary SNG tempo-record decoder (2026-10-22)
+## F-091 — MIMPIV4 manual documents playback tempo controls, but not the binary SNG tempo-record decoder (2026-10-22)
 
 **Status:** documentation fact; the runtime implementation path remains unresolved.
 
@@ -959,7 +959,7 @@ This narrows the source of the initial timer base but does not show that tempo r
 
 **Source:** private MIMPIV4 static-analysis export, `FUN_1000_22FC` (1000:22FC onward) and `FUN_1000_314F`; no runtime trace.
 
-## F-086 — MIMPIV4 driver setup is not yet a proven SNG tempo-record consumer
+## F-092 — MIMPIV4 driver setup is not yet a proven SNG tempo-record consumer
 **状態:** 静的逆アセンブルで確認（再生時のデータフローは未確定）
 
 - 起動経路は形式別 loader の後に `FUN_1FF5_1344` で driver を選び、`FUN_1FF5_0D61` で INT 8 timer handler を設定する。
