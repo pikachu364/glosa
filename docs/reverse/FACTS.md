@@ -801,7 +801,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - A static reference scan of the exported MIMPIV4 decompilation finds `0x0440` initialized from the loaded base-tempo byte and reset from saved/default values in mode setup paths, but does **not** identify a direct write from the v1 conductor tempo records into `0x0440`. This is not proof that tempo records are ignored: the remaining work is to trace the v1 record reader and any alternate state that affects the scheduled period.
 - Do not infer that MIMPIV4's playback tempo curve is identical to SNG2S's MIDI-export curve merely because both contain a factor of 120. The timer divisor, record interpretation, and SNG2S MIDI rounding are separate paths.
 
-**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`, especially `FUN_1000_22FC`, `FUN_1000_A3BB`, `FUN_1FF5_0D61`, `FUN_1FF5_0DFA`, and `FUN_1FF5_0DE1`. Static analysis only.
+**Sources:** private [MIMPIV4 Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/MIMPI427/Ghidra_12.2/mimpiv4%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt), especially `FUN_1000_22FC`, `FUN_1000_A3BB`, `FUN_1FF5_0D61`, `FUN_1FF5_0DFA`, and `FUN_1FF5_0DE1`. Static analysis only.
 
 
 ## F-078 — TEST.SNG independently confirms the same legacy layout and jmplayer rejection
