@@ -406,7 +406,7 @@
 
 - 現在の `docs/ballade-version-testdata` ブランチを確認し、v1 conductor に `ReadTempi` を使うと参照 `runner.MID` の tempo meta と一致しない問題（F-053）を再確認した。
 - v1 では汎用パーサーを呼ばず、根拠のない tempo change を出力しない暫定ガードを実装。テストで参照 MIDI の tempo meta（tick 0/8/192）を固定し、現 converter が既定 tempo のみを出力することを検証する。
-- これは互換性の完成ではない。参照 MIDI の tick 8 / 192 の tempo change は未実装であり、`0x21E0` バッファの充填元と `0x7BA` の設定元を追う必要がある。実行時トレース・実再生は未実施。
+- **当時の状態:** このログ時点では参照 MIDI の tick 8 / 192 tempo change は未実装だった。後続の実装状況は現在の `SngConverter.cs` と `SngConverterTests.cs` を参照する。実行時トレース・実再生を行った記録ではない。
 - コードコミット `ca99066649e5a5341e820486fd526c4d5ed4ac31`、テストコミット `cf77ba8736e36aa68bc9caa14d122136fc0a7b48`。branch HEAD `28a668fe56485f03fb571c692717bdbb5162797c` の CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で build/test が Ubuntu/macOS/Windows の全 job で成功した。
 
 
