@@ -417,16 +417,9 @@ The arithmetic is now supported by static evidence. Why the coarse event is seri
 
 Static tracing identifies the driver dispatch and timer initialization chain: `FUN_1FF5_1344` selects a driver setup path, several selected branches copy `0x0438` into `0x0440`, and `FUN_1FF5_0D61` installs the INT 8 handler before passing `0x0440` to `FUN_1FF5_0DFA`. The latter calculates a timer divisor and writes to I/O ports `0x71` and `0x5F`.
 
-This establishes how the timer is initialized, not how an SNG tempo record changes playback speed. The static export does not yet show a proven dataflow from the binary tempo-record second word to a playback-time update of `0x0438`, `0x0440`, or `0x7BF0`. Keep this question separate from SNG2S's MIDI tempo-meta conversion. No runtime trace or playback test was performed.
+The follow-up candidate review checked `FUN_1000_341E` (special-record payload scan), `FUN_1000_3543` (event/duration pre-scan), and `FUN_1000_2D27` (Program Change rewrite); none shows the tempo-record value being passed to the timer globals. `FUN_1000_8888` schedules a parsed text-command delay plus `0x0440`, but no connection to the binary SNG tempo table is established. The actual consumer of the binary tempo-record second word remains unidentified. This narrows the static search but does not prove that tempo records are ignored. Keep this question separate from SNG2S's MIDI tempo-meta conversion. No runtime trace or playback test was performed; next evidence is the actual playback event-dispatch path or a runtime trace around a known tempo record.
 
 
 ## Private runner comparison follow-up (2026-10-23)
 
 The private fixture workflow's latest successful run is [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256). It checked out Glosa `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed all 977 tests. The previous failure's first differing signature was caused by two same-tick Note-off events (channel 1, pitches 77 and 82) appearing in opposite array order. Canonical ordering by pitch removed the test-only ordering discrepancy; no converter behavior change was needed. Current PR #9 adds only documentation changes after the tested checkout. This validation is limited to the specific tempo and Note-event signatures covered by private tests.
-
-
-## 2026-10-24 — MIMPIV4 candidate-path review
-
-- Full-export static inspection of `FUN_1000_341E` (special-record scan), `FUN_1000_3543` (event/duration pre-scan), and `FUN_1000_2D27` (Program Change remap) found no writes to the timer base fields in those routines.
-- `FUN_1000_8888` schedules a parsed text-command value plus `0x0440`; no evidence connects that text path to the binary SNG tempo-record table.
-- T-016 remains open. This does not prove tempo records are ignored; next step is actual playback event-dispatch tracing or a runtime trace with a changing-tempo fixture. SNG2S export arithmetic remains separate.
