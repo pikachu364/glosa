@@ -226,10 +226,10 @@ Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includ
 
 - The MIMPIV4 v4.27 manual documents Up/Down keys for changing playback tempo and `/Tn` for fine adjustment. Those are user/runtime tempo controls; their existence does not show how a Ballade SNG tempo-record value is decoded.
 - Static tracing confirms a legacy header/base-tempo byte is copied to `0x7BF0` and `0x0440`, and `0x0440` is used by timer initialization and scheduling paths.
-- No proven dataflow currently connects the second word of the binary SNG tempo record to a playback-tempo update routine. It remains possible that the consumer is in an untraced path, but it must not be assumed.
+- No proven dataflow currently connects the second word of the binary SNG tempo record to a playback-tempo update routine. It remains possible that the consumer is in an untraced path, but it must not be assumed. The additional candidates `FUN_1000_341E` (special-record payload scan), `FUN_1000_3543` (event/duration pre-scan), and `FUN_1000_2D27` (Program Change rewrite) do not show the tempo-record value being passed to the timer globals. `FUN_1000_8888` schedules a parsed text-command delay plus `0x0440`, but its connection to the binary SNG tempo table is unproven.
 - Do not reuse the SNG2S MIDI-export curve `floor(120*v/64)` as the MIMPIV4 playback formula without locating that consumer or obtaining runtime evidence.
 
-**Next evidence:** identify the binary conductor/tempo-record parser's caller chain into playback scheduling, or trace a known SNG with a changed tempo record while observing the timer parameter and update path.
+**Next evidence:** trace the actual playback event dispatcher and any alternate interval/scaling state for the SNG tempo-record second word, or obtain a runtime trace comparing timer/scheduler state before and after a known tempo record. Keep SNG2S MIDI-export arithmetic separate.
 
 
 ### H-018 — Numeric tempo conversion resolved; tick placement remains open (2026-10-22)
@@ -239,11 +239,3 @@ Static tracing of `FUN_1000_3406` confirms that SNG2S reads a tempo value from t
 `FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting it. The first call therefore skips the pending-delta increment used by later calls.
 
 Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute tick 8. `0x6EE` is read by setup paths, but its initialized value is missing from the export. The proposed value 4 remains a hypothesis only. Runtime state or initialized data is needed before changing converter behavior.
-
-### H-019 — The inspected MIMPIV4 parser/pre-scan candidates are not the tempo-record consumer (2026-10-24)
-
-The complete available MIMPIV4 export has now been checked at `FUN_1000_341E` (special-record payload scan), `FUN_1000_3543` (event/duration pre-scan), `FUN_1000_2D27` (Program Change lookup rewrite), and `FUN_1000_8888` (text-command scheduling). None of these bodies shows the binary SNG tempo-record value being passed into the timer globals. The text-command path does schedule a parsed relative count plus `0x0440`, but it is not established as the SNG tempo-table consumer.
-
-This narrows the static search; it does **not** establish that MIMPIV4 ignores tempo records. Remaining possibilities include an unrecognized event-dispatch path, an alternate interval/scaling variable, or behavior that requires runtime tracing.
-
-**Next evidence:** trace a known changing-tempo SNG through the actual playback event dispatcher, or obtain a runtime trace comparing timer/scheduler state before and after a tempo record. Keep SNG2S MIDI-export arithmetic separate.
