@@ -133,7 +133,7 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 
 ### Separate issue: MIMPIV4 playback
 
-The MIMPIV4 loader initializes its timer-period parameter from the legacy conductor/header structure, and the timer driver uses that parameter. The available static export still does not identify the consumer of the binary SNG tempo-record second word. Do not infer that MIMPIV4 playback uses SNG2S's MIDI-export conversion curve.
+The MIMPIV4 loader initializes its timer-period parameter from the legacy conductor/header structure, and the timer driver uses that parameter. The complete available export was also checked at `FUN_1000_341E` (special-record payload scan), `FUN_1000_3543` (event/duration pre-scan), and `FUN_1000_2D27` (Program Change rewrite); these bodies do not show the binary SNG tempo-record value being passed to the timer globals. `FUN_1000_8888` schedules a parsed text-command delay plus `0x0440`, but its connection to the binary SNG tempo table is unproven. The actual playback consumer remains unidentified. This narrows the static search but does not prove tempo records are ignored; next evidence is the playback event-dispatch path or a runtime trace of timer/scheduler state around a known tempo record. Do not infer that MIMPIV4 playback uses SNG2S's MIDI-export conversion curve.
 
 ### Still open
 
@@ -192,10 +192,3 @@ The private Ballade directory includes the MIMPIV4 v4.27 manual and a Ghidra exp
 ## Validation boundary update (2026-10-23)
 
 Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) passed the v1 TEST.SNG tempo-event comparison and runner.SNG Note-event comparison (977 tests total) on Glosa commit `440000b971e72debcef72bb12407bcf4e944527a`. The earlier Note-event failure was a canonical list ordering issue for simultaneous Note-off events at tick 4012, channel 1, pitches 77 and 82; it was fixed in the test comparison ordering, not in tempo conversion. This does not resolve the separate SNG2S tick-8 serialization question, prove SysEx payload equality, or establish runtime playback behavior. Keep `0x6EE = 4` as unproven and do not change tempo conversion on this evidence alone.
-
-
-## MIMPIV4 playback tempo: candidate-path review (2026-10-24)
-
-The complete available MIMPIV4 export was checked for several plausible paths after the loader and timer-driver chain. `FUN_1000_341E` copies bounded special-record payloads; `FUN_1000_3543` scans event streams to calculate the maximum absolute tick; and `FUN_1000_2D27` rewrites Program Change data. None shows a write into the timer base fields. `FUN_1000_8888` is a text-command path that schedules parsed value + `0x0440`, not a demonstrated binary SNG tempo-record path.
-
-The tempo consumer remains unidentified. This is a narrower negative static result, not proof of absent dynamic tempo and not runtime verification. See `FACTS.md` F-093 and `NEXT_STEPS.md` T-016.
