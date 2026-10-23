@@ -338,7 +338,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 ## F-034 — SNG2S のバージョン判定と版別ヘッダ項目選択
 
-**状態:** `testdata/ballade/sng2gs/sng2gs解析データ.txt` に収録された逆アセンブル／デコンパイル資料の `FUN_1000_272a` と `FUN_1000_184a` を確認。実行ファイルを動かした実測ではない。
+**状態:** [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) に収録された逆アセンブル／デコンパイル資料の `FUN_1000_272a` と `FUN_1000_184a` を確認。実行ファイルを動かした実測ではない。
 
 - `FUN_1000_272a` はファイル先頭から `BA` シグネチャを確認し、ヘッダ中の版値（逆解析上の `local_22`）に応じて内部版識別値 `0x25DA` を設定する。判定境界は版値 `< 0x32` が識別値 0、`>= 0x32` が 1、`> 0x32` が 2、`> 0x33` が 3。
 - 版識別値 0 と非 0 では、後続で参照するヘッダ内オフセット群が分岐している。識別値 0 は `0x1AFC / 0x1B02 / 0x1B0E` など、非 0 は `0x1AE6 / 0x1AEA / 0x1AF2` などを使い、版 2/3 では追加項目も読み取る。版 3 ではパート数 `local_60` が 10 から 16 に変わる。
@@ -359,7 +359,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 ## F-036 — SNG2S の読込モードと旧版／後続版のパート領域幅
 
-**状態:** sng2gs解析データ.txt の FUN_1000_272a、FUN_1000_572a、FUN_1000_58ce のデコンパイルと命令列を照合。実行時トレースではない。
+**状態:** [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) の FUN_1000_272a、FUN_1000_572a、FUN_1000_58ce のデコンパイルと命令列を照合。実行時トレースではない。
 
 - FUN_1000_272a はファイルを FUN_1000_572a(param_1, 0x8000) で開く。open wrapper は第2引数の 0x8000 が立っていない場合に限り handle 管理フラグ 0x80 を設定し、read wrapper FUN_1000_58ce はその 0x80 が立っている場合だけ CR/LF 変換と Ctrl-Z (0x1A) のテキスト処理を行う。したがって、この呼び出し経路はテキスト変換を有効にしないバイナリ読込として扱われ、SNG 内の 0x1A や改行 byte を read wrapper が除去・変換するという説明は当てはまらない。
 - 各パートのループでは、まず 0x50（80）byte を読み取ってパート情報バッファに格納する。内部版識別値が 0 の旧版経路では、その直後に追加 byte を読む呼び出しがなく、フィールド参照基準は local_64 = 0x32。内部版識別値が非 0 の経路では、80-byte 読込の直後にさらに 1 byte を読むため、次のパート情報読込までの固定部分は 81 byte となり、フィールド参照基準は local_64 = 0x23。
@@ -432,7 +432,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 ## F-042 — v1 Note-off の競合処理候補：タイマー表の既存項目照合
 
-**状態:** `testdata/ballade/sng2gs/sng2gs解析データ.txt` に収録された SNG2S の逆アセンブル命令列を静的に照合。実行時トレースではなく、参照 MIDI との因果対応は未確定。
+**状態:** [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) に収録された SNG2S の逆アセンブル命令列を静的に照合。実行時トレースではなく、参照 MIDI との因果対応は未確定。
 
 - `FUN_1000_3A10`（1000:3A10–3A3E）は、タイマー表 `0xFA0` の空き枠へ `DL`、0、`AL`、`AH` を格納し、`0xF9E` の項目数を増やす。4-byte stride、最大64枠。
 - `FUN_1000_3A3F`（1000:3A3F–3A8D）は、表項目の先頭 word が非ゼロで、項目 `+2` word が入力 `AX` と一致するものを検索する。一致項目の先頭 byte と入力 `DL` を比較し、既存値が `DL` 未満の場合はその項目をクリアして項目数を減らす。`DH != 0xC0` の経路では `AL`、`AH`、0 を出力キューへ追加する。
@@ -587,7 +587,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 ## F-055 — SNG2S conductor metadata buffers are dispatched separately
 **状態:** 静的逆解析で buffer consumers を確認。SNG field mapping は一部未解決。
 
-- FUN_1000_272a は、別々に確保した3つの内部バッファの far pointer を 0x21DC、0x21E0、0x21E4 に設定する（解析資料 sng2gs解析データ.txt、FUN_1000_272a 内の代入列）。
+- FUN_1000_272a は、別々に確保した3つの内部バッファの far pointer を 0x21DC、0x21E0、0x21E4 に設定する（解析資料 [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)、FUN_1000_272a 内の代入列）。
 - FUN_1000_3406 は 0x21DC の4-byteレコードを読み、値が変わると FF 58 04 の time-signature meta event を出力する。レコードの第3–4 byteから numerator と denominator power を構成する（1000:3471–34FA）。
 - 同関数は 0x21E0 の4-byteレコードから tempo 値を更新し、FF 51 03 の tempo meta event を出力する。内部値は value * (word stored at memory address 0x2962) / 0x40 によって範囲 1–480 に丸められ、tempo は整数演算の 60,000,000 / value から計算される（1000:350E–3583）。
 - 0x21E4 は別の4-byteレコード列として読み取られ、状態値 0x7DE を更新し、FUN_1000_3B78 を呼び出す（1000:35FF–3645）。この列の MIDI 意味と SNG 内フィールドへの対応は本調査だけでは確定しない。
@@ -631,7 +631,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 **制約:** 192-tick grid の存在は確認できたが、参照 MIDI の tick 192 tempo meta がこの経路で出力されたことや、tick 8 の 869,000 µs/quarter の生成元は未確定。静的解析のみ。
 
-**根拠:** private-data repo の sng2gs解析データ.txt 内 FUN_1000_0010 / FUN_1000_272a / FUN_1000_3406 / FUN_1000_61EC と runner.SNG offset 0x00B5。
+**根拠:** private-data repo の [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) 内 FUN_1000_0010 / FUN_1000_272a / FUN_1000_3406 / FUN_1000_61EC と runner.SNG offset 0x00B5。
 
 
 ## F-065 — v1 tempo の2種類の整数計算
@@ -657,7 +657,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 **制約:** 上記は呼び出し順と accumulator の条件付き更新を狭める静的根拠であり、tick 8 の確定や runtime での再現を証明しない。converter / tests は変更しない。
 
-**根拠:** `sng2gs解析データ.txt` の `FUN_1000_1C70`, `FUN_1000_1CE4`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3EB5`, `FUN_1000_3406`, `FUN_1000_08EC`。
+**根拠:** `[SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)` の `FUN_1000_1C70`, `FUN_1000_1CE4`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3EB5`, `FUN_1000_3406`, `FUN_1000_08EC`。
 
 
 ## F-067 — 0x6EE の全命令参照と pending-delta 用途
@@ -669,7 +669,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - したがって `0x6EE` は少なくとも複数の出力経路で delta/間隔値として再利用される。ただし値・単位・初期化元は未確定であり、これをそのまま MIDI tick や tick 8 の値と同一視しない。
 - option parser の `FUN_1000_184A` は `FUN_1000_5EC8(input, 0xF05, 2)` を呼ぶ。`FUN_1000_5EC8` は指定長の文字列比較で一致時に 0 を返すため、`0xF05` は parser が比較する2-byte token の先頭位置であることまでは確認できる。実際の2文字と /F との対応は、文字列データが解析資料にないため未確定。
 
-**根拠:** `sng2gs解析データ.txt` 全体の `[0x6EE]` 命令参照、`FUN_1000_1CE4` (1000:1D5D / 1DA4 / 1E53)、`FUN_1000_184A` (1000:1989–199A)、`FUN_1000_5EC8` (1000:5EC8–5F01)。静的解析のみ。
+**根拠:** `[SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)` 全体の `[0x6EE]` 命令参照、`FUN_1000_1CE4` (1000:1D5D / 1DA4 / 1E53)、`FUN_1000_184A` (1000:1989–199A)、`FUN_1000_5EC8` (1000:5EC8–5F01)。静的解析のみ。
 
 
 ## F-068 — 参照 runner.MID の conductor tempo と SysEx tick 配置
@@ -695,7 +695,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - `FUN_1000_184A` では 1-byte token 比較が一致すると `0x626 = 1`、別の 2-byte token 比較 (`0xF05`) が一致すると `0x622 = 1` になる。
 - SNG2S の help text は `/F` を part-to-track order change、`/XD` を Exclusive disable と説明する。上記の変数の用途はそれぞれの説明と強く整合するため、以前の `0x622 ↔ /F` 仮説は誤りである可能性が高い。現時点の最良の対応は `0x626 ↔ /F`、`0x622 ↔ /XD` だが、token bytes の直接確認または runtime option trace は未実施。
 
-**根拠:** `sng2gs解析データ.txt` の `FUN_1000_0010`、`FUN_1000_08EC`、`FUN_1000_184A` と定義文字列 `1627:0147`、`1627:0261`。静的解析のみ。
+**根拠:** `[SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt)` の `FUN_1000_0010`、`FUN_1000_08EC`、`FUN_1000_184A` と定義文字列 `1627:0147`、`1627:0261`。静的解析のみ。
 
 
 ## F-071 — slider curve and two tempo-meta integer paths are confirmed; previous field mapping corrected
@@ -710,7 +710,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - **Implementation guidance:** use `floor(rawValue * baseTempo / 64)` for slider normalization, with baseTempo=120 yielding jmplayer's documented curve. Do not hard-code the 869000/869565 pair as two real tempo changes: they represent the same normalized 69 BPM through different integer paths. Keep the 3/4 quirk separate until a 3/4 reference fixture or a complete code path proves the correction.
 - **Still open:** trace the scheduler/tick accumulators that place the coarse and exact tempo meta events; identify the 3/4-specific export rounding branch; compare a 3/4 SNG2S reference if available. The current private fixture set has 4/4 samples for v1, v3, and v4 and a 6/4 v2 sample, but no 3/4 sample.
 
-**Sources:** jmplayer `docs/formats/en/sng-ballade.md`; private SNG2S decompilation `FUN_1000_3406`, `FUN_1000_0010`; private SNG2S reference MIDIs `runner.MID`, `START__0.MID`, `BOURREE0.MID`.
+**Sources:** jmplayer `docs/formats/en/sng-ballade.md`; private [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) `FUN_1000_3406`, `FUN_1000_0010`; private SNG2S reference MIDIs `runner.MID`, `START__0.MID`, `BOURREE0.MID`.
 
 ## F-072 — SNG2S's exact tempo meta is aligned to the stored meter-grid boundary
 
@@ -723,7 +723,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - The earlier/coarse tempo meta (e.g. v1's 869000 at tick 8) is a separate path associated with the scheduler tempo update and millisecond-quantized representation `floor(60,000 / BPM) * 1000`. The queue-drain path and exact tick-8 origin still need a finer trace, but the two values are not two distinct musical BPM settings.
 - **3/4 implication:** because `local_4c` comes from the SNG's stored grid data, the exact-tempo meta is aligned to the 3/4 grid when that grid is 144 ticks. This alone does not prove the documented +1 BPM behavior; that would require tracing the coarse tempo conversion or having a 3/4 reference fixture. The core timer normalization in `FUN_1000_3406` remains meter-independent.
 
-**Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_272a`, `FUN_1000_61EC`; v1 `runner.SNG` bytes and reference `runner.MID`; v3 `START__0.MID`; v4 `BOURREE0.MID`.
+**Sources:** private [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) `FUN_1000_0010`, `FUN_1000_272a`, `FUN_1000_61EC`; v1 `runner.SNG` bytes and reference `runner.MID`; v3 `START__0.MID`; v4 `BOURREE0.MID`.
 
 
 ## F-073 — the coarse FF 51 tempo event is explicitly emitted by FUN_1000_3406
@@ -736,7 +736,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - Separately, `FUN_1000_0010` aligns to the conductor grid and writes `floor(60000000/BPM)`; for 69 BPM this is 869565 at tick 192. F-072 records the grid alignment calculation.
 - **Remaining detail:** the source of the pending delta that makes the queued 869000 event land at tick 8 is not yet fully derived from the `0xF9A:0xF9C` and `0x6F2:0x6F4` updates. The producer and value are known; do not claim the tick-8 scheduling mechanism is fully closed.
 
-**Sources:** private SNG2S decompilation `FUN_1000_3406` (1000:350A–3583), `FUN_1000_08EC`, `FUN_1000_0010`; reference `runner.MID`.
+**Sources:** private [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) `FUN_1000_3406` (1000:350A–3583), `FUN_1000_08EC`, `FUN_1000_0010`; reference `runner.MID`.
 
 
 ## F-074 — v1 tempo-stream start is marker +10; later versions use marker +12
@@ -787,7 +787,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - This rules out treating the first record's interval word (48 in `runner.SNG`) as the direct explanation for the observed tick-8 tempo meta. The remaining task is to account for the preamble's absolute tick and pending delta immediately before the post-`FUN_1000_33d4` drain, including which setup routines emitted the reference SysEx events at ticks 0/4/8/8.
 - **Still unproven:** the value and initialization source of `0x6EE`, the exact mapping between the `FUN_1000_2144` / `FUN_1000_1CE4` output calls and each reference SysEx payload, and the resulting numeric pending-delta state at the tempo drain. No runtime trace was performed.
 
-**Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` and reference `runner.MID`. Static analysis only.
+**Sources:** private [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` and reference `runner.MID`. Static analysis only.
 
 
 ## F-077 — MIMPIV4 playback uses a hardware-timer path distinct from SNG2S MIDI export
@@ -829,7 +829,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - Therefore, the number of pre-tempo queue drains cannot be computed from the function call graph alone. It depends on the initial values of `0x6F8`, `0x6FA`, `0x61E`, `0x620`, `0x62E`, `0x6FC`, the part-state array at `0x923`, and the actual command-line options. The current Ghidra text export omits initialized data-segment values, and the exact SNG2S invocation for the reference MIDI is unknown.
 - This is the concrete reason the tick-8 explanation remains incomplete: the queue-drain behavior is known (F-076), but the pre-drain pending delta and the exact preamble events are not yet grounded. Do not promote the likely `0x6EE = 4` / two-drain explanation to a fact until the data-segment values or a trace establish it.
 
-**Sources:** private SNG2S decompilation `FUN_1000_184A`, `FUN_1000_2144`, `FUN_1000_1CE4`, `FUN_1000_265C`; command-line and initialized data-segment values not fully available in the current export.
+**Sources:** private [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) `FUN_1000_184A`, `FUN_1000_2144`, `FUN_1000_1CE4`, `FUN_1000_265C`; command-line and initialized data-segment values not fully available in the current export.
 
 
 ## F-089 — runner.SNG v1 tempo records: 37 is the value word; 48/144/192 are interval words
@@ -872,7 +872,7 @@ For private `testdata/ballade/v1/runner.SNG`:
 - The grid-alignment arithmetic explains the exact-tempo event at the next bar/grid boundary. For the observed reference output, the current absolute tick before this calculation must be consistent with the earlier tick-8 event; however, the exact preamble state that causes the coarse event to land at tick 8 remains unresolved.
 - **Still open:** identify the initialized value/source of `0x6EE`, the exact preamble queue items and command-line flags used for `runner.MID`, and the pending-delta/absolute-tick state at the drain that emits the coarse 869000 event. No runtime trace was performed.
 
-**Sources:** private SNG2S decompilation `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` bytes and reference `runner.MID`. Static analysis only.
+**Sources:** private [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt) `FUN_1000_0010`, `FUN_1000_61EC`, `FUN_1000_3406`, `FUN_1000_08EC`; private `runner.SNG` bytes and reference `runner.MID`. Static analysis only.
 
 
 ## F-082 — TEST.SNG/TEST.MID independently confirms the v1 setup-SysEx schedule and the no-change tempo case
@@ -884,7 +884,7 @@ For private `testdata/ballade/v1/runner.SNG`:
 - Both `TEST.MID` and `runner.MID` contain the same setup SysEx schedule on track 1: events at ticks 0, 4, 8, and 8, with the first two payloads 12 bytes and the latter two 10 bytes. `runner.MID` then contains the coarse 869,000 µs/quarter tempo meta at tick 8; `TEST.MID` does not because its tempo value is unchanged.
 - This independent v1 fixture strengthens the explanation that tick 8 is the point reached by the common setup-output sequence before the queued coarse tempo meta is serialized. It still does not prove every possible v1 file uses identical setup records or eliminate the need to map each payload producer.
 
-**Sources:** private `testdata/ballade/v1/TEST.SNG`, `testdata/ballade/v1/sng2gs/TEST.MID`, `testdata/ballade/v1/sng2gs/runner.MID`; private SNG2S decompilation. Static event parsing, not playback.
+**Sources:** private `testdata/ballade/v1/TEST.SNG`, `testdata/ballade/v1/sng2gs/TEST.MID`, `testdata/ballade/v1/sng2gs/runner.MID`; private [SNG2S Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/sng2gs/Ghidra%2012.2/sng2gs%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt). Static event parsing, not playback.
 
 ## F-083 — SNG2S setup-template generation path is located, but reference SysEx payloads are not mapped
 
@@ -921,7 +921,7 @@ For private `testdata/ballade/v1/runner.SNG`:
 - Static disassembly confirms that the legacy loader copies a base-tempo byte from the legacy header to `0x7BF0` and `0x0440`, and timer initialization uses `0x0440`. A separate binary tempo-record consumer has not yet been identified.
 - Therefore, neither the manual nor the currently traced code establishes that MIMPIV4 playback uses the same tempo conversion formula as SNG2S MIDI export.
 
-**Source:** private reverse-engineering reference `testdata/ballade/MIMPI427/MIMPIV4.DOC` (playback screen / key controls / `/Tn` option) and static disassembly export. The private files remain private.
+**Source:** private reverse-engineering reference `testdata/ballade/MIMPI427/MIMPIV4.DOC` (playback screen / key controls / `/Tn` option) and [MIMPIV4 Ghidra 12.2 analysis export](https://github.com/pikachu364/glosa-private-data/blob/main/testdata/ballade/MIMPI427/Ghidra_12.2/mimpiv4%E8%A7%A3%E6%9E%90%E3%83%87%E3%83%BC%E3%82%BF.txt). The private files remain private.
 
 
 ## F-085 — SNG2S tempo-record decoder dataflow (2026-10-22)
