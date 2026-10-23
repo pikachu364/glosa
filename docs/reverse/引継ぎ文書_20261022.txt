@@ -9,7 +9,7 @@
 - SNG2S の静的解析では、raw tempo 37 と base tempo 120 から 69 BPM、粗い整数経路で 869000 µs/qn、192-tick grid 経路で 869565 µs/qn が得られる。tick 8 の pending-delta / absolute-tick の完全な因果関係は未解決。
 - grid 構造の絶対 offset は記録間で不一致。0x00B5 (=181)、231、0x74+125 (=241) を同じ位置とみなさず、元データとの再照合までは未解決とする。
 - `0x6EE = 4` は仮説であり、事実・実装条件として扱わない。
-- MIMPIV4 の timer 初期化は確認済みだが、SNG tempo-record から playback timer への経路は未特定。SNG2S の MIDI-export 式を流用しない。
+- MIMPIV4 の timer 初期化は確認済みだが、SNG tempo-record から playback timer への経路は未特定。`FUN_1000_341E` / `FUN_1000_3543` / `FUN_1000_2D27` に timer base 更新は見つからず、`FUN_1000_8888` の text-command 経路と binary SNG tempo record の接続も未確認。tempo record を無視する証明ではない。SNG2S の MIDI-export 式を流用しない。
 
 ## 次に行う作業
 [NEXT_STEPS.md](NEXT_STEPS.md) を作業一覧の正本とする。
@@ -34,6 +34,3 @@ T-011〜T-013 は完了した静的解析の記録であり、残件は T-017 �
 - private CI の結果は対象 commit とテスト範囲に限定する。Note-event signature / tempo byte sequence の一致を SMF 全体の byte-for-byte 一致とは言わない。
 - private fixture や解析 dump を公開 repository にコピーしない。
 - PR #9 は明示的な許可なしに merge しない。
-
-
-2026-10-24 追記: MIMPIV4 解析データの追加調査では、`FUN_1000_341E`（special-record payload scan）、`FUN_1000_3543`（event/duration pre-scan）、`FUN_1000_2D27`（Program Change remap）から timer base 更新への経路は見つからなかった。`FUN_1000_8888` はテキスト引数の相対値に `0x0440` を加えて予約するが、binary SNG tempo record との接続は未確認。T-016 は未解決のまま。これは tempo record を無視する証明ではなく、実再生イベント経路か runtime trace が次の根拠となる。
