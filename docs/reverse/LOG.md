@@ -513,3 +513,11 @@
 - したがって、この差分は converter の Note-event mismatch ではなく、テスト比較順序の問題と確認できた。v1 TEST.SNG tempo test も含めて pass。converter の追加変更は不要。
 - 現在の PR #9 head `3463baf2f59c2e31fc76c00846e88ac5e713f2b4` と private run の checkout を比較すると、後続の変更は docs のみで converter / tests に差分なし。PR #9 は引き続き open / unmerged。
 - 制約: tempo-event equality と Note-event signature equality の範囲を確認しただけで、SysEx payload、physical track/chunk order、全 controller/program/pitch-bend、runtime playback、byte-for-byte SMF equivalence は証明していない。
+
+## 2026-10-23 — 解析資料リンクを Ghidra 12.2 に統一
+
+- `docs/reverse/FACTS.md` の解析資料参照を見直し、SNG2S の曖昧なファイル名・旧パス・「private SNG2S decompilation」表記を Ghidra 12.2 の解析エクスポートへの明示リンクに統一した。
+- MIMPIV4 の FACTS F-077 も Ghidra 12.2 の解析エクスポートへのリンクに変更した。
+- これにより、参照する解析資料のバージョンを読み違えにくくした。事実記述や解析結論を変更したものではなく、リンクと出典表記の明確化である。
+- 更新後の `FACTS.md` を GitHub から再取得し、旧 `sng2gs解析データ.txt` 表記、曖昧な `private SNG2S decompilation`、`static disassembly export` 表記が残っていないことを確認した。
+- コミット: `6d931405fe00edf7a3b40dfd16672d01f4b4f979`（MIMPIV4 link）、`5d9e5aa72d8087a1c549514af86a1aff94f8ad7c`（SNG2S / FACTS source references）。converter / regression tests は変更していない。
