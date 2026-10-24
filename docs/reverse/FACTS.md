@@ -1042,3 +1042,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - These statements describe documented behavior/defaults only. The manual does not record the command line used to generate the saved `runner.MID` / `TEST.MID`; an output consistent with a default cannot distinguish an omitted switch from an explicitly supplied default switch.
 
 **Source:** `glosa-private-data/testdata/ballade/sng2gs/SNG2S.DOC` (SNG2S Ver 3.3). The private manual is not copied into the public repository.
+
+
+## F-099 — SNG2S README.DOC records version history and a Ver 3.3 track-conversion fix (2026-10-24)
+
+**Status:** confirmed from the accompanying SNG2S Ver 3.3 README; it is release documentation, not a runtime trace.
+
+- The README identifies the program as SNG2S Ver 3.3.
+- From Ver 2.0, the listed changes include Ballade 3 support, writing song titles and track names as MIDI meta-event `FF 03` instead of the previous `FF 01`, addition of `/DEF` to automatically create a MIMPI DEF file, and addition of `/MT`.
+- For the Ver 3.2 → 3.3 change, it says a bug was fixed where conversion with the `/N` option on Ballade 3 data failed to convert tracks 11 and above. It also notes unspecified optimizations that slightly reduced program size.
+- The README warns that SNG2S Ver 3.0–3.1 do not convert correctly and should not be used.
+- It points to `SNG2S.DOC` for the detailed option descriptions. The README alone does not define the exact semantics of `/DEF` or `/MT`, establish which switches were used for `runner.MID` / `TEST.MID`, or prove the runtime behavior of any particular fixture.
+
+**Source:** private `glosa-private-data/testdata/ballade/sng2gs/README.DOC` (SNG2S Ver 3.3). The private document itself is not copied into the public repository.
