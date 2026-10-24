@@ -405,7 +405,7 @@ MIMPIV4 の legacy loader が conductor/header 内の base-tempo byte を timer-
 
 `FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting that flag. The first call therefore follows a different pending-delta path from later calls.
 
-The arithmetic is now supported by static evidence. Why the coarse event is serialized at absolute tick 8 remains a separate question involving preceding setup-event drains and pending-delta/absolute-tick state. The initialized value of `0x6EE` is absent from the export, so four ticks remains unproven.
+The arithmetic is now supported by static evidence. Why the coarse event is serialized at absolute tick 8 remains a separate question involving preceding setup-event drains and pending-delta/absolute-tick state. The original executable's initialized data image confirms `DS:0x06EE = 4` at file offset `0x6B5E` (FACTS F-094). Static startup tracing now connects the two setup drains, the first scheduler call's special `0xF96` state, and the later queue drain to the tick-8 coarse tempo event when `0x622 == 0` (FACTS F-095). Runtime state and generalization beyond the inspected fixture remain unverified.
 
 ## 文書監査メモ（2026-10-22）
 
