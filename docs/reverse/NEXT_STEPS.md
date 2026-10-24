@@ -435,8 +435,8 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 - [x] Trace the class-1 fallback: `0x1B04=0`, so `0x1AF4` / `0x1AF6` provide `6,6`; `0x7BE=5`.
 - [x] Inspect the original `SNG2S.EXE` initialized image: `DS:0x07BC` maps to file offset `0x6C2C` and is initialized to `0x00`. Adjacent words initialize `0x7BE=5`, `0x7C0=0`, `0x7C2=5`, `0x7C4=3`.
 - [x] Trace the override gates: bits 0–2 of `0x7BC` control assignments to `0x7C0`, `0x7C2`, and `0x7C4`. The available full analysis export contains no direct store to `0x7BC`; indirect/aliased runtime writes are not fully ruled out.
-- [x] Match `FUN_1000_1CE4`'s `0xF34` / `0xF3F` output against reference MIDI ticks 100 and 104. The events `F0 41 10 16 12 10 00 01 00 06 06 63 F7` and `F0 41 10 16 12 52 00 01 00 06 06 21 F7` match the calculated arguments `0,6,6`, checksums, and terminators.
-- [x] Identify the earlier tick-4 / tick-8 pair as `FUN_1000_23C0(4)`: the calculated data `10 00 0F 03` and `52 00 0F 0F` match reference events `F0 41 10 16 12 10 00 0F 03 5E F7` and `F0 41 10 16 12 52 00 0F 0F 10 F7`, including checksum and `F7`.
+- [x] Match `FUN_1000_1CE4`'s `0xF34` / `0xF3F` output against reference MIDI ticks 100 and 104. The events at ticks 100 and 104 match the calculated arguments `0,6,6`, checksums, and terminators.
+- [x] Identify the earlier tick-4 / tick-8 pair as `FUN_1000_23C0(4)`: the calculated data values match the reference events at ticks 4 and 8, including checksums and terminators.
 - [x] Correct the earlier mismatch framing: the tick-4/tick-8 pair and tick-100/tick-104 pair are distinct producer paths, not competing expected values.
 - [x] Keep this v2 investigation separate from T-017's v1 tick-8 pending-delta problem and T-016's MIMPIV4 playback-tempo consumer.
 
