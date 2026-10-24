@@ -648,3 +648,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Updated FACTS F-057 to remove stale wording that the four SysEx producer paths were unresolved: tick 0/4 are covered by F-097 and tick 8/8 by F-101. Kept converter-side generation as an implementation gap.
 - Updated NEXT_STEPS T-002 / T-003 / T-017 to reflect the user-confirmed no-switch reference command, documented `/X2` default, completed static payload mapping, and the remaining distinction between static parser mapping and runtime flag state.
 - No converter or test code changed.
+
+
+## 2026-10-25 — SngConverter の先頭 track writer を再確認
+
+- 作業ブランチの `src/Glosa.Core/Smf/SngConverter.cs` を再取得し、`ToSmf` の SMF writer を確認。最初の track body が time-signature meta (`FF 58`) と tempo meta (`FF 51`) を出力し、その後に part 1→N の track を出力することを確認した。
+- 確認した writer 経路には、reference track 0 のタイトル文字列 meta-event、または reference track 1 の独立 `Exclusive` track を生成する処理がない。これは現行ソースの出力経路に関する確認であり、他のコード経路がないことまで一般化しない。
+- FACTS F-054 と NEXT_STEPS T-006 の既存記述を更新。物理 track layout の互換実装は引き続き保留し、v2/v3/v4 の reference layout と回帰範囲の確認を先行する。converter / test code は変更していない。
