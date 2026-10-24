@@ -197,6 +197,12 @@ The first two 12-byte setup SysEx events at ticks 0 and 4 are now mapped to `FUN
 **Remaining:** map the separate 10-byte setup events at ticks 8 and 8 to their producer path; establish the actual reference command line and runtime `0x622` value if recoverable; and retain the boundary that static analysis is not a runtime trace. Do not change converter behavior without an independent fixture comparison.
 
 
+
+
+### H-016 follow-up — v1 tick-8 setup SysEx mapping completed (2026-10-25)
+
+The separate 10-byte setup SysEx events at ticks 8 and 8 are now mapped to the static producer path `FUN_1000_33D4 → FUN_1000_3B68 → FUN_1000_3B78 → FUN_1000_3BA7`. The initialized template at `CS:0x3F82`, the initialized word `DS:0x07DE = 0x004B`, and the checksum/body/terminator calculations match both saved reference MIDIs byte-for-byte (FACTS F-101). This supersedes the earlier H-016 paragraph's remaining item about mapping the tick-8 setup SysEx. Runtime state, indirect writes, runtime trace, and generalization beyond the inspected fixtures remain unverified. Do not infer converter implementation support from this static mapping.
+
 ### H-015 follow-up — command-line token mapping refined (2026-10-24)
 
 The original executable's initialized data image and parser control flow now directly confirm `DS:0x0F05 = "XD\0"`: the parser compares a two-character option token against this string and writes `1` to `0x622` on a match (FACTS F-096). Thus `/XD → 0x622 = 1` is confirmed; the previous statement that the token-to-string mapping was unconfirmed is superseded. The help text documents `/XD` as disabling Exclusive/SysEx conversion.
