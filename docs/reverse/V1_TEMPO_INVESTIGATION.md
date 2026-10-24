@@ -1,6 +1,6 @@
 # v1 Tempo Event Investigation
 
-> **Current status (updated 2026-10-23):** The integer conversion for the coarse tempo event and the separate 192-tick grid path are supported by static analysis. The remaining tick-8 issue is event placement: pending delta / absolute tick and prior queue drains. `0x6EE` is read by setup paths, but its initialized value and exact SysEx mapping are not known. Do not assume it equals 4 or change converter timing without new evidence. See [NEXT_STEPS.md](NEXT_STEPS.md), T-017.
+> **Current status (updated 2026-10-25):** Static startup tracing and byte-level comparison with the saved reference MIDI now explain the inspected v1 path. The original EXE initialized image confirms `0x6EE = 4`; setup SysEx at ticks 0/4/8/8 has been mapped to producer paths, and both tick-8 payloads match byte-for-byte (FACTS F-094/F-095/F-097/F-101). The coarse 869,000 µs/qn event at tick 8 and exact 869,565 µs/qn event at tick 192 arise from distinct paths. Runtime trace/playback, indirect writes, and generalization to every v1 file remain unverified. Do not change converter timing on the basis of static analysis alone. See [NEXT_STEPS.md](NEXT_STEPS.md), T-017.
 
 ## Scope and current reference
 
@@ -21,19 +21,18 @@ The current converter has a dedicated v1 tempo path, and the public regression t
 - `FUN_1000_3406` processes 4-byte records through internal pointer `0x21E0`. The second word is normalized using the tempo base at memory address `0x2962`; raw value 37 with base 120 gives 69 BPM after integer arithmetic, corresponding to 869,565 µs/quarter.
 - The normal scheduler path increments pending delta accumulator `0xF9A:0xF9C`; `FUN_1000_08EC` flushes pending delta when emitting events and updates the absolute tick accumulator `0x6F2:0x6F4`.
 
-## Still unresolved
+## Remaining limitations
 
-- Which output tick receives the first tempo record.
-- How the reference value 869,000 µs/quarter at tick 8 is produced.
-- Static control flow identifies the 192-tick grid-aligned exact-tempo path, and its 869,565 value matches the reference event at tick 192. Runtime event-to-tick causality is still unverified.
-- The exact order and accumulator values across queue insertion, queue draining, countdown exceptions, and event output.
+- The static startup path explains the coarse tempo's tick-8 placement for the inspected reference path: the first two setup drains leave pending delta 4; the first `FUN_1000_3406` call skips the normal scheduler increment while `0xF96` is nonzero; when `0x622 == 0`, the pending delta survives to the subsequent queue drain (FACTS F-095). The user confirmed that the reference MIDI was generated without command-line switches, but no runtime invocation trace was performed.
+- The exact-tempo event at tick 192 is associated with the separate 192-tick grid path. Keep it distinct from the coarse tick-8 event.
+- Runtime memory state, possible indirect/aliased writes, and generalization beyond `runner.SNG` remain unverified. The analysis does not establish actual playback behavior in MIMPIV4.
 
 ## Next steps
 
-1. Continue only the remaining queue-state work listed in [NEXT_STEPS.md](NEXT_STEPS.md), T-017: pending delta / absolute tick before the tick-8 event, `0x6EE` initialization, and SysEx producer-to-payload mapping.
-2. Keep the 192-tick exact-tempo path separate from the coarse tick-8 tempo path; do not reopen completed integer-arithmetic analysis without contradictory evidence.
-4. Compare each proven output event with reference ticks 0, 8, and 192.
-5. Keep static deductions clearly distinguished from runtime-trace evidence.
+1. Keep converter behavior and v1 tempo regression tests unchanged until independent validation is available.
+2. If a runtime trace or executable test environment becomes available, record `0x622`, `0xF9A:0xF9C`, and `0x6F2:0x6F4` around startup drains and compare against ticks 0/8/192.
+3. Keep the SNG2S MIDI-export tempo path separate from the unresolved MIMPIV4 playback-tempo consumer.
+4. Preserve the distinction between static executable/data-image evidence and runtime-trace evidence.
 
 ## Evidence limitations
 
