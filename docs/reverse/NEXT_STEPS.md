@@ -9,6 +9,7 @@
 - **v2〜v4 saved MIDI audit (2026-10-25):** reference と保存済み Glosa MIDI をバイナリ解析し、各版で Glosa 側が物理 track 1本少ないこと、reference track index 1 に独立 SysEx track があること、パート順が逆方向であること、tempo event に差があることを記録（比較文書 §20）。これは保存済み旧出力の比較であり、現行コードからの再生成結果ではない。次は private fixture workflow で現行 PR head を指定して再検証し、現行挙動と旧生成物の差を切り分ける。
 - **オプションフラグ:** parser の文字列と分岐から `/XD → 0x622 = 1` は直接確認済み（F-096）。reference MIDI の生成時に `/XD` が指定されたかは不明だが、ユーザー確認では生成コマンドにオプションなし。`/F` token-to-flag の直接対応は未確認。
 - **残る制約:** 解析は original EXE initialized image、静的命令列、保存済み MIDI の照合であり、runtime trace / 実再生は未実施。indirect writes と inspected fixture 以外への一般化は未証明。converter と tempo regression tests は変更しない。
+- **現行 private CI の追加結果（2026-10-25）:** PR head の v2〜v4 参照イベント比較で 4 件失敗（v2 SHIZUME0 の Note event、v2 SHIZUME0 / v3 START__0 / v4 BOURREE0 の tempo event）。v2 Note event は reference の先頭 tick 128 に対し Glosa が 288。tempo は v2 reference tick 128=1,000,000 µs に対し Glosa は tick 288=500,000 µs、v3 reference は tick 0=500,000 → tick 92=361,000 → tick 192=361,445、Glosa は tick 0=361,445 → tick 192=361,445 → tick 384=895,522、v4 も reference の coarse tempo event（tick 116=260,000）を欠き、exact tempo の tick/value もずれる。これは旧保存 MIDI audit だけでなく、現在の converter を再実行した比較で確認された実装差。原因が確定するまで、オフセットだけの修正やテスト条件の緩和はしない。
 ## reverse 文書全体の監査（2026-10-22）
 
 - 対象: README、FACTS、HYPOTHESES、LOG、BALLADE_LAYOUT_COMPARISON、V1_TEMPO_INVESTIGATION、引継ぎ文書。
