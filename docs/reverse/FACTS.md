@@ -579,7 +579,7 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - 参照 MIDI は 12 個の `MTrk` chunk を持つ。index 0 はタイトル文字列と conductor metadata を含む track、index 1 は Text meta `Exclusive` と SysEx 4件を含む track、index 2〜10 は Note-on を持つ part track、index 11 は Note-on のない `Keyboard` track（FACTS F-057）。
 - Note-on を持つ track の順は channel 9 / part 10（Rhythm、928件）、channel 8 / part 9（Per.、480件）、channel 7 / part 8（Bass、61件）、channel 6 / part 7（Backing、688件）、channel 5 / part 6（Chord2、146件）、channel 4 / part 5（Chord1、234件）、channel 3 / part 4（Mero.3、110件）、channel 2 / part 3（Mero.2、175件）、channel 1 / part 2（Mero.1、473件）。末尾 track は channel 0 / part 1（Keyboard）で Note-on は0件。
 - ユーザーが確認した生成方法はオプションなしの `sng2gs.exe runner.sng`。したがって、観測された part 10→1 順はマニュアルの v1〜v3 default order と整合し、`/F` を指定したと仮定する必要はない（FACTS F-098/F-100）。
-- 現行 `SngConverter.ToSmf` は conductor track 1本の後に `tracks` を part 1→N の順で書き、独立した `Exclusive` track を生成しない。このため physical track count / role / order は参照 MIDI と異なる。channel `part - 1` が一致することとは別の互換性差である。
+- 現行 `SngConverter.ToSmf` は conductor 相当の最初の track body に time-signature meta (`FF 58`) と tempo meta (`FF 51`) を書き、その後に `tracks` を part 1→N の順で出力する。確認した writer 経路では、参照 track 0 にあるタイトル文字列の meta-event と、track 1 の独立した `Exclusive` track を生成していない。このため physical track count / role / order は参照 MIDI と異なる。channel `part - 1` が一致することとは別の互換性差である。
 - track name は旧コードページ由来の文字列を含むため、単純な ASCII 文字列比較は正しい互換性検証にならない可能性がある。
 
 **残る確認:** `/F` の実行時出力は参照実行ファイルがないため未検証。ただし default reference の order は確認済み。互換実装前に v2/v3/v4 の物理 track order、title/conductor track と Exclusive track の生成条件、空 track 保持を回帰テスト計画に含める。
