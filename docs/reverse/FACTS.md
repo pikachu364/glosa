@@ -1079,3 +1079,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - `0x25DA < 2` の分岐では A の後、`0x6FA != 2` の場合だけ B を出力して return する。`0x3FA0` は別経路の template で、今回の tick-8 2件には使われない。
 
 **Sources:** private `SNG2S.EXE` initialized image; static paths `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3B68`, `FUN_1000_3BA7`, `FUN_1000_3FA6`, `FUN_1000_407F`; private `runner.MID` and `TEST.MID` SysEx payloads. Static image/payload comparison only; no runtime trace, MIDI regeneration, or playback.
+## F-102 — 現行 v2〜v4 private fixture 比較で Note / tempo event の差を再確認（2026-10-25）
+
+**状態:** private-data CI の現行 converter 実行結果と reference MIDI 比較から確認。これは保存済み旧 Glosa MIDI の監査とは別の結果。CI ログに出たイベント署名を記録したもので、原因の完全な説明や修正済みを意味しない。
+
+- `PrivateV2ToV4MatchReferenceNoteEvents(v2, SHIZUME0.SNG, SHIZUME0.MID)` が失敗。ログの最初の差では reference の Note event が tick 128、Glosa が tick 288（同じ音高群が並ぶ）。従って現行変換の時刻差は保存済み MIDI だけに限定されない。
+- `PrivateV2ToV4MatchReferenceTempoEvents(v2, SHIZUME0.SNG, SHIZUME0.MID)` が失敗。reference は tick 0 = 500000、tick 128 = 1000000 µs/quarter。Glosa は tick 0 = 500000、tick 288 = 500000、続いて tick 780 = 508474。
+- v3 `START__0.SNG` の tempo 比較が失敗。reference は tick 0 = 500000、tick 92 = 361000、tick 192 = 361445、tick 383 = 895000、tick 575 = 983000。Glosa は tick 0 = 361445、tick 192 = 361445、tick 384 = 895522、tick 576 = 983606。
+- v4 `BOURREE0.SNG` の tempo 比較が失敗。reference は tick 0 = 500000、tick 116 = 260000、tick 192 = 260869、tick 407 = 258000、tick 443 = 256000。Glosa は tick 0 = 260869、tick 192 = 260869、tick 408 = 258620、tick 444 = 256410。
+- この結果から、後続版 `ReadTempi()` が reference の coarse tempo-change event、初期 default tempo、および grid-boundary の exact tempo event を正しく再現できていないことが確認できる。一方、個々の SNG tempo record と reference event tick の対応、版別 scheduler の時刻計算式は未確定。v2 note discrepancy も record-step の意味を特定するまで固定 tick 補正で修正しない。
+
+**制約:** これは private fixture を使った比較テストの結果であり、全 SNG ファイルへの一般化、byte-for-byte SMF 同等性、SysEx / track chunk の同等性、実再生は証明しない。修正後は同じ private workflow で再検証する。
