@@ -636,3 +636,9 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Updated the current T-017 status to reflect the original EXE initialized bytes, static producer paths, and byte-for-byte comparison of both 10-byte SysEx payloads at tick 8 in `runner.MID` and `TEST.MID` (FACTS F-101).
 - The earlier tick-8 payload uncertainty is closed for these saved references. The remaining boundary is runtime state / playback, indirect or aliased writes, and generalization to every v1 file; no converter or test changes were made.
 - Reconciled the top-level status in `NEXT_STEPS.md`, the current status and next steps in `V1_TEMPO_INVESTIGATION.md`, and the SysEx subsection in `BALLADE_LAYOUT_COMPARISON_2026-10-21.md`. Older dated notes remain as historical records and are superseded by the current findings.
+
+## 2026-10-25 — v1 default track order compared with reference MIDI
+
+- Compared the confirmed no-switch generation procedure with the saved `runner.MID` physical chunk order and the SNG2S v3.3 manual. The reference's part track order is 10→1, matching the documented v1–v3 default; the empty part-1/Keyboard track is retained.
+- Documented the separate current-Glosa layout gap: its writer emits one conductor track followed by parts in ascending order and does not emit the reference's dedicated `Exclusive` track. Channel-to-part mapping (`channel = part - 1`) is a separate concern.
+- `/F` runtime behavior remains untested because the executable is unavailable. No converter or test code was changed; track-layout implementation remains gated on resolving track roles and cross-version regression coverage.
