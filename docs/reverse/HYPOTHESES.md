@@ -239,3 +239,14 @@ Static tracing of `FUN_1000_3406` confirms that SNG2S reads a tempo value from t
 `FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting it. The first call therefore skips the pending-delta increment used by later calls.
 
 Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute tick 8. `0x6EE` is read by setup paths, but its initialized value is missing from the export. The proposed value 4 remains a hypothesis only. Runtime state or initialized data is needed before changing converter behavior.
+
+### H-019 — `0x7BC` controls preservation of legacy setup parameters; writer not yet located (2026-10-24)
+
+**Status:** bit-level consumer is confirmed statically; flag initialization and runtime values remain unknown.
+
+- In `FUN_1000_272A`, bits 0–2 of `0x7BC` independently decide whether calculated values replace `0x7C0`, `0x7C2`, and `0x7C4`. A set bit skips the corresponding assignment and retains the prior value.
+- A search of the available SNG2S export found the three bit tests in the loader and no direct store to `0x7BC`. This only establishes that a writer was not found in the available export text; it does not rule out initialized data, an indirect/aliased write, omitted instructions, or a path outside the export.
+- For v2 `SHIZUME0.SNG`, the calculated fallback values are `0, 6, 6` if all three bits are clear. That conditional result does not match the already-extracted v2 MIDI payload values, so the actual flag state or another setup path must be resolved before claiming a producer-to-payload mapping.
+- Do not set the flags to zero in Glosa or infer their values from the reference MIDI alone.
+
+**Next evidence:** inspect the original EXE initialized data/relocations and all startup/setup paths that could write or alias `0x7BC`; then compare each generated template byte against the complete reference SysEx events. If static export cannot resolve the writer, retain the uncertainty rather than inventing a flag default.
