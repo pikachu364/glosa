@@ -186,22 +186,13 @@ The old `0x622 ↔ /F` mapping is withdrawn. The `/XD → 0x622 = 1` token mappi
 **次の確認:** `0x622` の参照実行時の値と、runtime での indirect/aliased write を確認できる手段があれば検証する。静的 startup path は F-095 に整理済み。
 
 
-### H-016 follow-up — initialized value and static tick-8 path confirmed (2026-10-24)
+### H-016 follow-up — initialized value, tick-8 path, and first setup-pair mapping (2026-10-24)
 
-**更新状態（2026-10-24）:** 元の EXE の初期化済み data image から `DS:0x06EE = 4` を確認した（FACTS F-094）。さらに startup call order / pending-delta の静的追跡が tick 8 の粗い tempo event を説明する（FACTS F-095）。runtime trace と全ファイルへの一般化は未実施。
+The original executable's initialized data image confirms `DS:0x06EE = 4` (FACTS F-094). Static startup call-order/pending-delta analysis explains the coarse tempo event at tick 8 for the inspected runner path (FACTS F-095), subject to runtime-state and generalization caveats.
 
-参照 `runner.MID` を SMF として直接解析すると、track 1 の SysEx event は tick 0 / 4 / 8 / 8 に出力されている（FACTS F-068）。一方、v1 の `FUN_1000_1CE4` は条件成立時に2回 SysEx-style event を生成して drain し、各 drain 後に `0x6EE` を pending delta `0xF9A:0xF9C` に設定する。`FUN_1000_3F79` の共通 byte 列、`FUN_1000_5FAA` のデータ生成、`FUN_1000_3F54` の checksum 用和計算、`FUN_1000_3EED` の checksum + `F7` 追加から、これらが SysEx 形式であることは静的に支持される。
+The first two 12-byte setup SysEx events at ticks 0 and 4 are now mapped to `FUN_1000_1CE4` templates `0xF34` / `0xF3F` by comparing formatted arguments, checksum, terminator, and event length against both saved reference MIDIs (FACTS F-097). The `runner.MID` pair uses arguments `0,5,6`; `TEST.MID` uses `0,5,5`. Private payload bytes are intentionally not copied into the public docs.
 
-この2回の drain が track 1 の tick 0 と tick 4 の最初の2件に対応するなら、`0x6EE = 4` と推定でき、2回目の drain 後に残る delta 4 は次の出力を tick 8 に進め得る。これは tick 8 tempo の説明につながる具体的候補だが、まだ以下が未確認である。
-
-- `0xF34` / `0xF3F` から作られる queue payload が、参照 SysEx のどの payload と一致するか。
-- queue drain ごとの `0x6F2:0x6F4` と `0x1ED8:0x1EDA` の実際の値。
-- 参照実行時の `0x622` が pending delta reset を有効にしたか。
-
-したがって `0x6EE = 4` は on-disk 初期値として確認済みで、startup call order と pending-delta の静的追跡は tick 8 を説明する（FACTS F-095）。ただし runtime trace はなく、全 v1 ファイルへの一般化も未証明。converter の変更は独立した fixture 比較なしに行わない。
-
-
-追加の対応根拠（2026-10-21）: 参照 MIDI の最初の2件の SysEx は、どちらも payload 12 bytes で共通 prefix を持つ。一方、`FUN_1000_1CE4` の最初の2経路は同じ SysEx-style builder を使い、異なる文字列 offset `0xF34` / `0xF3F` のデータを出力して checksum と `F7` を追加する。event 数・形式・順序・tick 間隔が整合するため、これらが tick 0 / 4 の2件に対応し `0x6EE = 4` となる推定は以前より強い。ただし文字列データ本体が解析資料にないため byte-for-byte の照合は未完了で、確定事実には格上げしない。
+**Remaining:** map the separate 10-byte setup events at ticks 8 and 8 to their producer path; establish the actual reference command line and runtime `0x622` value if recoverable; and retain the boundary that static analysis is not a runtime trace. Do not change converter behavior without an independent fixture comparison.
 
 
 ### H-015 follow-up — command-line token mapping refined (2026-10-24)
