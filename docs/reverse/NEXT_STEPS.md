@@ -336,10 +336,11 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Confirm the parser mapping `/XD → 0x622 = 1` from the original executable's initialized bytes and comparison branch (FACTS F-096). The actual options used to create `runner.MID` / `TEST.MID` remain unknown; `/F` token-to-flag mapping is also not directly confirmed.
 - [x] Map the first two v1 setup SysEx events at ticks 0 and 4 to `FUN_1000_1CE4` templates `0xF34` / `0xF3F`; formatted arguments, checksums, terminators, and lengths match both `runner.MID` and `TEST.MID` (FACTS F-097). Private payload bytes are not copied into public docs.
 - [x] Trace the startup call `FUN_1000_33D4` → `FUN_1000_3B68` → `FUN_1000_3B78` → `FUN_1000_3BA7`; identify the two message bodies and checksum formulas (FACTS F-101).
-- [ ] Recover the four bytes terminated by `0xFF` at template `CS:0x3F82`, and establish the runtime value of `0x7DE`. Then compare the calculated 10-byte messages with the two reference events at tick 8. Do not generalize the v2 producer mapping resolved in T-018 to v1 without evidence.
-- [ ] Keep converter behavior and tempo tests unchanged until independently validated. The static tick-8 mechanism explains the inspected runner path, but runtime state and generalization to every v1 file are not proven.
+- [x] Read the initialized bytes at `CS:0x3F82`: `F0 41 10 16 12 FF`. The four payload-template bytes after the SMF SysEx status are `41 10 16 12`; `0xFF` is the template terminator.
+- [x] Read the initialized word at `DS:0x07DE` as `0x004B` and compare the formula results with the saved tick-8 events in both `runner.MID` and `TEST.MID`. Both 10-byte event payloads match byte-for-byte (FACTS F-101).
+- [ ] Keep converter behavior and tempo tests unchanged until independently validated. The static tick-8 mechanism explains the inspected reference path, but runtime state and generalization to every v1 file are not proven.
 
-**Current result:** the exact grid-aligned tempo path and the static startup mechanism for the coarse tick-8 placement are explained (FACTS F-072/F-080/F-095). The explanation is bounded to the inspected reference path; runtime state, indirect writes, and generalization to all v1 files are not proven.
+**Current result:** setup SysEx payloads at ticks 0, 4, and both tick-8 events are matched to static producer paths and reference MIDI. The initialized `0x6EE = 4` value and tick-8 setup-template bytes are recovered. The coarse tempo's tick-8 placement has a static explanation (FACTS F-072/F-080/F-094/F-095/F-097/F-101), but runtime state, indirect writes, and generalization to all v1 files remain unproven.
 
 ### Follow-up trace — scheduler calls are not yet a tempo-record consumer (2026-10-22)
 
