@@ -452,3 +452,9 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 - [x] `README.DOC` を確認し、対象資料が SNG2S Ver 3.3 であること、Ver 3.2 → 3.3 で Ballade 3 + `/N` 時の 11 トラック目以降の変換欠落が修正されたことを記録した（FACTS F-099）。
 - [x] Ver 3.0〜3.1 は正しい変換を行わないという README の警告を記録した。
 - [x] `/DEF` と `/MT` は Ver 2.0 からの追加オプションと分かったが、README には詳細仕様がないため、推測で意味を補わない。
+
+
+### Reference generation command confirmed (2026-10-24)
+- [x] Record the user's confirmation that `runner.MID` / `TEST.MID` and the other `sng2gs` outputs were generated with commands such as `sng2gs.exe runner.sng` and `sng2gs.exe TEST.sng`, with no switches.
+- [x] Treat these files as default-behavior references; do not explain them by assuming explicit `/F`, `/N`, or `/X1` arguments.
+- [ ] Compare observed empty-track retention and track order against the documented default behavior, keeping observed output separate from unproven internal implementation details.
