@@ -179,7 +179,7 @@ This section replaces the earlier H-015 wording that associated `0x622` with `/F
 
 **状態:** 用途については静的根拠あり、意味・値・単位は未確定。
 
-- 解析テキストの命令行にある `[0x6EE]` 参照29箇所はすべて読み出しで、直接書き込みは見つかっていない。
+- 完全な 18,795 行の SNG2S 解析 export を再走査したところ、`0x6EE` はテキスト上 58 箇所に現れる。これは decompiler 表現と命令行表現の両方を含む。命令行の参照は読み出しのみで、直接書き込みは見つからない。export は初期化済み data segment の実バイトを含まないため、初期値や indirect/aliased write はこの検索だけでは確定できない。
 - `FUN_1000_1CE4` の queue drain 後には、読み出した値を `0x1ED8:0x1EDA` に加算し、同値を `0xF9A:0xF9C` にセットする。別の event-output path にも同じ形があるため、単なる tempo 値というより、出力間隔・delta に関係する共通値である可能性がある。
 - ただし初期化データ、別名参照、間接 store の可能性が残る。値が分からないため、MIDI tick との換算や tick 8 との対応はまだ導けない。
 
@@ -214,7 +214,7 @@ Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includ
 **Status:** repeated use confirmed by static control flow; numeric value and exact event mapping unconfirmed.
 
 - The SNG2S export contains repeated reads of `0x6EE` across setup/preamble emitters. Observed paths add it to `0x1ED8:0x1EDA` and set it as pending delta in `0xF9A:0xF9C`.
-- A text search found no direct write to `0x6EE` in the available export. The initialized data segment is not included, so the numeric value cannot be read from this artifact.
+- A full scan of the available 18,795-line export found 58 textual occurrences of `0x6EE` (decompiler and assembly views of the same code included); the assembly references are reads and no direct store appears. The initialized data segment is not included, so the numeric value cannot be read from this artifact.
 - `FUN_1000_08EC` serializes pending delta through `FUN_1000_16E6` and advances output absolute tick `0x6F2:0x6F4`. This establishes the scheduler relationship, not the value of `0x6EE`.
 - The value 4 remains compatible with reference SysEx events at ticks 0/4/8, but the event-by-event mapping and initial value are not proven. Do not promote `0x6EE = 4` to a fact or use it to alter converter behavior.
 - Best next evidence: the original initialized data segment or a runtime trace that records `0x6EE` and the scheduler state at each setup emission.
