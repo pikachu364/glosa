@@ -1,22 +1,13 @@
-# 逆解析の進捗サマリー（2026-10-23 更新）
+# 逆解析の進捗サマリー（2026-10-25 更新）
 
 ## 現在地
 
-> **作業境界:** 未完了作業の正本は T-017（tick-8 queue state / 0x6EE / setup SysEx mapping / reference invocation）、T-014（3/4 rounding）、T-015（v2 tempo audit）、T-016（MIMPIV4 playback tempo）。T-011〜T-013 は静的解析の記録として扱い、同じ残件を重複管理しない。
+> **作業境界:** T-017 の v1 SNG2S coarse tick-8 tempo と setup SysEx の静的対応付けは、保存済み reference MIDI に対する byte-level 比較まで進んだ。残るのは runtime state の確認と全 v1 ファイルへの一般化。別件の T-014（3/4 rounding）、T-015（v2 tempo audit）、T-016（MIMPIV4 playback tempo）は混同せず継続する。
 
-- **進行中の最優先課題:** SNG2S では setup 出力が `FUN_1000_33D4` より先にキューへ積まれ、初回 `FUN_1000_3406` が coarse tempo meta を追加してから `FUN_1000_08EC` がまとめて drain する呼び出し順を確認済み。これが tick 8 になる流れと整合するが、個々の SysEx payload と pending-delta 値の完全な対応は未確定。tick 192 は別経路の 192-grid alignment で説明できる（FACTS F-080/F-073/F-076/F-082）。
-- **参照 MIDI で確認済み:** `runner.MID` は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。`TEST.MID` は tick 0 の 500,000 のみ。両方とも setup SysEx は track 1 の tick 0/4/8/8 にある（FACTS F-082）。time signature は tick 0 の 4/4。
-- **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
-- **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
-- **オプションフラグ対応の再評価:** 下流の用途から `0x626 ↔ /F`（track-order table 選択）、`0x622 ↔ /XD`（SysEx 抑制）が最有力。以前の `0x622 ↔ /F` 仮説は撤回する。parser の比較 operand `0xF05` が `/XD` 文字列に対応すること、token bytes、参照生成時の実際の引数は未確認。FACTS F-069 を参照。
-- **実装への影響:** v1 の汎用 ReadTempi ガードと既存の v1 tempo regression tests を維持する。tick 8 の内部 delta 説明が未確定であることと、現在の実装が参照値を出力することは区別する。新しい tempo 挙動を推測で追加せず、v2–v4 の既存挙動も変更しない。
-- **直近の実装側 CI:** head `3ce65a96` の CI run [39764666646](https://github.com/pikachu364/glosa/actions/runs/39764666646) は成功済み。
-- **今回の文書監査後 (2026-10-22):** docs-only 更新でも PR CI が起動する。直近の結果は GitHub Actions で確認し、queued / in progress を成功扱いしない。実装側の直近成功 run と文書のみの更新後 run は区別する。PR #9 は open / unmerged。
-- **jmplayer の v1 layout rejection:** private `runner.SNG` の実バイト列と現在の `sngmidi.cpp` を照合し、3つの header candidate がすべて part 1 の後続版 offset validation で失敗することを確認（FACTS F-075）。これは静的再現であり、jmplayer を実行してエラーダイアログを採取したものではない。
-- **実データで再確認:** `runner.SNG` は 85,897 bytes、tableEnd=114、legacy headerEnd=116、part 1 start=1510。v1 の +80 block size、+115/+117 length fields、+119 の13 seek 値の合計は実データと一致（FACTS F-037–F-040/F-075）。
-- **MIMPIV4 のタイマー経路:** legacy loader が base-tempo byte を `0x440` / `0x7BF0` に設定し、interrupt-8 hook と I/O timer divisor calculation (`FUN_1FF5_0D61` / `FUN_1FF5_0DFA`) を使用することを確認（FACTS F-077）。v1 tempo-record から実際の playback period / delta への経路は未確定。
-- **作業の種類:** ここまでの tempo / jmplayer 調査は静的解析。実行時トレース・実再生確認は未実施。
-
+- **T-017 の進展:** 元 EXE initialized image から `DS:0x06EE = 4`、`DS:0x07DE = 0x004B`、`CS:0x3F82 = F0 41 10 16 12 FF` を確認。静的 call order と reference MIDI を照合し、tick 0/4 の 12-byte SysEx 2件、tick 8 の 10-byte SysEx 2件すべてを producer path / payload と対応付けた（FACTS F-094/F-095/F-097/F-101）。
+- **tempo event:** `runner.MID` の tempo は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。`TEST.MID` は tick 0 の 500,000 のみ。coarse tempo の tick 8 placement は、setup drains の後に pending delta 4 が残る startup path と整合する。tick 192 の exact tempo は別の 192-tick grid path（FACTS F-072/F-080/F-095）。
+- **オプションフラグ:** parser の文字列と分岐から `/XD → 0x622 = 1` は直接確認済み（F-096）。reference MIDI の生成時に `/XD` が指定されたかは不明だが、ユーザー確認では生成コマンドにオプションなし。`/F` token-to-flag の直接対応は未確認。
+- **残る制約:** 解析は original EXE initialized image、静的命令列、保存済み MIDI の照合であり、runtime trace / 実再生は未実施。indirect writes と inspected fixture 以外への一般化は未証明。converter と tempo regression tests は変更しない。
 ## reverse 文書全体の監査（2026-10-22）
 
 - 対象: README、FACTS、HYPOTHESES、LOG、BALLADE_LAYOUT_COMPARISON、V1_TEMPO_INVESTIGATION、引継ぎ文書。
