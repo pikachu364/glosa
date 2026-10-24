@@ -655,3 +655,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 作業ブランチの `src/Glosa.Core/Smf/SngConverter.cs` を再取得し、`ToSmf` の SMF writer を確認。最初の track body が time-signature meta (`FF 58`) と tempo meta (`FF 51`) を出力し、その後に part 1→N の track を出力することを確認した。
 - 確認した writer 経路には、reference track 0 のタイトル文字列 meta-event、または reference track 1 の独立 `Exclusive` track を生成する処理がない。これは現行ソースの出力経路に関する確認であり、他のコード経路がないことまで一般化しない。
 - FACTS F-054 と NEXT_STEPS T-006 の既存記述を更新。物理 track layout の互換実装は引き続き保留し、v2/v3/v4 の reference layout と回帰範囲の確認を先行する。converter / test code は変更していない。
+
+
+## 2026-10-25 — reverse README / hypothesis status synchronization
+
+- Audited current summary statements against FACTS F-057, F-097, and F-101. Updated `README.md` so the v1 tick-8 / tick-8 setup SysEx pair is no longer described as unmapped; it now records the static producer path and byte-level match, while retaining the runtime-trace/playback and Glosa implementation limits.
+- Added a dated follow-up under H-016 to mark the tick-8 setup SysEx producer mapping complete for the inspected reference files. Earlier text remains as historical context; the follow-up explicitly supersedes that item.
+- No converter or test code changed. No claim of current-HEAD CI success is made from this documentation-only update.
