@@ -1,5 +1,12 @@
 # 調査ログ
 
+## 2026-10-25 — v1 tick-8 SysEx producer path narrowed
+
+- Static call-chain review found startup calls `FUN_1000_3B68` after `FUN_1000_3406`; `FUN_1000_3B68` can call `FUN_1000_3BA7` when `0x7DE` changes.
+- `FUN_1000_3BA7` contains template-plus-six-byte output paths consistent with 10-byte messages if the template is four bytes. This is a supported candidate for the two 10-byte SysEx events at tick 8, not yet a byte-for-byte mapping.
+- Recorded the bounded result as FACTS F-101 and retained template bytes / runtime branch conditions as open work. No converter code, tests, or MIDI fixtures were changed.
+
+
 ## 2026-10-25 — SNG2GS /DEF の位置づけを確定
 
 - SNG2S Ver. 3.3 説明書の記述に基づき F-051 を整理し直した。`/DEF` は MIMPI V4 のチャンネル音源名・トラック名表示用ファイルの自動生成であり、MIDI 変換・演奏の必須要件ではない。
