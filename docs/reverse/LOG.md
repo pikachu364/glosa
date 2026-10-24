@@ -596,3 +596,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - README に明記された Ver 2.0 からの変更（Ballade 3 対応、タイトル/トラック名の meta-event `FF 03` 化、`/DEF` と `/MT` の追加）、Ver 3.2 → 3.3 の `/N` 使用時に Ballade 3 の 11 トラック目以降が欠落する不具合修正、Ver 3.0〜3.1 の使用警告を記録した。
 - `/DEF` と `/MT` の具体的な仕様、保存済み reference MIDI の実際の起動オプション、個別 fixture の runtime behavior は README からは確定できないと明記。詳細オプションは `SNG2S.DOC` を参照するという README の案内も保持。
 - private README の本文や private fixture / payload bytes は public repository に複製していない。converter/test code の変更、build、test、runtime conversion、playback は行っていない。
+
+
+## 2026-10-24 — Reference MIDI の生成コマンドを確認
+
+- 利用者から、`runner.MID` / `TEST.MID` とその他の `sng2gs` 生成物は `sng2gs.exe runner.sng`、`sng2gs.exe TEST.sng` のようにオプションなしで生成したと確認。
+- このため、保存済み MIDI はデフォルト動作の reference として扱う。`/F`、`/N`、`/X1` などの明示指定を仮定しない旨を FACTS F-100、比較文書 section 18、NEXT_STEPS に反映。
+- MIDI の構造確認は既存 reference の静的解析。converter/test code は変更しておらず、再変換・再生・build・test は実施していない。
