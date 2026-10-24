@@ -449,3 +449,15 @@ private `testdata/ballade/sng2gs/SNG2S.DOC`（SNG2S Ver 3.3）には、起動形
 参照 MIDI に SysEx events があるため、実効変換では `/XD` による SysEx 抑止は有効でなかった。一方、マニュアルは `runner.MID` / `TEST.MID` を作成した実際のコマンドラインを記録していない。特に `/1` と `/X2` はデフォルトなので、出力だけから「省略された」のか「明示された」のかは区別できない。
 
 **次の確認:** reference MIDI のトラック順を manual の `/F` 有無の規則と比較する。これは実効挙動の推定には役立つ可能性があるが、実際に入力された command line の証拠とは区別する。
+
+
+## 17. 追加資料（2026-10-24）：README.DOC の版履歴と Ver 3.3 修正
+
+private `testdata/ballade/sng2gs/README.DOC` は、対象プログラムを SNG2S Ver 3.3 と記載し、版履歴を補足する（FACTS F-099）。
+
+- Ver 2.0 からの変更として、Ballade 3 対応、曲タイトル・トラック名を MIDI meta-event `FF 03` で出力（従来 `FF 01`）、`/DEF` による MIMPI 用 DEF ファイル自動作成、`/MT` の追加が列挙されている。
+- Ver 3.2 から 3.3 では、Ballade 3 データを `/N` 付きで変換した際に 11 トラック目以降が変換されない不具合を修正したと記載されている。ほかに、プログラムサイズを少し小さくする最適化が記されている。
+- Ver 3.0〜3.1 は正しい変換を行わないため使用しないよう警告している。
+- `/DEF` と `/MT` の詳細な意味は README だけでは分からず、README 自身が `SNG2S.DOC` を参照するよう案内している。
+
+これは付属 README に書かれたリリース情報であり、保存済み `runner.MID` / `TEST.MID` の実際の起動オプションや、個々の fixture における実行時挙動を証明するものではない。private README の本文や fixture データは public repository に複製していない。
