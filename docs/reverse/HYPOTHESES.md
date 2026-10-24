@@ -164,12 +164,14 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 **Status:** `/XD → 0x622 = 1` is confirmed from the initialized data image and parser branch (FACTS F-096). The actual command line used to create the saved reference MIDIs remains unknown; `/F → 0x626` is still a best-fit interpretation rather than a direct token-to-flag proof.
 
 - `FUN_1000_184A` compares a two-character option token at operand `0xF05`. The original executable's initialized data image confirms `DS:0x0F05 = "XD\0"`; a match writes `1` to `0x622` (FACTS F-096).
-- Downstream use agrees with the documented meaning of `/XD`: `0x622` suppresses SysEx payload output in `FUN_1000_08EC`. The executable's help text documents `/XD` as disabling Exclusive/SysEx conversion.
+- Downstream use agrees with the documented meaning of `/XD`: `0x622` suppresses SysEx payload output in `FUN_1000_08EC`. `SNG2S.DOC` independently documents `/XD` as disabling Exclusive/SysEx generation (FACTS F-098).
 - `0x626` selects an alternate track-order table in `FUN_1000_0010`, which fits the documented `/F` option, but this finding does not directly prove the `/F` token-to-flag mapping.
-- The saved reference MIDIs contain SysEx events, so `/XD` was probably not active for those runs. This is an inference from output, not proof of the actual command line or runtime flag state.
+- The saved reference MIDIs contain SysEx events, so `/XD` was not active in the effective conversion path for those outputs. This rules out a successful run with SysEx suppression enabled, but does not recover the full command line or prove which other switches were explicitly supplied.
 - `0x6EE` is now confirmed as initialized value 4 on disk, and the static startup call-order explains the coarse tempo event at tick 8 for the inspected runner path (FACTS F-094/F-095). Runtime trace and generalization remain unverified.
 
-**Next verification:** determine the actual SNG2S invocation if recoverable, directly verify the `/F` token-to-flag mapping, and finish the v1 setup-SysEx producer-to-payload comparison. Do not infer actual flags from documented defaults alone.
+**Manual evidence (FACTS F-098):** `/1` and `/X2` are documented defaults; `/F` reorders SNG tracks into ascending MIDI track order; `/XD` disables SysEx generation. Since the reference MIDIs contain SysEx, the effective run did not suppress SysEx. The manual does not record the historical invocation, and output consistent with a default cannot show whether that switch was explicitly typed.
+
+**Next verification:** compare reference MIDI track ordering against the documented default and `/F` ordering to see whether the effective `/F` behavior can be inferred; directly verify the `/F` token-to-flag mapping; and finish the v1 setup-SysEx producer mapping. Keep actual command-line history marked unknown unless a log/script/sidecar is found.
 
 ### H-015 correction note (2026-10-24)
 
