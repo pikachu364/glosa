@@ -662,3 +662,13 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Audited current summary statements against FACTS F-057, F-097, and F-101. Updated `README.md` so the v1 tick-8 / tick-8 setup SysEx pair is no longer described as unmapped; it now records the static producer path and byte-level match, while retaining the runtime-trace/playback and Glosa implementation limits.
 - Added a dated follow-up under H-016 to mark the tick-8 setup SysEx producer mapping complete for the inspected reference files. Earlier text remains as historical context; the follow-up explicitly supersedes that item.
 - No converter or test code changed. No claim of current-HEAD CI success is made from this documentation-only update.
+
+
+## 2026-10-25 — PR #9 mergeability and cross-version track-order audit
+
+- Rechecked PR #9 at head `a95d600ae3f2bafb378906f488db64fa5b9a3b7e`: it remains open and unmerged. GitHub currently reports `mergeable=true`; the earlier `false` observation is not current.
+- The base branch is two commits ahead of the PR's merge base because of commit `d7ee60f` and merge commit `6e99e68` (PR #10, stop-silence timing test tolerance). These changes affect `tests/Glosa.Tests/SequencerTests.cs`, not the SNG converter/docs paths listed in PR #9. No merge or rebase was performed.
+- The PR head's associated CI workflow run #1076 completed successfully. Combined commit status returned no individual status entries; this should not be reported as separate required checks passing.
+- Re-read the SNG2S v3.3 manual: default output is Format 1; `/X2` is the default and creates a dedicated Exclusive track immediately after the conductor track. Without `/F`, non-Ballade-3 files use part order 10→1; Ballade 3 uses 10, 16→11, 9→1. The user-confirmed reference generation command has no switches, so these documented defaults are the appropriate comparison baseline.
+- This documents expected ordering from the manual, not a new binary inspection of every v2/v3/v4 reference MIDI. The existing v4 saved-MIDI observation (18 reference tracks vs 17 saved Glosa tracks) is consistent with one missing dedicated Exclusive track, but the cause of tempo-event count/value differences remains unresolved.
+- No converter or test code changed.
