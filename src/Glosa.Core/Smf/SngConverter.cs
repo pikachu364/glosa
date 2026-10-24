@@ -203,6 +203,12 @@ public static class SngConverter
             WriteChunk(output, body.ToArray());
         }
 
+        // SNG2GS v2 uses a 128-tick part-track lead-in even for the 6/4
+        // SHIZUME0 fixture (barLength 288). Later layouts use the bar-length lead-in.
+        int partTrackOffset = Encoding.ASCII.GetString(data.Slice(18, 4)) == "2.00"
+            ? 128
+            : barLength;
+
         foreach (Track track in tracks)
         {
             // OrderBy/ThenBy are stable, preserving source order for otherwise equal events.
@@ -218,7 +224,7 @@ public static class SngConverter
             int previous = 0;
             foreach (var e in track.Events.OrderBy(e => e.Tick).ThenBy(e => e.Order))
             {
-                int at = Math.Max(0, e.Tick + barLength);
+                int at = Math.Max(0, e.Tick + partTrackOffset);
                 WriteVar(body, (uint)Math.Max(0, at - previous));
                 body.Write(e.Bytes);
                 previous = at;
