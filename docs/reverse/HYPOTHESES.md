@@ -163,7 +163,7 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 
 **Status:** `/XD → 0x622 = 1` is confirmed from the initialized data image and parser branch (FACTS F-096). The actual command line used to create the saved reference MIDIs remains unknown; `/F → 0x626` is still a best-fit interpretation rather than a direct token-to-flag proof.
 
-- `FUN_1000_184A` compares a two-character option token at operand `0xF05`. The original executable's initialized data image confirms `DS:0x0F05 = "XD\\0"`; a match writes `1` to `0x622` (FACTS F-096).
+- `FUN_1000_184A` compares a two-character option token at operand `0xF05`. The original executable's initialized data image confirms `DS:0x0F05 = "XD\0"`; a match writes `1` to `0x622` (FACTS F-096).
 - Downstream use agrees with the documented meaning of `/XD`: `0x622` suppresses SysEx payload output in `FUN_1000_08EC). The executable's help text documents `/XD` as disabling Exclusive/SysEx conversion.
 - `0x626` selects an alternate track-order table in `FUN_1000_0010`, which fits the documented `/F` option, but this finding does not directly prove the `/F` token-to-flag mapping.
 - The saved reference MIDIs contain SysEx events, so `/XD` was probably not active for those runs. This is an inference from output, not proof of the actual command line or runtime flag state.
@@ -206,7 +206,7 @@ The old `0x622 ↔ /F` mapping is withdrawn. The `/XD → 0x622 = 1` token mappi
 
 ### H-015 follow-up — command-line token mapping refined (2026-10-24)
 
-The original executable's initialized data image and parser control flow now directly confirm `DS:0x0F05 = "XD\\0"`: the parser compares a two-character option token against this string and writes `1` to `0x622` on a match (FACTS F-096). Thus `/XD → 0x622 = 1` is confirmed; the previous statement that the token-to-string mapping was unconfirmed is superseded. The help text documents `/XD` as disabling Exclusive/SysEx conversion.
+The original executable's initialized data image and parser control flow now directly confirm `DS:0x0F05 = "XD\0"`: the parser compares a two-character option token against this string and writes `1` to `0x622` on a match (FACTS F-096). Thus `/XD → 0x622 = 1` is confirmed; the previous statement that the token-to-string mapping was unconfirmed is superseded. The help text documents `/XD` as disabling Exclusive/SysEx conversion.
 
 Still unknown: whether `/XD` was actually supplied when the saved `runner.MID` / `TEST.MID` files were generated. The `/F` help text is present, and downstream use is consistent with `0x626`, but the `/F` parser token-to-flag mapping and the reference invocation are not established. Do not infer the actual reference flags from documented defaults alone.
 
