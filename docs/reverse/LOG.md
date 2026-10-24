@@ -574,3 +574,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - The help text documents `/XD` as disabling Exclusive/SysEx conversion and documents `/X1` / `/X2` placement choices. This does not establish which options were used to create the saved reference MIDI files. The `/F` token-to-`0x626` mapping remains unconfirmed.
 - Updated H-015, marked the parser-token check complete in T-017, and explicitly retained the reference invocation and v1 producer-to-payload mapping as open work. Reframed the older H-016 note as superseded history so it no longer contradicts F-094/F-095.
 - No converter/test code changed; no runtime invocation, MIDI regeneration, build, test, or playback was performed. Private executable, fixtures, and analysis export remain private.
+
+
+## 2026-10-24 — v1 setup SysEx mapping, first pair
+
+- Compared the original executable's `FUN_1000_1CE4` format templates `0xF34` / `0xF3F` with the saved v1 reference MIDI event signatures.
+- The two 12-byte setup SysEx events at ticks 0 and 4 match the formatted template outputs, checksum, and terminator in both fixtures: `runner.MID` uses arguments `0,5,6`; `TEST.MID` uses `0,5,5` (FACTS F-097). Private SysEx payload bytes are not included in the public docs.
+- This closes the first producer pair only. The separate 10-byte events at ticks 8 and 8 remain to be mapped. No converter/test code changed; no runtime execution, MIDI regeneration, build, test, or playback was performed.
