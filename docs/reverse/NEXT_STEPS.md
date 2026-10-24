@@ -120,7 +120,7 @@
 - [x] マニュアル記載の既定順（v1〜v3: 10→1、v4: 10,16→11,9→1）と現行 Glosa のパート昇順出力の差を整理した。
 - [x] 参照 MIDI の track chunk 順・Note-on・channel を抽出し、SNG パートへ対応付けた。ノートイベントを持つパートの channel は part-1 と一致（FACTS F-030/F-054）。
 - [x] ユーザー確認の「オプションなし」実行と参照 MIDI の実際の track chunk 順を照合。v1 `runner.MID` は track 0（title/conductor）、track 1（Exclusive）、part track の part 10→1 順で、part 1 / Keyboard の空 track も保持する。これはマニュアルの v1〜v3 既定順と整合する（FACTS F-054/F-057/F-100）。
-- [x] 現行 Glosa の物理出力との違いを確認。`SngConverter.ToSmf` は conductor track の後に part 1→N を追加するため、参照 MIDI の独立 Exclusive track と part 10→1 の順序を再現していない。これは既知の track-layout 差であり、channel の `part - 1` 対応とは別問題。
+- [x] 現行 Glosa の物理出力との違いをソースで再確認。`SngConverter.ToSmf` の先頭 track body は time-signature (`FF 58`) と tempo (`FF 51`) を出力するが、確認した writer 経路には参照 track 0 のタイトル文字列 meta-event と独立 `Exclusive` track の生成がない。続く part track は part 1→N 順であり、参照の part 10→1 と異なる。channel の `part - 1` 対応とは別問題。
 - [ ] `/F` の昇順オプション自体は実行時に未検証。既存 reference がオプションなしの default を示すため、default track order の判定には `/F` 実行は不要。実行可能な SNG2S 環境が得られた場合に限り、`/F` の動作を別途確認する。
 
 **完了条件:** default reference の chunk order、track role、channel／SNG part の対応、および現行 Glosa との差は説明済み。互換実装の変更は、SysEx/conductor/title track の生成元と回帰テスト方針を確定してから行う。
