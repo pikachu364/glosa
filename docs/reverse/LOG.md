@@ -630,3 +630,9 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 元の SNG2S.EXE の CS:0x3F82 initialized bytes が `F0 41 10 16 12 FF` であることを確認。終端 FF を除いた template と body の組み合わせが、SMF SysEx event data の形式に合う。
 - 0x7DE の initialized word 0x004B と、runner.MID / TEST.MID の tick 8 SysEx 2件を比較。A `41 10 16 12 10 00 16 4B 0F F7`、B `41 10 16 12 52 00 10 4B 53 F7` が静的生成式と byte-for-byte 一致した。
 - FACTS F-101、比較文書 section 19、NEXT_STEPS に結果を記録。runtime trace、再生成、実再生、converter/test code の変更は行っていない。
+
+## 2026-10-25 — v1 tick-8 SysEx payloads completed and T-017 status reconciled
+
+- Updated the current T-017 status to reflect the original EXE initialized bytes, static producer paths, and byte-for-byte comparison of both 10-byte SysEx payloads at tick 8 in `runner.MID` and `TEST.MID` (FACTS F-101).
+- The earlier tick-8 payload uncertainty is closed for these saved references. The remaining boundary is runtime state / playback, indirect or aliased writes, and generalization to every v1 file; no converter or test changes were made.
+- Reconciled the top-level status in `NEXT_STEPS.md`, the current status and next steps in `V1_TEMPO_INVESTIGATION.md`, and the SysEx subsection in `BALLADE_LAYOUT_COMPARISON_2026-10-21.md`. Older dated notes remain as historical records and are superseded by the current findings.
