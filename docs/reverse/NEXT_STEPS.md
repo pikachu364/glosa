@@ -334,7 +334,8 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Re-scan the complete 18,795-line SNG2S export: `0x6EE` appears 58 times across decompiler and assembly views; the assembly references are reads, with no direct store found. The export alone omits initialized data-segment bytes; the original EXE's on-disk initial value is recorded in the next item.
 - [x] Recover the on-disk initialized value of `0x6EE`: `DS:0x06EE` maps to file offset `0x6B5E`, whose bytes `04 00` encode little-endian word value 4 (FACTS F-094).
 - [x] Confirm the parser mapping `/XD → 0x622 = 1` from the original executable's initialized bytes and comparison branch (FACTS F-096). The actual options used to create `runner.MID` / `TEST.MID` remain unknown; `/F` token-to-flag mapping is also not directly confirmed.
-- [ ] Finish the v1 setup SysEx producer-to-payload mapping. Do not generalize the v2 producer mapping resolved in T-018 to v1 without evidence.
+- [x] Map the first two v1 setup SysEx events at ticks 0 and 4 to `FUN_1000_1CE4` templates `0xF34` / `0xF3F`; formatted arguments, checksums, terminators, and lengths match both `runner.MID` and `TEST.MID` (FACTS F-097). Private payload bytes are not copied into public docs.
+- [ ] Map the separate 10-byte setup SysEx events at ticks 8 and 8 to their producer path. Do not generalize the v2 producer mapping resolved in T-018 to v1 without evidence.
 - [ ] Keep converter behavior and tempo tests unchanged until independently validated. The static tick-8 mechanism explains the inspected runner path, but runtime state and generalization to every v1 file are not proven.
 
 **Current result:** the exact grid-aligned tempo path and the static startup mechanism for the coarse tick-8 placement are explained (FACTS F-072/F-080/F-095). The explanation is bounded to the inspected reference path; runtime state, indirect writes, and generalization to all v1 files are not proven.
