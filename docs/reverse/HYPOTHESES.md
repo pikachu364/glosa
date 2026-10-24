@@ -177,18 +177,18 @@ This section replaces the earlier H-015 wording that associated `0x622` with `/F
 
 ### H-016 — 0x6EE は複数の出力経路で使う delta/間隔値の可能性
 
-**状態:** 用途については静的根拠あり、意味・値・単位は未確定。
+**状態:** 初期化済み image 上の数値は 4 と確認。setup queue drain と tick-8 tempo 出力をつなぐ静的 call-order/dataflow が確認された。runtime trace と全 v1 ファイルへの一般化は未実施。
 
 - 完全な 18,795 行の SNG2S 解析 export を再走査したところ、`0x6EE` はテキスト上 58 箇所に現れる。これは decompiler 表現と命令行表現の両方を含む。命令行の参照は読み出しのみで、直接書き込みは見つからない。export は初期化済み data segment の実バイトを含まないため、初期値や indirect/aliased write はこの検索だけでは確定できない。
 - `FUN_1000_1CE4` の queue drain 後には、読み出した値を `0x1ED8:0x1EDA` に加算し、同値を `0xF9A:0xF9C` にセットする。別の event-output path にも同じ形があるため、単なる tempo 値というより、出力間隔・delta に関係する共通値である可能性がある。
-- ただし初期化データ、別名参照、間接 store の可能性が残る。値が分からないため、MIDI tick との換算や tick 8 との対応はまだ導けない。
+- on-disk 初期値 4 は確認できたが、runtime 上書きや全 v1 ファイルへの一般化は未確認。startup call order による tick-8 の静的説明は FACTS F-095 を参照。
 
-**次の確認:** 実行ファイルの data segment / relocation / 文字列領域を含むダンプ、または runtime memory trace を得る。解析テキストの xref scan だけでは値の由来は確定しない。
+**次の確認:** `0x622` の参照実行時の値と、runtime での indirect/aliased write を確認できる手段があれば検証する。静的 startup path は F-095 に整理済み。
 
 
-### H-016 follow-up — 0x6EE の数値候補は4 ticks（旧仮説・後続調査で未証明）
+### H-016 follow-up — initialized value and static tick-8 path confirmed (2026-10-24)
 
-**更新状態（2026-10-22）:** この項目は履歴として保持するが、4 ticks を `0x6EE` の実値とみなしてはならない。後続の H-016 follow-up が示すとおり、初期値と各 SysEx への対応は未確定。
+**更新状態（2026-10-24）:** 元の EXE の初期化済み data image から `DS:0x06EE = 4` を確認した（FACTS F-094）。さらに startup call order / pending-delta の静的追跡が tick 8 の粗い tempo event を説明する（FACTS F-095）。runtime trace と全ファイルへの一般化は未実施。
 
 参照 `runner.MID` を SMF として直接解析すると、track 1 の SysEx event は tick 0 / 4 / 8 / 8 に出力されている（FACTS F-068）。一方、v1 の `FUN_1000_1CE4` は条件成立時に2回 SysEx-style event を生成して drain し、各 drain 後に `0x6EE` を pending delta `0xF9A:0xF9C` に設定する。`FUN_1000_3F79` の共通 byte 列、`FUN_1000_5FAA` のデータ生成、`FUN_1000_3F54` の checksum 用和計算、`FUN_1000_3EED` の checksum + `F7` 追加から、これらが SysEx 形式であることは静的に支持される。
 
@@ -198,7 +198,7 @@ This section replaces the earlier H-015 wording that associated `0x622` with `/F
 - queue drain ごとの `0x6F2:0x6F4` と `0x1ED8:0x1EDA` の実際の値。
 - 参照実行時の `0x622` が pending delta reset を有効にしたか。
 
-したがって `0x6EE = 4` は有望な仮説であり、確認済み事実ではない。runtime trace または payload / tick のイベント単位対応が得られるまでは converter を変更しない。
+したがって `0x6EE = 4` は on-disk 初期値として確認済みで、startup call order と pending-delta の静的追跡は tick 8 を説明する（FACTS F-095）。ただし runtime trace はなく、全 v1 ファイルへの一般化も未証明。converter の変更は独立した fixture 比較なしに行わない。
 
 
 追加の対応根拠（2026-10-21）: 参照 MIDI の最初の2件の SysEx は、どちらも payload 12 bytes で共通 prefix を持つ。一方、`FUN_1000_1CE4` の最初の2経路は同じ SysEx-style builder を使い、異なる文字列 offset `0xF34` / `0xF3F` のデータを出力して checksum と `F7` を追加する。event 数・形式・順序・tick 間隔が整合するため、これらが tick 0 / 4 の2件に対応し `0x6EE = 4` となる推定は以前より強い。ただし文字列データ本体が解析資料にないため byte-for-byte の照合は未完了で、確定事実には格上げしない。
