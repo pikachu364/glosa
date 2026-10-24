@@ -642,3 +642,9 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Compared the confirmed no-switch generation procedure with the saved `runner.MID` physical chunk order and the SNG2S v3.3 manual. The reference's part track order is 10→1, matching the documented v1–v3 default; the empty part-1/Keyboard track is retained.
 - Documented the separate current-Glosa layout gap: its writer emits one conductor track followed by parts in ascending order and does not emit the reference's dedicated `Exclusive` track. Channel-to-part mapping (`channel = part - 1`) is a separate concern.
 - `/F` runtime behavior remains untested because the executable is unavailable. No converter or test code was changed; track-layout implementation remains gated on resolving track roles and cross-version regression coverage.
+
+## 2026-10-25 — reconcile Exclusive-track and reference-generation records
+
+- Updated FACTS F-057 to remove stale wording that the four SysEx producer paths were unresolved: tick 0/4 are covered by F-097 and tick 8/8 by F-101. Kept converter-side generation as an implementation gap.
+- Updated NEXT_STEPS T-002 / T-003 / T-017 to reflect the user-confirmed no-switch reference command, documented `/X2` default, completed static payload mapping, and the remaining distinction between static parser mapping and runtime flag state.
+- No converter or test code changed.
