@@ -424,24 +424,19 @@ The follow-up candidate review checked `FUN_1000_341E` (special-record payload s
 
 The private fixture workflow's latest successful run is [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256). It checked out Glosa `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed all 977 tests. The previous failure's first differing signature was caused by two same-tick Note-off events (channel 1, pitches 77 and 82) appearing in opposite array order. Canonical ordering by pitch removed the test-only ordering discrepancy; no converter behavior change was needed. Current PR #9 adds only documentation changes after the tested checkout. This validation is limited to the specific tempo and Note-event signatures covered by private tests.
 
-## 15. 追加調査（2026-10-24）：v2 setup SysEx のパラメータ計算と未解決の override flags
+## 15. 追加調査（2026-10-24）：v2 setup SysEx producer mapping の静的照合
 
-**状態:** private SNG2S 逆解析 export と v2 fixture の静的照合。実行時値は未確認。
+**状態:** private SNG2S 逆解析 export、original EXE initialized data、v2 fixture/reference MIDI を静的に照合。runtime trace・実再生は未実施。
 
-`FUN_1000_272A` は version block を `0x1AE2` に読み込み、v2 fixture では file offset `0x73` から `0x4E` bytes を読む。内部 class 1 の経路では `0x1B04` の値を分岐値として使う。`SHIZUME0.SNG` ではこの値が `0` のため、fallback pair `0x1AF4` / `0x1AF6` が選ばれ、どちらも `0x06` になる。また `0x7BE` は `5` に設定される。
+`FUN_1000_272A` は v2 fixture で file offset `0x73` から `0x4E` bytes を `0x1AE2` に読み込む。`SHIZUME0.SNG` の class-1 分岐では `0x1B04=0` のため fallback pair `0x1AF4` / `0x1AF6`（値 6, 6）を選び、`0x7BE=5` に設定する。
 
-計算値が実際に使われるかどうかは `0x7BC` の3つの bit に依存する。
+`0x7BC` の bit 0–2 は、それぞれ `0x7C0`、`0x7C2`、`0x7C4` への代入を許可する。original `SNG2S.EXE` initialized image では `DS:0x07BC` は file offset `0x6C2C` に対応し、初期 byte は `0x00`。隣接する初期 word は `0x7BE=5`、`0x7C0=0`、`0x7C2=5`、`0x7C4=3`。解析 export には `0x7BC` への直接 store がないが、これは実行時 trace ではなく、間接/別名アドレスによる書き込みも完全には排除しない。
 
-| `0x7BC` bit | 0 の場合 | 1 の場合 |
-|---|---|---|
-| bit 0 | `0x7C0 = local_6e` を代入 | `0x7C0` の既存値を保持 |
-| bit 1 | `0x7C2 = local_3c` を代入 | `0x7C2` の既存値を保持 |
-| bit 2 | `0x7C4 = local_68` を代入 | `0x7C4` の既存値を保持 |
+参照 MIDI との比較では、次の2組は別々の producer path に一致する。
 
-3 bit がすべて 0 なら候補値は `0, 6, 6`。ただし、現在の解析 export では `0x7BC` への直接 store を見つけていないため、これは最終値とは断定できない。初期化データ、間接 store、別名アドレス、export に含まれない経路は未排除である。
+- tick 4 / 8: `FUN_1000_23C0(4)` の計算値がデータ値 `10 00 0F 03` と `52 00 0F 0F` に一致し、checksum と terminator も一致。
+- tick 100 / 104: `FUN_1000_1CE4` の `0xF34` / `0xF3F` template が引数 `0,6,6`、checksum、terminator を含めて一致。`%c` は1 byteを消費し、template marker `0xFE` は checksum 生成前に `0x00` へ正規化される。
 
-`FUN_1000_1CE4` は、該当分岐で template `0xF34` と `0xF3F` から2件の SysEx-style event を組み立てる。`%c` は1 byte の引数を消費し、引数は `0x7C0`、`local_16`、`local_18` の順に出力される。template の `0xFE` は `0x00` に変換され、checksum と `F7` が後段で追加される。別分岐では `0xF4A` template による3件目の event もあり得る。
+従って、以前の「payload 不一致」は異なる2つの producer path を競合候補として比較したことによるものだった。ここで照合した4イベントの静的 producer mapping は説明できる。一方、実行時の `0x7BC` 状態や別経路での global 変更、全イベントへの一般化は未証明であり、converter の変更根拠にはしない。
 
-この計算候補は、保存済み v2 `SHIZUME0.MID` から抽出した payload `10 00 0F 03`、`52 00 0F 0F` と一致しない。これは直ちに converter の不具合を意味しない。`0x7BC` の実値、既存値が設定される経路、参照 MIDI の event がこの分岐から生成されたかが未確定だからである。
-
-**次の作業:** `0x7BC` の初期値/writer を特定し、完全な SysEx event と checksum を含む byte 単位比較で producer mapping を確定する。根拠が得られるまで converter の変更は行わない。private fixture / reverse export の内容自体は public repository に追加しない。
+**残る確認:** 可能なら runtime trace で `0x7BC` と関連 global の実行時値・書き込み経路を確認する。private fixture / reverse export の内容自体は public repository に追加しない。
