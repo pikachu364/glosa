@@ -290,9 +290,10 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **Priority:** completed for v1; keep later-version base-tempo semantics as a separate audit.
 
 - [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S consumes the second word in its base-tempo scaling calculation, so 37 at baseTempo120 yields 69 BPM. Whether this word is semantically the same as the UI slider remains unproven (FACTS F-089).
-- [x] Verify v3/v4 use sentinel +12: value 89 gives 166 BPM in `START__0.SNG`, and value 123 gives 230 BPM in `BOURREE0.SNG`, matching their reference MIDIs.
+- [x] Verify v3/v4 use sentinel +12: value 89 gives 166 BPM in `START__0.SNG`, and value 123 gives 230 BPM in `BOURREE0.SNG`. This confirms the numeric BPM mapping only; it does not confirm tempo-event timing, coarse millisecond-rounded events, initial default tempo, or exact grid-aligned events.
 - [x] Confirm Glosa already has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` implementations.
 - [ ] Separate audit: v2 `SHIZUME0.SNG` has a different base-tempo setting and a 6/4 grid. Verify its full tempo-stream-to-MIDI tick scaling before changing shared later-version code; do not infer it from the v1 rule.
+- [ ] Investigate current private-CI failures in all v2–v4 tempo event signatures (FACTS F-102). Reconstruct, for each version, the sequence of coarse tempo changes and exact bar/grid-aligned tempo events, including the initial 500000 µs/qn default. The current `ReadTempi()` emits the first changed tempo at tick 0 and omits the reference's intermediate coarse events; its grid-aligned events are also off by one tick in v3/v4. These are observed output differences; the underlying step-to-tick scheduler rule is not yet established.
 
 **Result:** jmplayer's shared `last+12` tempo parser would misread the v1 stream even after its part-block layout is fixed. This is a separate v1 compatibility fix, documented in FACTS F-074.
 
