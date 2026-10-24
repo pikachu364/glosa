@@ -543,3 +543,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Re-scanned the complete private SNG2S analysis export (18,795 lines). The only `0x7BC` references are three decompiler bit tests and the corresponding three assembly `TEST` instructions; no direct store appears in the available text export.
 - Cross-checked the related globals: `0x7C2` and `0x7C4` have no other visible direct store sites beyond the loader's conditional assignments. `0x7C0` has additional writes in the formatter path. The export's `STRINGS / DEFINED DATA` section does not provide initialized bytes for `0x7BC`, so this pass cannot establish the flag's initial value or rule out indirect/aliased writes.
 - Updated the existing F-093, H-019, and T-018 sections rather than adding duplicate investigation items. The payload mismatch remains unresolved; no converter/test change, build, runtime trace, MIDI regeneration, or playback was performed. Private SNG/MIDI fixtures and analysis dumps remain private.
+
+## 2026-10-24 — v2 setup SysEx producer paths reconciled
+
+- Original `SNG2S.EXE` initialized data confirms the on-disk initial byte at `DS:0x07BC` is `0x00`; this does not substitute for runtime state, and indirect/aliased writes remain possible.
+- Matched the distinct reference-MIDI event pairs: `FUN_1000_23C0(4)` explains ticks 4/8, while `FUN_1000_1CE4` templates explain ticks 100/104. The comparisons include calculated data, checksums, and terminators.
+- Corrected the interpretation of the earlier mismatch: it compared two different producer paths. Updated the existing H-019, README conclusion, and comparison section 15; T-018 remains complete for static producer mapping.
+- No converter/test code changed; no runtime trace or playback was performed. Private fixtures and full raw event sequences remain private.
