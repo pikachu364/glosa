@@ -529,3 +529,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 今回の静的解析で除外できた候補は `FUN_1000_341E`、`FUN_1000_3543`、`FUN_1000_2D27`。`FUN_1000_8888` は text-command delay + `0x0440` の経路だが、binary SNG tempo record との接続は未確認。
 - T-016 は未完了。tempo record を無視するとの結論にはせず、実際の playback event dispatcher の追跡、または既知の tempo 変化 fixture による runtime trace を次の根拠とする。
 - `docs/reverse/` の9文書を再確認。private fixture / 解析 dump は公開 repository に追加していない。実装変更、テスト、実再生は未実施。
+
+## 2026-10-24 — v2 legacy setup parameter path traced; override flags remain unresolved
+
+- Traced `FUN_1000_272A`'s version-class branch and the v2 `SHIZUME0.SNG` version-block mapping: `0x4E` bytes are read to `0x1AE2` from file offset `0x73`; the inspected sample selects the fallback pair at `0x1AF4` / `0x1AF6` with values 6 and 6 and sets `0x7BE = 5`.
+- Confirmed that `0x7BC` bits 0–2 gate assignments to `0x7C0`, `0x7C2`, and `0x7C4`; set bits preserve the prior values. A search of the available static export found no direct store to `0x7BC`, which is not proof that no writer exists elsewhere.
+- Corrected the formatter dataflow: `%c` consumes one byte argument; `FUN_1000_1CE4` supplies the three byte values in order to the `0xF34` and `0xF3F` templates. The `0xFE` marker becomes `0x00` before checksum generation. The routine can also emit a separate `0xF4A` event on another branch.
+- The all-bits-clear candidate does not match the previously extracted v2 `SHIZUME0.MID` payload values. No final `0x7BC` state or exact producer-to-payload mapping is established.
+- Added F-093 / H-019 / T-018 and a focused comparison section. No converter or test code was changed; no build, test, runtime trace, MIDI regeneration, or playback was performed. Private fixture bytes and reverse exports remain private.
