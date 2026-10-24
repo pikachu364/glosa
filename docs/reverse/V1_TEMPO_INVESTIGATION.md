@@ -1,5 +1,7 @@
 # v1 Tempo Event Investigation
 
+> **Current status (updated 2026-10-23):** The integer conversion for the coarse tempo event and the separate 192-tick grid path are supported by static analysis. The remaining tick-8 issue is event placement: pending delta / absolute tick and prior queue drains. `0x6EE` is read by setup paths, but its initialized value and exact SysEx mapping are not known. Do not assume it equals 4 or change converter timing without new evidence. See [NEXT_STEPS.md](NEXT_STEPS.md), T-017.
+
 ## Scope and current reference
 
 This note tracks the unresolved v1 tempo conversion in `runner.SNG` compared with `testdata/ballade/v1/sng2gs/runner.MID`. The reference MIDI contains tempo meta events at ticks 0, 8, and 192:
@@ -8,12 +10,12 @@ This note tracks the unresolved v1 tempo conversion in `runner.SNG` compared wit
 - tick 8: 869,000 µs per quarter note
 - tick 192: 869,565 µs per quarter note
 
-The current converter does not yet reproduce the latter two events. Do not change tempo conversion until the mapping is evidence-backed.
+The current converter has a dedicated v1 tempo path, and the public regression test asserts byte sequences for all three reference tempo values. The unresolved item is the original SNG2S tick-8 scheduling explanation, not absence of all v1 tempo implementation.
 
 ## Confirmed static-analysis findings
 
 - The explicit 500,000 µs/quarter tempo is emitted during startup, before `FUN_1000_33D4` initializes tempo-record processing.
-- `FUN_1000_272a` reads 590 bytes from SNG offset `0x00B5` into the internal buffer referenced by `0x21DC`. The source bytes begin `C0 00 04 04`.
+- `FUN_1000_272a` is documented as reading 590 bytes into the internal buffer referenced by `0x21DC`; the grid/time-signature bytes are `C0 00 04 04`. Notes disagree on their absolute source offset: `0x00B5` (=181), 231, and `0x74 + 125` (=241) are all recorded. Treat the 192-tick grid as supported, but the absolute offset as unresolved until raw file coordinates are reconciled.
 - `FUN_1000_0010` reads the first byte of `0x21DC` as `uVar11`; in this sample it is 192. The following `04 04` values contribute to the 4/4 time-signature meta event.
 - After initial event handling, the entry path computes a remainder using `FUN_1000_61EC(currentTick, uVar11, 0)`. If nonzero, the caller calculates `uVar11 - remainder` as the delta to the next boundary. This is consistent with a 192-tick grid.
 - `FUN_1000_3406` processes 4-byte records through internal pointer `0x21E0`. The second word is normalized using the tempo base at memory address `0x2962`; raw value 37 with base 120 gives 69 BPM after integer arithmetic, corresponding to 869,565 µs/quarter.
@@ -23,14 +25,13 @@ The current converter does not yet reproduce the latter two events. Do not chang
 
 - Which output tick receives the first tempo record.
 - How the reference value 869,000 µs/quarter at tick 8 is produced.
-- Whether the 192-tick grid path directly produces the reference tempo event at tick 192.
+- Static control flow identifies the 192-tick grid-aligned exact-tempo path, and its 869,565 value matches the reference event at tick 192. Runtime event-to-tick causality is still unverified.
 - The exact order and accumulator values across queue insertion, queue draining, countdown exceptions, and event output.
 
 ## Next steps
 
-1. Trace `FUN_1000_33D4` through the first `FUN_1000_3406` call and the following `FUN_1000_08EC` queue drain.
-2. Record pending delta `0xF9A:0xF9C` and absolute tick `0x6F2:0x6F4` at each tempo-event output point.
-3. Trace the grid-delta calculation and `FUN_1000_618A` separately from tempo-record countdown processing.
+1. Continue only the remaining queue-state work listed in [NEXT_STEPS.md](NEXT_STEPS.md), T-017: pending delta / absolute tick before the tick-8 event, `0x6EE` initialization, and SysEx producer-to-payload mapping.
+2. Keep the 192-tick exact-tempo path separate from the coarse tick-8 tempo path; do not reopen completed integer-arithmetic analysis without contradictory evidence.
 4. Compare each proven output event with reference ticks 0, 8, and 192.
 5. Keep static deductions clearly distinguished from runtime-trace evidence.
 
@@ -119,3 +120,75 @@ This is static analysis of the SNG2S disassembly and source bytes. No runtime tr
 既存の下流制御フローを横断して見直した結果、以前の `0x622 ↔ /F` 仮説は撤回する。`FUN_1000_08EC` では `0x622 != 0` が SysEx payload の出力抑制に使われ、`FUN_1000_0010` では `0x626` が track-order table の選択に使われる。SNG2S の help text は `/XD` を Exclusive disable、`/F` を part-to-track order change と説明するため、現在の最有力対応は `0x622 ↔ /XD`、`0x626 ↔ /F` である（FACTS F-069）。
 
 この再評価により、`0x622 != 0` を `/F` の効果として説明する旧記述は採用しない。参照 MIDI に SysEx が4件あるため `/XD` が指定されていなかった可能性は高いが、実際の起動引数・実行時フラグ値は未確認。したがって tick 8 の pending-delta 論は依然として静的推定であり、converter / tests は変更しない。
+
+## Update: current findings and remaining proof gaps (2026-10-22)
+
+### Findings now supported by static control flow
+
+- The two non-default tempo values are generated by **different integer paths** from the same normalized tempo of 69 BPM: the tempo-record path uses `floor(60,000 / 69) × 1,000 = 869,000`; the bar/grid path uses `floor(60,000,000 / 69) = 869,565`. These are not evidence of two different musical BPM settings.
+- The source bytes at SNG offset `0x00B5` begin `C0 00 04 04`; the grid operand is 192 ticks. The grid-alignment code therefore explains the exact-tempo value associated with the next 192-tick boundary. It does **not** explain the earlier coarse event.
+- `FUN_1000_3406` queues the coarse 869,000 value. The reference MIDI places it at tick 8, but the pending-delta / absolute-tick state that causes that placement is not yet proven.
+- The first `FUN_1000_3406` call is an exception path: initialization sets `0xF96 = 0xFFFF`, and the caller resets it only after that call. Do not apply the normal scheduler's pending-delta `+1` rule to this first call.
+- `FUN_1000_1CE4` has conditional queue drains and assignments from `0x6EE`. The possible `0x6EE = 4` explanation is consistent with the first two reference SysEx events at ticks 0 and 4, but payloads and accumulator states are not mapped one-to-one; this remains a hypothesis.
+
+### Separate issue: MIMPIV4 playback
+
+The MIMPIV4 loader initializes its timer-period parameter from the legacy conductor/header structure, and the timer driver uses that parameter. The complete available export was also checked at `FUN_1000_341E` (special-record payload scan), `FUN_1000_3543` (event/duration pre-scan), and `FUN_1000_2D27` (Program Change rewrite); these bodies do not show the binary SNG tempo-record value being passed to the timer globals. `FUN_1000_8888` schedules a parsed text-command delay plus `0x0440`, but its connection to the binary SNG tempo table is unproven. The actual playback consumer remains unidentified. This narrows the static search but does not prove tempo records are ignored; next evidence is the playback event-dispatch path or a runtime trace of timer/scheduler state around a known tempo record. Do not infer that MIMPIV4 playback uses SNG2S's MIDI-export conversion curve.
+
+### Still open
+
+1. Establish the initialized value and source of `0x6EE`, including data-segment and indirect-write possibilities.
+2. Map the two setup-template paths to the exact SysEx payloads, or explicitly retain the missing initialized bytes as the evidence limit.
+3. Recover the option token/string mapping and actual SNG2S command line for the reference MIDI; the manual's defaults do not prove they were used.
+4. Prove the pending delta and absolute tick at the drain that emits the coarse tempo event at tick 8. No runtime trace has been performed.
+5. Keep the v1 converter's tempo guard and tests unchanged until those gaps are closed; do not claim full MIDI equivalence based only on the 3,295 Note-on/off matches.
+
+## Follow-up audit (2026-10-22): narrow the remaining tick-8 question
+
+The static trace has progressed beyond identifying candidate tempo producers:
+
+- The coarse value `869000` is produced by the tempo-record path; its arithmetic is no longer the open question.
+- The exact value `869565` and its 192-tick grid alignment are supported by the static path and match the reference event at tick 192.
+- The remaining tempo question is specifically **why the coarse event is serialized at absolute tick 8**. The needed evidence is the queue/pending-delta state immediately before and after the first tempo queue drain, including `0xF9A:0xF9C`, `0x6F2:0x6F4`, and preceding setup events.
+- The first `FUN_1000_3406` call takes an initialization exception path because `0xF96` starts at `0xFFFF`; it should not be reasoned about using the normal scheduler's later-call delta adjustment.
+- `0x6EE` is read and added into pending timing in setup-output paths, but the exported text disassembly omits initialized data bytes. Its value is therefore not established by the current static export; interpreting it as 4 ticks remains speculative.
+
+This narrows the next useful experiment to a runtime trace or a recovered initialized data segment. Re-reading the 192-tick grid calculation will not resolve the tick-8 placement. No converter behavior is changed by this finding.
+
+
+## Follow-up audit 2 (2026-10-22): what the 0x6EE references actually establish
+
+A full text search of the available SNG2S disassembly export finds repeated **reads** of `0x6EE` in setup/preamble paths, including `FUN_1000_0010`, `FUN_1000_1CE4`, `FUN_1000_1E6C`, and related setup emitters. Each observed use adds that word to the internal absolute accumulator at `0x1ED8:0x1EDA` and assigns it as the next pending delta at `0xF9A:0xF9C`. The text export contains no direct store to `0x6EE`, so its initial value is not recoverable from this export alone.
+
+`FUN_1000_08EC` drains queued MIDI-like events by converting the pending delta to a variable-length quantity, then advances the accumulated output tick (`0x6F2:0x6F4`) and clears the pending delta. This confirms the role of the *pending-delta/absolute-tick machinery*, but it still does not reveal the initialized value of `0x6EE` or prove that it equals 4. The observed reference SysEx ticks 0/4/8 are compatible with a 4-unit interval, but compatibility is not proof.
+
+**Revised conclusion:** `0x6EE` is a shared setup-event spacing value in the SNG2S output scheduler; its numeric value and the exact mapping from each setup emission to the reference SysEx events remain unknown. Do not hard-code 4 or change converter timing from this evidence alone.
+
+
+## Follow-up 3 (2026-10-22): tempo arithmetic is resolved, tick placement is not
+
+`FUN_1000_3406` reads tempo records from `0x21E0` and computes the normalized tempo from the record value and base tempo at `0x2962`, divided by 64 and clamped to 1–480. At base tempo 120, record value 37 yields 69 BPM. The numeric conversion is therefore supported by the static trace.
+
+`FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` and resets `0xF96` only after that call. This confirms the first-call exception to the later pending-delta increment path.
+
+The remaining issue is narrower: why the coarse 869000 µs/qn event is serialized at absolute tick 8. That requires the pending-delta, absolute-tick and preceding queue-drain state. The initialized numeric value of `0x6EE` is still absent from the export, so interpreting it as 4 ticks remains unproven. No converter behavior is changed.
+
+## Cross-check against the MIMPIV4 reference directory (2026-10-22)
+
+The private Ballade directory includes the MIMPIV4 v4.27 manual and a Ghidra export of `MIMPIV4.EXE`, so the player-side timing path can be traced separately from SNG2S's MIDI-export path.
+
+- The manual documents playback tempo adjustment through Up/Down and `/Tn`; it does not specify the binary SNG tempo-record decoding formula.
+- Static disassembly shows `FUN_1FF5_0D61` saves and replaces the INT 8 vector and calls `FUN_1FF5_0DFA` using the timing value from `0x0440`. `FUN_1FF5_0DFA` calculates a divisor and writes to I/O ports `0x71` and `0x5F`.
+- The loader populates `0x0440` and `0x7BF0` from a byte in a format-dependent record. This identifies a concrete timer initialization path, but not the source of the playback tempo for Ballade SNG records.
+- No proven dataflow currently connects the SNG binary tempo-record table to `0x0440` / `0x7BF0`. Do not infer that MIMPIV4 uses the same 869000 / 869565 µs-per-quarter formulas as SNG2S MIDI export.
+
+### Next player-side trace
+
+1. Trace the v1 SNG parser's loaded record and identify the exact field copied to `0x7BF0` / `0x0440`.
+2. Search callers and writes around the loaded record for a path that updates the timer input during playback, distinguishing initialization from dynamic tempo changes.
+3. Keep this separate from the unresolved SNG2S tick-8 serialization question: the latter concerns queued MIDI meta output and pending delta state, not MIMPI's timer interrupt.
+4. No runtime trace has been captured; these findings are static only.
+
+## Validation boundary update (2026-10-23)
+
+Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) passed the v1 TEST.SNG tempo-event comparison and runner.SNG Note-event comparison (977 tests total) on Glosa commit `440000b971e72debcef72bb12407bcf4e944527a`. The earlier Note-event failure was a canonical list ordering issue for simultaneous Note-off events at tick 4012, channel 1, pitches 77 and 82; it was fixed in the test comparison ordering, not in tempo conversion. This does not resolve the separate SNG2S tick-8 serialization question, prove SysEx payload equality, or establish runtime playback behavior. Keep `0x6EE = 4` as unproven and do not change tempo conversion on this evidence alone.

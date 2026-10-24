@@ -22,7 +22,7 @@ v1 `runner.SNG` のサイズ表を直接走査した結果、次の組み合わ�
 - 可能なら SNG2S の v1 分岐を追加の静的証拠または実行時観測で検証する。
 
 ## H-002 — Tie の Note-on 抑制と Note-off 延長規則
-**状態:** v2〜v4 の実 C# 変換出力と参照 MIDI の集計比較テストが CI で成功。トラック／チャンネル単位の検証は未完了。
+**状態:** v2〜v4 の実 C# 変換出力と参照 MIDI の Note-on/off 集計がパート単位で一致することを確認済み。トラック／チャンネル別の対応と同音高重複時の Note-off の厳密な対応付けは未完了。
 
 v2 `SHIZUME0` では非 Tie ノートレコード 2,713 件、v3 `START__0` では 5,362 件がそれぞれ SNG2GS Note-on 数と一致する。Tie レコードを新規 Note-on/off にせず、同じ音高の pending Note-off のうち予定 tick が Tie 開始 tick 以下で最も後のものを Tie の終了 tick まで延長する規則で、参照 MIDI の全 Note-on/off がパート単位で一致することをオフライン再生成で確認した。v2 は参照側に +160 ticks、v3 は補正なしで一致する。v4 は Tie レコードがなく、Note-on/off が一致する。
 
@@ -159,50 +159,84 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 これは tick-8 の既存仮説を強める/確定する証拠ではなく、通常 scheduler loop の `+1` を初回呼び出しに誤適用しないための制約である。runtime trace がなく、`0x6EE` の値も確定していないため、tick 8 は未確認のまま扱い、converter guard を維持する。
 
 
-## H-015 — 0x622 は SNG2S の /F オプションに対応する可能性
+## H-015 — SNG2S option flags and reference invocation
 
-**状態:** 有力な推定。SNG2S の定義データには `/F` の説明文字列が存在するが、比較先 `0xF05` とその文字列位置の対応、および参照実行条件は未確定。
+**Status:** `/XD → 0x622 = 1` is confirmed from the initialized data image and parser branch (FACTS F-096). The actual command line used to create the saved reference MIDIs remains unknown; `/F → 0x626` is still a best-fit interpretation rather than a direct token-to-flag proof.
 
-- `FUN_1000_184A` は `0xF05` の2-byte option token を比較し、一致時に `0x622` を設定する。
-- 解析テキスト末尾の `STRINGS / DEFINED DATA` セクションには `1627:0147` の `/F` 説明文字列（`Part 1-16 -> Track 2-11`）が収録されている。したがって `/F` という文字列自体が資料にない、という以前の記述は訂正する。ただし、定義データ上の `1627:0147` と比較先 `0xF05` が同一データを指すことは、このテキストだけでは確認できていない。
-- SNG2S.DOC は /F を MIDI track generation order の変更オプションとして説明する。逆アセンブルで観測した 0x622 の下流利用（alternate track-order selection と queue drain 前の pending-delta reset）はこの説明と整合する。
-- したがって 0x622 ↔ /F は有力な推定だが、実文字列の照合なしに確定扱いしない。また reference runner.MID 生成時に /F が指定されたかは不明。
-- 0x6EE は複数の event-output path で pending delta として読み出されるが、利用可能な解析テキスト内では直接書き込みを見つけられていない。値・由来を未解決として維持し、tick 8 の根拠に推測で使わない。
+- `FUN_1000_184A` compares a two-character option token at operand `0xF05`. The original executable's initialized data image confirms `DS:0x0F05 = "XD\0"`; a match writes `1` to `0x622` (FACTS F-096).
+- Downstream use agrees with the documented meaning of `/XD`: `0x622` suppresses SysEx payload output in `FUN_1000_08EC`. `SNG2S.DOC` independently documents `/XD` as disabling Exclusive/SysEx generation (FACTS F-098).
+- `0x626` selects an alternate track-order table in `FUN_1000_0010`, which fits the documented `/F` option, but this finding does not directly prove the `/F` token-to-flag mapping.
+- The saved reference MIDIs contain SysEx events, so `/XD` was not active in the effective conversion path for those outputs. This rules out a successful run with SysEx suppression enabled, but does not recover the full command line or prove which other switches were explicitly supplied.
+- `0x6EE` is now confirmed as initialized value 4 on disk, and the static startup call-order explains the coarse tempo event at tick 8 for the inspected runner path (FACTS F-094/F-095). Runtime trace and generalization remain unverified.
 
-**次の確認:** 文字列テーブルを含むバイナリ／データダンプ、実際の SNG2S 呼び出し条件、0x6EE の初期値または間接書き込みを確認する。0x622 の対応が確定するまでは H-015 の推定状態を維持する。
+**Manual evidence (FACTS F-098):** `/1` and `/X2` are documented defaults; `/F` reorders SNG tracks into ascending MIDI track order; `/XD` disables SysEx generation. Since the reference MIDIs contain SysEx, the effective run did not suppress SysEx. The manual does not record the historical invocation, and output consistent with a default cannot show whether that switch was explicitly typed.
 
+**Next verification:** compare reference MIDI track ordering against the documented default and `/F` ordering to see whether the effective `/F` behavior can be inferred; directly verify the `/F` token-to-flag mapping; and finish the v1 setup-SysEx producer mapping. Keep actual command-line history marked unknown unless a log/script/sidecar is found.
 
-### H-015 follow-up — 0xF05 token の比較長を確認（2026-10-21）
+### H-015 correction note (2026-10-24)
 
-`FUN_1000_184A` から `FUN_1000_5EC8(local_56, 0xF05, 2)` が呼ばれ、比較結果が一致（戻り値 0）の場合に `0x622 = 1` となる。`FUN_1000_5EC8` の命令列は指定長の文字列比較と整合するため、0xF05 は2-byte token の候補位置である。これは H-015 の parser 経路を具体化するが、token の文字そのものは文字列データ未収録のため確認できず、/F 対応は依然として推定。
+The old `0x622 ↔ /F` mapping is withdrawn. The `/XD → 0x622 = 1` token mapping is directly confirmed by FACTS F-096; the actual reference invocation is unknown. The `0x626 ↔ /F` mapping remains a downstream-use hypothesis until its parser token is directly traced.
 
 ### H-016 — 0x6EE は複数の出力経路で使う delta/間隔値の可能性
 
-**状態:** 用途については静的根拠あり、意味・値・単位は未確定。
+**状態:** 初期化済み image 上の数値は 4 と確認。setup queue drain と tick-8 tempo 出力をつなぐ静的 call-order/dataflow が確認された。runtime trace と全 v1 ファイルへの一般化は未実施。
 
-- 解析テキストの命令行にある `[0x6EE]` 参照29箇所はすべて読み出しで、直接書き込みは見つかっていない。
+- 完全な 18,795 行の SNG2S 解析 export を再走査したところ、`0x6EE` はテキスト上 58 箇所に現れる。これは decompiler 表現と命令行表現の両方を含む。命令行の参照は読み出しのみで、直接書き込みは見つからない。export は初期化済み data segment の実バイトを含まないため、初期値や indirect/aliased write はこの検索だけでは確定できない。
 - `FUN_1000_1CE4` の queue drain 後には、読み出した値を `0x1ED8:0x1EDA` に加算し、同値を `0xF9A:0xF9C` にセットする。別の event-output path にも同じ形があるため、単なる tempo 値というより、出力間隔・delta に関係する共通値である可能性がある。
-- ただし初期化データ、別名参照、間接 store の可能性が残る。値が分からないため、MIDI tick との換算や tick 8 との対応はまだ導けない。
+- on-disk 初期値 4 は確認できたが、runtime 上書きや全 v1 ファイルへの一般化は未確認。startup call order による tick-8 の静的説明は FACTS F-095 を参照。
 
-**次の確認:** 実行ファイルの data segment / relocation / 文字列領域を含むダンプ、または runtime memory trace を得る。解析テキストの xref scan だけでは値の由来は確定しない。
-
-
-### H-016 follow-up — 0x6EE の数値候補は4 ticks（暫定）
-
-参照 `runner.MID` を SMF として直接解析すると、track 1 の SysEx event は tick 0 / 4 / 8 / 8 に出力されている（FACTS F-068）。一方、v1 の `FUN_1000_1CE4` は条件成立時に2回 SysEx-style event を生成して drain し、各 drain 後に `0x6EE` を pending delta `0xF9A:0xF9C` に設定する。`FUN_1000_3F79` の共通 byte 列、`FUN_1000_5FAA` のデータ生成、`FUN_1000_3F54` の checksum 用和計算、`FUN_1000_3EED` の checksum + `F7` 追加から、これらが SysEx 形式であることは静的に支持される。
-
-この2回の drain が track 1 の tick 0 と tick 4 の最初の2件に対応するなら、`0x6EE = 4` と推定でき、2回目の drain 後に残る delta 4 は次の出力を tick 8 に進め得る。これは tick 8 tempo の説明につながる具体的候補だが、まだ以下が未確認である。
-
-- `0xF34` / `0xF3F` から作られる queue payload が、参照 SysEx のどの payload と一致するか。
-- queue drain ごとの `0x6F2:0x6F4` と `0x1ED8:0x1EDA` の実際の値。
-- 参照実行時の `0x622` が pending delta reset を有効にしたか。
-
-したがって `0x6EE = 4` は有望な仮説であり、確認済み事実ではない。runtime trace または payload / tick のイベント単位対応が得られるまでは converter を変更しない。
+**次の確認:** `0x622` の参照実行時の値と、runtime での indirect/aliased write を確認できる手段があれば検証する。静的 startup path は F-095 に整理済み。
 
 
-追加の対応根拠（2026-10-21）: 参照 MIDI の最初の2件の SysEx は、どちらも payload 12 bytes で共通 prefix を持つ。一方、`FUN_1000_1CE4` の最初の2経路は同じ SysEx-style builder を使い、異なる文字列 offset `0xF34` / `0xF3F` のデータを出力して checksum と `F7` を追加する。event 数・形式・順序・tick 間隔が整合するため、これらが tick 0 / 4 の2件に対応し `0x6EE = 4` となる推定は以前より強い。ただし文字列データ本体が解析資料にないため byte-for-byte の照合は未完了で、確定事実には格上げしない。
+### H-016 follow-up — initialized value, tick-8 path, and first setup-pair mapping (2026-10-24)
+
+The original executable's initialized data image confirms `DS:0x06EE = 4` (FACTS F-094). Static startup call-order/pending-delta analysis explains the coarse tempo event at tick 8 for the inspected runner path (FACTS F-095), subject to runtime-state and generalization caveats.
+
+The first two 12-byte setup SysEx events at ticks 0 and 4 are now mapped to `FUN_1000_1CE4` templates `0xF34` / `0xF3F` by comparing formatted arguments, checksum, terminator, and event length against both saved reference MIDIs (FACTS F-097). The `runner.MID` pair uses arguments `0,5,6`; `TEST.MID` uses `0,5,5`. Private payload bytes are intentionally not copied into the public docs.
+
+**Remaining:** map the separate 10-byte setup events at ticks 8 and 8 to their producer path; establish the actual reference command line and runtime `0x622` value if recoverable; and retain the boundary that static analysis is not a runtime trace. Do not change converter behavior without an independent fixture comparison.
 
 
-### H-015 follow-up — string-table evidence found (2026-10-21)
+### H-015 follow-up — command-line token mapping refined (2026-10-24)
 
-Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includes a `STRINGS / DEFINED DATA` section. It contains the `/F` help text at `1627:0147`: `Part 1-16 -> Track 2-11 (default=Track 16-2)`. This confirms that the executable's documented `/F` option text is present in the recovered string table, correcting the earlier statement that no option string was available in the analysis text. It does **not** yet prove that the parser's comparison operand `0xF05` points to that string; segment/offset mapping or a direct data cross-reference is still needed. The relationship `0x622 ↔ /F` remains a strong hypothesis, not a confirmed fact, and the reference MIDI's invocation options remain unknown.
+The original executable's initialized data image and parser control flow now directly confirm `DS:0x0F05 = "XD\0"`: the parser compares a two-character option token against this string and writes `1` to `0x622` on a match (FACTS F-096). Thus `/XD → 0x622 = 1` is confirmed; the previous statement that the token-to-string mapping was unconfirmed is superseded. The help text documents `/XD` as disabling Exclusive/SysEx conversion.
+
+Still unknown: whether `/XD` was actually supplied when the saved `runner.MID` / `TEST.MID` files were generated. The `/F` help text is present, and downstream use is consistent with `0x626`, but the `/F` parser token-to-flag mapping and the reference invocation are not established. Do not infer the actual reference flags from documented defaults alone.
+
+
+### H-016 earlier follow-up — superseded by initialized-image and startup-order evidence (2026-10-24)
+
+The 2026-10-22 note below is retained as investigation history only. Its statements that the initialized value of `0x6EE` was unknown and that the tick-8 path had not been explained are superseded by FACTS F-094/F-095: the original executable's on-disk initialized value is 4, and static startup call-order/dataflow explains the coarse tempo event at tick 8 for the inspected runner path. Runtime trace, indirect writes, and generalization to all v1 files remain unverified. The v1 setup payload-to-event mapping and actual reference command-line invocation remain open.
+
+
+### H-017 — MIMPIV4 playback tempo controls are independent of the unresolved SNG tempo-record consumer (2026-10-22)
+
+**Status:** separation of evidence; no formula-level conclusion.
+
+- The MIMPIV4 v4.27 manual documents Up/Down keys for changing playback tempo and `/Tn` for fine adjustment. Those are user/runtime tempo controls; their existence does not show how a Ballade SNG tempo-record value is decoded.
+- Static tracing confirms a legacy header/base-tempo byte is copied to `0x7BF0` and `0x0440`, and `0x0440` is used by timer initialization and scheduling paths.
+- No proven dataflow currently connects the second word of the binary SNG tempo record to a playback-tempo update routine. It remains possible that the consumer is in an untraced path, but it must not be assumed. The additional candidates `FUN_1000_341E` (special-record payload scan), `FUN_1000_3543` (event/duration pre-scan), and `FUN_1000_2D27` (Program Change rewrite) do not show the tempo-record value being passed to the timer globals. `FUN_1000_8888` schedules a parsed text-command delay plus `0x0440`, but its connection to the binary SNG tempo table is unproven.
+- Do not reuse the SNG2S MIDI-export curve `floor(120*v/64)` as the MIMPIV4 playback formula without locating that consumer or obtaining runtime evidence.
+
+**Next evidence:** trace the actual playback event dispatcher and any alternate interval/scaling state for the SNG tempo-record second word, or obtain a runtime trace comparing timer/scheduler state before and after a known tempo record. Keep SNG2S MIDI-export arithmetic separate.
+
+
+### H-018 — Numeric tempo conversion resolved; tick placement remains open (2026-10-22)
+
+Static tracing of `FUN_1000_3406` confirms that SNG2S reads a tempo value from the table at `0x21E0`, multiplies by the base tempo at `0x2962`, divides by 64, and clamps the result to 1–480. With base tempo 120, value 37 becomes 69 BPM. This is now a supported fact, not an open arithmetic hypothesis.
+
+`FUN_1000_3DE2` initializes `0xF96` to `0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting it. The first call therefore skips the pending-delta increment used by later calls.
+
+Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute tick 8. `0x6EE` is read by setup paths, but its initialized value is missing from the export. The proposed value 4 remains a hypothesis only. Runtime state or initialized data is needed before changing converter behavior.
+
+### H-019 — `0x7BC` override flags and v2 setup SysEx producer mapping (2026-10-24)
+
+**Status:** The on-disk initial byte and the two observed reference-MIDI producer pairs are explained by static analysis; runtime state and exhaustive alias-write exclusion remain unverified.
+
+- The original `SNG2S.EXE` initialized image maps `DS:0x07BC` to file offset `0x6C2C`, whose initial byte is `0x00`. This is the executable's on-disk initial value, not a runtime trace.
+- Bits 0–2 of `0x7BC` gate assignments to `0x7C0`, `0x7C2`, and `0x7C4`. The complete available 18,795-line analysis export contains three bit-test reads and no direct store to `0x7BC`; indirect/aliased writes or paths outside the export are not fully ruled out.
+- For the inspected v2 `SHIZUME0.SNG`, the class-1 fallback values are `6,6` and `0x7BE=5`. With the on-disk initial flag byte and no intervening write, the conditional assignments would replace the three values with `0,6,6`; this conditional static result should not be promoted to a runtime observation.
+- Two distinct producer paths explain the inspected reference MIDI pairs: `FUN_1000_23C0(4)` matches the pair at ticks 4 and 8, while `FUN_1000_1CE4` templates `0xF34` / `0xF3F` match the pair at ticks 100 and 104. Both comparisons include calculated data, checksum, and terminator. They are separate paths, not competing expected values.
+- Do not change Glosa setup values or add hard-coded SysEx based on this static mapping alone. No converter change, runtime trace, or playback was performed.
+
+**Remaining boundary:** confirm whether runtime code can alter `0x7BC` or the related globals through indirect/aliased writes, and perform a runtime trace if available. The static producer mapping for the four inspected events is complete; runtime behavior is not.

@@ -1,32 +1,30 @@
-# SNG → MIDI 逆解析ノート
+# Ballade SNG 逆解析資料
 
-このディレクトリは、Ballade SNG と SNG2S/SNG2GS の調査情報を、長い作業ログから切り離して整理するための入口です。
+## 目的
+Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI・実装・テスト・静的解析の根拠に沿って整理する。調査項目を増やすことではなく、確認済み事項と未解決事項を区別する。
 
-## 現在の進捗（2026-10-21）
+## 現在の結論
+- **v1 レイアウト:** v1 専用のパート構造（サイズ +80、長さフィールド +115/+117、13個の相対 seek 値、ノート開始 +145）を支持する静的根拠があり、別 fixture でも容量条件が一致する。jmplayer の後続版共通検証では候補が失敗する。これは静的照合であり、jmplayer 実行時の再現とは区別する。
+- **v1 tempo:** `SngConverter.cs` に `ReadLegacyV1Tempi()` がある。公開テスト `BalladeV1RunnerProducesReferenceTempoEvents()` は参照値 500000 / 869000 / 869565 の byte sequence を確認し、`BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()` は変化しない tempo stream の既定値維持を確認する。
+- **v1 setup SysEx:** `FUN_1000_1CE4` の `0xF34` / `0xF3F` templates は、参照 `runner.MID` / `TEST.MID` の tick 0 / 4 の setup events と arguments・checksum・terminator・length が一致する（F-097）。tick 8 / 8 の別 producer pair は未対応付け。
+- **SNG2S の tempo 計算:** raw tempo 37 と base tempo 120 から 69 BPM、粗い経路の 869000 µs/qn と grid 経路の 869565 µs/qn を静的解析で説明できる。元の EXE の初期化済み data image から `0x6EE = 4` を確認し、startup call order と pending delta の静的追跡で、参照 fixture の coarse tempo event が tick 8 に出る仕組みを説明できる（F-094/F-095）。runtime trace と全 v1 ファイルへの一般化は未確認。
+- **grid offset:** 192-tick grid と 4/4 は解析対象だが、絶対 offset は記録間で不一致（0x00B5=181、231、0x74+125=241）。未解決として扱い、根拠なく統一しない。
+- **MIMPIV4:** timer 初期化経路は確認済みだが、SNG tempo-record の値が再生中の timer / event interval に入る経路は未特定。SNG2S の MIDI export 式を流用しない。
+- **v2 setup SysEx:** 静的解析と参照 MIDI の照合で、tick 4/8 の `FUN_1000_23C0(4)` 経路と tick 100/104 の `FUN_1000_1CE4` 経路を別々に説明できる（F-093 / H-019 / T-018）。`0x7BC` の実行時状態や間接書き込みの完全排除、runtime trace は未確認。
 
-**最優先:** Ballade v1 の tempo meta（tick 8 / 192）の出力時刻を SNG2S の処理経路と対応付ける。
+## 次の作業
+未完了作業の正本は [NEXT_STEPS.md](NEXT_STEPS.md) の T-018（v2 setup parameter override flags / SysEx payload mapping）、T-017（v1 tick-8 の runtime state / fixture generalization、setup SysEx mapping、参照 MIDI の生成オプション）、T-014（3/4 固有丸め）、T-015（v2 tempo audit）、T-016（MIMPIV4 再生 tempo）とする。T-011〜T-013 は完了した静的解析の記録として扱い、同じ作業を重複させない。
 
-- 数値計算と初回 scheduler の例外経路は静的解析で説明できている。参照 track 1 の SysEx payload と checksum は `FUN_1000_1CE4` / `FUN_1000_3BA7` の生成経路に強く一致し、tick 0 / 4 の並びから `0x6EE = 4` が有力な静的推定となった。ただし実行時値と tick 8 の割当は未検証。
-- 初回 scheduler の例外経路は確認済み。0x6EE の全29命令参照は直接読み出しで、複数の出力経路で delta/間隔値として使われるが、値・初期化元は未解決。
-- オプションフラグの最有力対応は `0x622 ↔ /XD`（SysEx 抑制）、`0x626 ↔ /F`（track-order table 選択）。旧 `0x622 ↔ /F` 仮説は撤回。token bytes と参照生成時の引数は未確認（FACTS F-069）。
-- `HYPOTHESES.md` の H-015 には旧対応の記述が残っているため、文書間の同期は未完了。
-- converter / regression tests は未変更。実行時トレースと実再生は未実施。
-- まず [NEXT_STEPS.md](NEXT_STEPS.md) の進捗サマリーと優先順を確認してください。
+## 文書の役割
+1. [FACTS.md](FACTS.md) — 根拠付きの確認事項。事実 ID の正本。
+2. [HYPOTHESES.md](HYPOTHESES.md) — 未確定の仮説、反証状況、必要な確認。
+3. [NEXT_STEPS.md](NEXT_STEPS.md) — 実行する未完了作業と完了条件の正本。
+4. [V1_TEMPO_INVESTIGATION.md](V1_TEMPO_INVESTIGATION.md) — v1 tempo の詳細。
+5. [BALLADE_LAYOUT_COMPARISON_2026-10-21.md](BALLADE_LAYOUT_COMPARISON_2026-10-21.md) — レイアウト比較と履歴。
+6. [LOG.md](LOG.md) — 時系列の調査履歴。旧仮説は現状の根拠として扱わない。
+7. [引継ぎ文書_20261022.txt](引継ぎ文書_20261022.txt) — 現状と次の作業の引継ぎ。
 
-## 読む順番
-1. [FACTS.md](FACTS.md) — 根拠が確認できている事実
-2. [HYPOTHESES.md](HYPOTHESES.md) — 有力候補・未確定事項
-3. [NEXT_STEPS.md](NEXT_STEPS.md) — 次の調査と完了条件
-4. [LOG.md](LOG.md) — 日付順の調査履歴
-5. [旧・詳細引き継ぎ](../DEVELOPMENT_HANDOFF.md) — 詳細な経緯と過去のメモ
+## 検証上の制約
+公開テスト、private fixture CI、静的解析、実行時トレース、実再生は別の検証段階である。private workflow の成功は、その run が checkout した commit と実行したテスト範囲に限る。Note-event signature や tempo byte sequence の一致を、SMF 全体の byte-for-byte 一致、SysEx payload の一致、または再生結果の完全一致と言い換えない。
 
-## 記録ルール
-- **確認済み**: 根拠となるソース、オフセット、データ比較を記す。
-- **一部確認**: 一部の条件やサンプルでのみ確認できた範囲を明示する。
-- **仮説**: 事実と同じ段落に混ぜず、反証・検証方法を添える。
-- **未確認**: バイナリがない、実行していない、参照出力条件が不明などの制約を明記する。
-- 静的解析、テスト実行、MIDI 再生を別の検証段階として扱う。
-- SngConverter.cs は、制御フローと参照 MIDI のイベント単位の検証が揃うまで変更しない。
-- SNG パート番号、内部スケジューラスロット、MIDI トラック番号を同一視しない。
-
-項目には安定した ID（例: F-001, H-001, T-001）を付け、内容を移動しても参照できるようにします。
+private fixture と逆解析 dump は private repository 内に保持し、この公開 repository に追加しない。PR #9 は明示的な許可なしに merge しない。

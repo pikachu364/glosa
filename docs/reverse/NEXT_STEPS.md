@@ -1,15 +1,41 @@
-# 逆解析の進捗サマリー（2026-10-21）
+# 逆解析の進捗サマリー（2026-10-23 更新）
 
 ## 現在地
 
-- **進行中の最優先課題:** v1 tempo meta の tick 8 / tick 192 の出力時刻を SNG2S の処理経路と対応付ける。
-- **参照 MIDI で確認済み:** tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。time signature は tick 0 の 4/4。
+> **作業境界:** 未完了作業の正本は T-017（tick-8 queue state / 0x6EE / setup SysEx mapping / reference invocation）、T-014（3/4 rounding）、T-015（v2 tempo audit）、T-016（MIMPIV4 playback tempo）。T-011〜T-013 は静的解析の記録として扱い、同じ残件を重複管理しない。
+
+- **進行中の最優先課題:** SNG2S では setup 出力が `FUN_1000_33D4` より先にキューへ積まれ、初回 `FUN_1000_3406` が coarse tempo meta を追加してから `FUN_1000_08EC` がまとめて drain する呼び出し順を確認済み。これが tick 8 になる流れと整合するが、個々の SysEx payload と pending-delta 値の完全な対応は未確定。tick 192 は別経路の 192-grid alignment で説明できる（FACTS F-080/F-073/F-076/F-082）。
+- **参照 MIDI で確認済み:** `runner.MID` は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。`TEST.MID` は tick 0 の 500,000 のみ。両方とも setup SysEx は track 1 の tick 0/4/8/8 にある（FACTS F-082）。time signature は tick 0 の 4/4。
 - **静的解析で説明できたこと:** raw tempo 37 → 69 BPM。tempo-record 経路は (60000 / 69) * 1000 = 869000、192-tick grid 経路は 60000000 / 69 = 869565。数値は参照値と一致するが、tick 8 の割当は実行時に未確認。
-- **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。これを使うと 0x6EE = 4 が具体的な候補になるが、queue payload と accumulator の対応は未確認。
+- **直近の重要な制約:** 初回 FUN_1000_3406 は 0xF96 != 0 の例外経路で、通常経路の pending-delta +1 は通らない。参照 MIDI の track 1 SysEx は tick 0 / 4 / 8 / 8。0x6EE = 4 は候補だが、queue payload と accumulator の対応は未確認。
 - **オプションフラグ対応の再評価:** 下流の用途から `0x626 ↔ /F`（track-order table 選択）、`0x622 ↔ /XD`（SysEx 抑制）が最有力。以前の `0x622 ↔ /F` 仮説は撤回する。parser の比較 operand `0xF05` が `/XD` 文字列に対応すること、token bytes、参照生成時の実際の引数は未確認。FACTS F-069 を参照。
-- **実装への影響:** v1 の汎用 ReadTempi ガードを維持。converter / tempo regression tests は変更しない。v2–v4 の既存挙動も変更なし。
-- **PR:** #5 は reverse/v1-tempo-investigation で open / unmerged。直近確認時の CI status は空であり、CI 成功とは扱わない。
-- **作業の種類:** ここまでの tempo 調査は静的解析。実行時トレース・実再生確認は未実施。
+- **実装への影響:** v1 の汎用 ReadTempi ガードと既存の v1 tempo regression tests を維持する。tick 8 の内部 delta 説明が未確定であることと、現在の実装が参照値を出力することは区別する。新しい tempo 挙動を推測で追加せず、v2–v4 の既存挙動も変更しない。
+- **直近の実装側 CI:** head `3ce65a96` の CI run [39764666646](https://github.com/pikachu364/glosa/actions/runs/39764666646) は成功済み。
+- **今回の文書監査後 (2026-10-22):** docs-only 更新でも PR CI が起動する。直近の結果は GitHub Actions で確認し、queued / in progress を成功扱いしない。実装側の直近成功 run と文書のみの更新後 run は区別する。PR #9 は open / unmerged。
+- **jmplayer の v1 layout rejection:** private `runner.SNG` の実バイト列と現在の `sngmidi.cpp` を照合し、3つの header candidate がすべて part 1 の後続版 offset validation で失敗することを確認（FACTS F-075）。これは静的再現であり、jmplayer を実行してエラーダイアログを採取したものではない。
+- **実データで再確認:** `runner.SNG` は 85,897 bytes、tableEnd=114、legacy headerEnd=116、part 1 start=1510。v1 の +80 block size、+115/+117 length fields、+119 の13 seek 値の合計は実データと一致（FACTS F-037–F-040/F-075）。
+- **MIMPIV4 のタイマー経路:** legacy loader が base-tempo byte を `0x440` / `0x7BF0` に設定し、interrupt-8 hook と I/O timer divisor calculation (`FUN_1FF5_0D61` / `FUN_1FF5_0DFA`) を使用することを確認（FACTS F-077）。v1 tempo-record から実際の playback period / delta への経路は未確定。
+- **作業の種類:** ここまでの tempo / jmplayer 調査は静的解析。実行時トレース・実再生確認は未実施。
+
+## reverse 文書全体の監査（2026-10-22）
+
+- 対象: README、FACTS、HYPOTHESES、LOG、BALLADE_LAYOUT_COMPARISON、V1_TEMPO_INVESTIGATION、引継ぎ文書。
+- 古い調査メモは履歴として残し、現在の結論・TODO と混同しない。過去ログにある option flag の旧対応や `0x6EE = 4` は、後続の訂正・制約を優先する。
+- FACTS の重複 ID は F-089〜F-092 に整理し、参照先も更新した。
+- 節番号の重複を比較文書で修正。コード、テスト、private fixture はこの文書監査では変更していない。
+
+---
+
+## 調査項目の整理（2026-10-22）
+
+このファイルには、完了した解析履歴と現在の未解決事項が混在している。重複した TODO を別々に再調査しないため、以後は次の整理に従う。
+
+- **現在の最優先 TODO の正本:** T-017。残件は (1) 初回 coarse tempo が tick 8 に出る直前の pending delta / absolute tick の根拠、(2) `0x6EE` の初期値・設定元、(3) setup SysEx 4件と各 producer の payload 対応、(4) 参照 MIDI を生成した実際の SNG2S オプション。
+- **重複する観点:** T-011 は grid と queue drain の全体像、T-012 は tempo/device queue の分離、T-013 は preamble と初回 drain の状態を記録している。これらの完了済みチェックをやり直さず、残件は T-017 の上記4点に集約して進める。個々の過去の根拠・解析ログは削除せず保持する。
+- **別件として維持:** T-014 の 3/4 固有丸め、T-015 の v2 tempo-stream audit、T-016 の MIMPIV4 再生タイマー経路は、tick-8 queue gap と同一視しない。
+- **実装/検証の境界:** PR #9 の説明にある tempo 値の出力は現実装と参照 MIDI の一致を指す。一方、初回イベントが tick 8 になる内部 delta の完全な説明や、任意の v1 ファイルへの一般化は未証明。これらを「実装が未対応」と「内部根拠が未確定」で混同しない。
+
+---
 
 ## 次に行うこと（順序）
 
@@ -65,20 +91,14 @@
 
 **完了条件:** 候補がソース解析または参照 MIDI と一致する。整合性だけを根拠に実装へ反映しない。
 
-## T-003 — 参照 MIDI の生成条件を確認する
-**優先度:** 中
+## T-003 — 参照 MIDI の生成条件を確認する（残件は T-017 に集約）
 
-- [x] リポジトリ内の `testdata/ballade/sng2gs/SNG2S.DOC` を確認し、SNG2S Ver. 3.3 の対応バージョン、timebase 48、/F・/N などの出力オプションを FACTS F-001 に整理した。
-- [ ] 既存の参照 MIDI を生成した実行ファイル名・版・指定オプションを確認する。
-- [ ] 参照 MIDI の作成条件が不明なら、未確認として明記する。
-- [ ] +128 tick の根拠をコンダクタ情報と出力イベントから追跡する。
+- [x] リポジトリ内の `SNG2S.DOC` を確認し、SNG2S Ver. 3.3 の対応バージョン、timebase 48、出力オプションの説明を FACTS F-001 に記録した。
+- [x] tempo-record の整数計算と v1/v3/v4 の参照値を静的解析で対応付けた（FACTS F-071/F-073/F-085）。
+- [ ] 保存済み参照 MIDI の実際の実行ファイル・バージョン・オプションは未特定。残件は T-017 で一元管理する。
+- [x] 以前の汎用 `ReadTempi` 適用が v1 に不適切な候補を出す問題をガードし、後続の `ReadLegacyV1Tempi()` と tempo regression tests を追加した。過去の CI 記録は当時の commit に対する結果であり、現在の branch head の CI 成功を意味しない。
 
-- [x] 静的解析で `FUN_1000_3406` が内部バッファ `0x21DC` から `FF 58` time-signature meta、`0x21E0` から `FF 51` tempo meta を出力することを確認（FACTS F-055）。`0x21E4` は別のレコード列として `0x7DE` と `FUN_1000_3B78` に接続するが、意味は未確定。
-- [ ] `0x21DC` / `0x21E0` / `0x21E4` は SNG 内絶対オフセットではなく内部 far-pointer。各バッファの充填元を SNG 読込側へ逆追跡する。
-- [ ] v1 `runner.MID` の tempo meta（tick 0 / 8 / 192）と、v1 conductor に現行 `ReadTempi` を適用した値列の不一致を解消する。`0x7BA` の設定元と内部 tempo buffer の各レコードを対応付ける（FACTS F-053 / F-055 / HYPOTHESES H-012）。
-- [x] 作業ブランチで v1 に後続版向け `ReadTempi` を適用しないガードと回帰テストを追加。これにより誤った tempo 候補は出さないが、tick 8 / 192 の参照 tempo change は未実装。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功（FACTS F-056）。
-
-**完了条件:** 生成条件とオフセット差の説明が、根拠付きで記録される。
+**完了条件:** マニュアルに書かれたオプション説明と、参照 MIDI を実際に生成したオプションを区別する。実行条件が特定できなければ未確認のまま記録し、推測で埋めない。
 
 ## T-004 — スケジューラ表と slot 対応を回収する
 **優先度:** 中
@@ -243,34 +263,198 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 
 
-## T-011 — v1 tempo queue と 192-tick grid の対応付け
-**優先度:** 高
+## T-011〜T-013 — v1 tempo queue / grid / preamble（静的解析は完了）
 
-- [ ] FUN_1000_33D4 の初回 record 消費から FUN_1000_08EC の queue drain まで、pending delta-time (0xF9A:0xF9C) と absolute tick (0x6F2:0x6F4) の更新をイベント出力点ごとに追う。
-- [ ] grid delta 計算（uVar11=192）後の FUN_1000_618A 呼び出しについて、キュー投入時刻と実際の MIDI tick を分けて整理する。
-- [ ] reference tempo tick 0 / 8 / 192 と生成経路をそれぞれ対応付ける。tick 8 の 869,000 µs/quarter の生成元を別途特定する。
-- [ ] 実行時トレースができない場合は、静的推論と参照 MIDI の観測事実を明確に分離して記録する。
+**状態:** 静的な呼び出し順、tempo-record の整数計算、192-tick grid の exact-tempo 経路、初回 `FUN_1000_3406` の例外経路と queue-drain semantics は記録済み（FACTS F-065〜F-068、F-073、F-076、F-080、F-082、F-085）。
 
-**完了条件:** 3つの参照 tempo event の値・tick と SNG2S の各出力経路を根拠付きで説明できること。そこまでは converter / regression test を変更しない。
+これらの節は調査履歴として残す。残件を重複して管理しないため、次の作業は T-017 に集約する。
+
+- tick 8 の pending-delta / absolute-tick の実際の値と因果関係
+- `0x6EE` の初期値・設定元
+- 4件の setup SysEx payload と producer の対応
+- 参照 `runner.MID` を生成した実際のオプション
+
+**検証境界:** `SngConverterTests.cs` の公開テストは 500000 / 869000 / 869565 の期待 byte sequence を検査する。これは変換出力の回帰確認であり、元実行ファイルの実行時挙動全体、SysEx payload、SMF 全体のバイト一致、実再生を証明するものではない。
+
+---
+
+## T-014 — tempo slider curve と 3/4 の MIDI 出力丸めを分離
+**優先度:** 中（v1 の読み込み失敗を直すブロッカーではない）
+
+- [x] jmplayer の仕様メモと SNG2S `FUN_1000_3406` を照合し、`rawValue * baseTempo / 64` の整数除算、1..480 の clamp、baseTempo=120 の場合の `floor(15*v/8) = 2v - ceil(v/8)` を確認（FACTS F-071）。
+- [x] `runner.SNG` の v1 tempo stream を実バイトで再確認。レコードは `(step, value)` の little-endian word pair で、`37` は第2 word、`48/144/192` は第1 word の interval fields。baseTempo 120 で SNG2S の式に入れると 69 BPM になるが、37 をユーザー向け slider 値と同一視できる根拠は未確認（FACTS F-071/F-089）。
+- [ ] SNG2S の 3/4 固有 +1 BPM 説明について、time-signature input と MIDI tempo-meta generation の間に条件分岐があるか、decompilation の全 call/data flow を調べる。
+- [ ] 3/4 の SNG と SNG2S 参照 MIDI が得られた場合、slider 値ごとに実際の tempo meta と time-signature meta を比較する。現在の private fixture tree には 3/4 の参照 fixture が見つかっていないため、未確認のまま数値補正を実装しない。
+- [x] v1/v3/v4 reference MIDIs show the same two integer paths: v1 869000 at tick 8 and 869565 at tick 192 (69 BPM); v3 361000 at tick 92 and 361445 at tick 192 (166 BPM); v4 260000 at tick 116 and 260869 at tick 192 (230 BPM). This confirms the values are coarse millisecond and exact microsecond representations of the same normalized tempo, not two actual BPM changes (FACTS F-071).
+- [ ] The remaining tick-8 queue-drain question is tracked in T-017. Keep the separate 3/4 +1 BPM investigation here; do not duplicate the same queue task.
+
+**完了条件:** slider-to-timer curve と SNG2S MIDI-export rounding を別の処理として説明し、3/4 の補正は参照 fixture で確認できるまで実装しない。
 
 
-## T-012 — tempo と device-parameter queue を分離
+## T-015 — versioned tempo-stream start offsets
+**Priority:** completed for v1; keep later-version base-tempo semantics as a separate audit.
 
-- [x] `0x21E4` / `0x7DE` / `FUN_1000_3BA7` を FF 51 tempo path (`0x21E0`) から分離して確認。
-- [x] tempo-record 側の整数計算 `(60000 / 69) * 1000 = 869000` と、192-tick grid 側の `60000000 / 69 = 869565` を静的解析で照合。参照 tick 8 / 192 の tempo 値に一致する。
-- [ ] queue drain 時点の absolute tick が tick 8 であることを runtime trace で確認する。pending delta `0xF9A:0xF9C` と absolute tick `0x6F2:0x6F4` の値を、最初の queue drain 前後で追う。
-- [ ] `FUN_1000_3406` の1回の scheduler call で、`0x21E0` と `0x21E4` の両方が処理される順序を整理し、`FUN_1000_08EC` の queue drain 順序を確認する。
+- [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S consumes the second word in its base-tempo scaling calculation, so 37 at baseTempo120 yields 69 BPM. Whether this word is semantically the same as the UI slider remains unproven (FACTS F-089).
+- [x] Verify v3/v4 use sentinel +12: value 89 gives 166 BPM in `START__0.SNG`, and value 123 gives 230 BPM in `BOURREE0.SNG`, matching their reference MIDIs.
+- [x] Confirm Glosa already has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` implementations.
+- [ ] Separate audit: v2 `SHIZUME0.SNG` has a different base-tempo setting and a 6/4 grid. Verify its full tempo-stream-to-MIDI tick scaling before changing shared later-version code; do not infer it from the v1 rule.
 
-**注意:** 数値の一致は強い静的根拠だが、tick 8 の割当は runtime 未確認。実行時トレースが済むまでは converter / regression test を変更しない。
+**Result:** jmplayer's shared `last+12` tempo parser would misread the v1 stream even after its part-block layout is fixed. This is a separate v1 compatibility fix, documented in FACTS F-074.
 
-## T-013 — preamble delta と初回 tempo queue drain の状態を確定
 
-- [x] v1 の `FUN_1000_1C70` → `FUN_1000_1CE4` → `FUN_1000_33D4` → 初回 `FUN_1000_3406` → `FUN_1000_08EC` の呼び出し順を静的に追跡。
-- [x] `FUN_1000_3DE2` が `0xF96 = 0xFFFF` にし、`FUN_1000_33D4` が初回 `FUN_1000_3406` の後で `0xF96 = 0` に戻すため、初回 `FUN_1000_3406` は通常の pending delta `+1` 経路を通らないことを確認。
-- [x] 解析テキスト全体の命令行を検索し、`[0x6EE]` の29参照がすべて直接読み出しで、直接 store が見つからないことを確認。複数の event-output path で `0x1ED8:0x1EDA` への加算と `0xF9A:0xF9C` への設定に使われる（FACTS F-067）。
-- [ ] `0x6EE` の実値と初期化元を特定する。data segment、別名アドレス、間接書き込み、runtime memory trace は未確認。
-- [x] `FUN_1000_184A` → `FUN_1000_5EC8(input, 0xF05, 2)` の比較経路を確認。2-byte token の一致で `0x622=1`。下流用途との整合から `/XD` が最有力で、以前の `/F` 対応推定は撤回。ただし token bytes と文字列の直接対応は未確認（FACTS F-069）。
-- [ ] 参照 MIDI 生成時に `/XD` が指定されたか確認し、`0x622 != 0` の pending-delta reset が実際に適用されたかを絞る。SysEx 4件の存在は `/XD` 無効を強く示唆するが、生成条件の直接証拠ではない。
-- [ ] `FUN_1000_1CE4` 内の条件付き queue drain 後の `0x6F2:0x6F4` と `0xF9A:0xF9C`、続く初回 tempo drain の前後を対応表にする。可能なら runtime trace で照合する。
+## T-016 — MIMPIV4 legacy tempo records to playback timer
 
-**注意:** 初回 `FUN_1000_3406` に通常経路の +1 を当てはめない。tick 8 が説明できるまで `SngConverter.cs` と tempo regression tests は変更しない。
+**Priority:** high; required for the SNG2S/MIMPIV4 comparison.
+
+- [x] Retrieve the complete private MIMPIV4 Ghidra export via its blob; the file is larger than the ordinary file-content response and must remain private.
+- [x] Confirm `FUN_1000_22FC` legacy branch reads the byte at `+0x1C` of the loaded conductor structure and stores it in `0x7BF0` and `0x0440`; the timer parameter is not calculated from the tempo record's second word at this point (FACTS F-090).
+- [x] Trace timer setup: `FUN_1FF5_0D61` installs the interrupt-8 handler and initializes timer state; `FUN_1FF5_0DFA` calculates a hardware timer divisor using the current CX parameter, a factor of 120, and `0x3392` timebase; `FUN_1FF5_0DE1` updates the scheduled count.
+- [x] Scan the full available MIMPIV4 Ghidra export for direct `0x0440` references: only loader initialization and timer-driver initialization write it; playback later passes it to `FUN_1FF5_0DE1` (FACTS F-090).
+- [x] Re-open the full private export and verify the call sites: legacy `FUN_1000_22FC` copies conductor byte `header+0x1C` to both `0x7BF0` and `0x0440`; `FUN_1FF5_0D61` loads `0x0440` into `CX` before calling the timer-divisor calculation, and `FUN_1FF5_1409` restores `0x0440` from `0x7BF0`. Other playback scheduling paths call `FUN_1FF5_0DE1` with an event-relative count plus `0x0440`. This confirms the base timer input and additive scheduling path, but does not identify a consumer for the SNG tempo-record second word; do not infer that MIMPIV4 applies SNG2S's `rawValue * baseTempo / 64` formula.
+- [x] Inspect `FUN_1000_341E`, the early special-record scan: it accepts record types `0x01`, `0x02`, and `0x03`, copies bounded payloads into fixed buffers at `0x3BA` / `0x400`, and does not itself read the tempo-record `(step,value)` pairs or reference `0x0440` / `0x7BF0`. This narrows the search but does not identify a dynamic-tempo consumer; do not treat this pre-scan as proof that tempo records are ignored.
+- [x] Follow the `0x3BA` / `0x400` buffers to `FUN_1000_9D75`: it iterates their NUL-terminated bytes and passes text-like values to `FUN_1000_BF17` with fixed screen coordinates/attributes. These buffers are therefore consistent with UI/display labels, not the missing playback-tempo record consumer. This is a static interpretation of call arguments, not a verified function name.
+- [x] Check further candidate paths in the complete export: `FUN_1000_3543` pre-scans event streams and computes maximum absolute tick; `FUN_1000_2D27` rewrites Program Change records; neither shows a timer-base update. `FUN_1000_8888` schedules a parsed text-command delay plus `0x0440`, but no link to the binary SNG tempo table is established.
+- [ ] Identify which MIMPIV4 routine consumes the v1 conductor tempo records and determine whether it changes another timer parameter or per-event delta scaling.
+- [ ] Reconcile that routine against the actual v1 `runner.SNG` records without assuming the SNG2S MIDI-export curve applies to MIMPIV4 playback.
+- [ ] If the path cannot be proven statically, record the exact remaining dataflow gap; do not claim runtime behavior without a trace.
+- [ ] If static tracing cannot identify the consumer, run a runtime trace on a known changing-tempo SNG and compare timer/scheduler state immediately before and after the tempo record.
+
+**Current result:** the loader and hardware-timer path are mapped, and several likely parser/pre-scan candidates have been excluded. The actual consumer of the SNG tempo-record second word remains unidentified. This does not prove that MIMPIV4 ignores tempo records (FACTS F-077/F-084).
+
+
+## T-017 — distinguish coarse tick-8 tempo from exact grid-aligned tempo
+
+**Priority:** high; remaining SNG2S scheduler gap.
+
+- [x] Re-read the complete SNG2S `FUN_1000_0010` decompilation rather than relying on the summary wording. The code reads the first byte of the grid structure through `0x21DC` into `uVar11`; the grid buffer yields `uVar11 = 192`, not 8. The absolute source offset is unresolved (FACTS F-062/F-072/F-080).
+- [x] Confirm `FUN_1000_61EC(absTick, uVar11, 0, 0)` computes the remainder modulo the grid operand and that the following delta aligns the **exact** tempo meta to the next 192-tick boundary. The 869565 event at tick 192 is this path (FACTS F-072/F-080).
+- [x] Correct FACTS F-080 to explicitly state that grid alignment does not explain the earlier coarse 869000 event at tick 8.
+- [x] Trace the startup call order across `1000:0448` → `FUN_1000_1C70` / v1 `FUN_1000_1CE4`, `1000:044B` → `FUN_1000_33D4`, and `1000:0463` → `FUN_1000_08EC`. The two setup drains each leave pending delta 4; the first `FUN_1000_3406` call skips the normal +1 path while `0xF96` is nonzero. When `0x622 == 0`, the main routine preserves pending delta and the queued coarse tempo meta drains at tick 8 (FACTS F-095).
+- [x] Cross-check the setup-output schedule against both private reference files: `runner.MID` and `TEST.MID` each contain SysEx events at ticks 0, 4, 8, and 8 (payload lengths 12, 12, 10, 10). `TEST.MID` has no changed-tempo event because its tempo stream normalizes to the default 120 BPM (FACTS F-082).
+- [x] Re-scan the complete 18,795-line SNG2S export: `0x6EE` appears 58 times across decompiler and assembly views; the assembly references are reads, with no direct store found. The export alone omits initialized data-segment bytes; the original EXE's on-disk initial value is recorded in the next item.
+- [x] Recover the on-disk initialized value of `0x6EE`: `DS:0x06EE` maps to file offset `0x6B5E`, whose bytes `04 00` encode little-endian word value 4 (FACTS F-094).
+- [x] Confirm the parser mapping `/XD → 0x622 = 1` from the original executable's initialized bytes and comparison branch (FACTS F-096). The actual options used to create `runner.MID` / `TEST.MID` remain unknown; `/F` token-to-flag mapping is also not directly confirmed.
+- [x] Map the first two v1 setup SysEx events at ticks 0 and 4 to `FUN_1000_1CE4` templates `0xF34` / `0xF3F`; formatted arguments, checksums, terminators, and lengths match both `runner.MID` and `TEST.MID` (FACTS F-097). Private payload bytes are not copied into public docs.
+- [ ] Map the separate 10-byte setup SysEx events at ticks 8 and 8 to their producer path. Do not generalize the v2 producer mapping resolved in T-018 to v1 without evidence.
+- [ ] Keep converter behavior and tempo tests unchanged until independently validated. The static tick-8 mechanism explains the inspected runner path, but runtime state and generalization to every v1 file are not proven.
+
+**Current result:** the exact grid-aligned tempo path and the static startup mechanism for the coarse tick-8 placement are explained (FACTS F-072/F-080/F-095). The explanation is bounded to the inspected reference path; runtime state, indirect writes, and generalization to all v1 files are not proven.
+
+### Follow-up trace — scheduler calls are not yet a tempo-record consumer (2026-10-22)
+
+- Re-opened the full private MIMPIV4 export and inspected `FUN_1000_8888`, `FUN_1000_A3BB`, `FUN_1FF5_0DE1`, and `FUN_1FF5_0DFA`.
+- `FUN_1000_8888` is called from `FUN_1000_7E55`, a text-command parser that dispatches commands beginning with `@`. The handler parses a value from a text token, stores it at `0x43E`, then schedules `parsedValue + [0x440]` through `FUN_1FF5_0DE1`. This establishes a base-plus-relative scheduling mechanism for that command language; it does **not** establish that the binary SNG conductor tempo-record second word reaches this handler.
+- `FUN_1000_A3BB` is a UI/event-loop routine. When counter `0x43A` reaches threshold `0x3516`, it clears `0x43E` and `0x43A` and reschedules the base value at `0x440`. This looks like expiration/reset handling, not a tempo-record decode path.
+- `FUN_1FF5_0DE1` simply stores the requested count in `0x3390` (normalizing zero to one). The timer-divisor routine `FUN_1FF5_0DFA` uses its CX input to program the timer hardware; no conductor-record pointer or tempo-record field is present in these routines.
+- These traces narrow the known scheduling calls but still do not identify the binary conductor tempo-record consumer. The `FUN_1000_7E55` text-command path should not be conflated with the SNG binary parser without a proven caller/dataflow link.
+- CI recheck for head `1ff04bcb42700727f6963c464e8dc4d4deab730e`: both push run `39736654504` and PR run `39736659682` completed successfully. PR #9 remains open and unmerged.
+
+### Setup-template trace follow-up (2026-10-22)
+
+- The SNG2S text exports show that helper routines at 1000:3F79 and 1000:3F97 load BX with 0x3F82 and 0x3FA0 respectively, then scan bytes until 0xFF. One path sends each byte to the output-byte routine (FUN_1000_4098); the other writes bytes into the queued output buffer (FUN_1000_39C9).
+- FUN_1000_3BA7 uses the 0x3F82/0x3FA0 template paths and also emits explicit bytes including 0x10, 0x16, the current low byte of 0x7DE, a derived 7-bit value, and 0xF7. The branch conditions depend on 0x6FA, 0x6F8, and format byte 0x25DA.
+- This narrows the setup-message construction logic, but the exported disassembly does not include the initialized data bytes at 0x3F82 and 0x3FA0. Consequently the actual template payloads cannot be recovered from these text exports alone, and a one-to-one mapping to runner.MID SysEx payloads is not yet supported. Do not infer full payload bytes from the helper names or the F7 terminator.
+- CI for 67f2dcd completed successfully for both push and PR workflows. PR #9 is still open and unmerged.
+
+### SNG2S option documentation cross-check (2026-10-22)
+
+- Read the archived SNG2S v3.3 manual (`testdata/ballade/sng2gs/SNG2S.DOC` in the private reference repository). It documents `/1` as the default (Format 1), `/X2` as the default SysEx placement (a dedicated track immediately after the conductor track), and `/XD` as disabling SysEx conversion. `/X1` instead puts SysEx into the conductor track; `/F` changes SNG-track ordering, and `/N` omits parts without notes.
+- This narrows the documented defaults for a normal SNG2S invocation, but the exact command line that produced `runner.MID` / `TEST.MID` is still not recorded. The manual does not include the binary template bytes at 0x3F82/0x3FA0, so it cannot close the payload mapping by itself.
+- The SNG2S manual also states output timebase is fixed at 48 ticks per quarter note. That is consistent with the reference MIDI's PPQN but does not explain the coarse tempo meta at tick 8 or the pending-delta value 0x6EE.
+- CI for commit 608e731 completed successfully on both push and PR workflows (runs 39738048630 and 39738058337). PR #9 remains open and unmerged.
+
+
+### Latest continuation note (2026-10-22)
+
+- `FUN_1000_3406` directly reads 4-byte tempo records from the table at `0x21E0`; the second word is normalized using the base tempo at `0x2962`, divided by `0x40`, clamped to 1–480, and compared with `0x7BA` before emitting changed-tempo output.
+- `FUN_1000_3DE2` sets `0xF96 = 0xFFFF`; `FUN_1000_33D4` calls `FUN_1000_3406` before resetting `0xF96` to zero. This confirms the first-call exception path, but does not resolve the tick-8 queue/pending-delta state.
+- The unresolved work is now narrower: trace the state before the first coarse tempo queue drain and recover the initialized value of `0x6EE`; do not re-open the already-supported tempo arithmetic or 192-tick grid calculation.
+
+
+### Private Ballade reference-directory audit (2026-10-22)
+
+The full `glosa-private-data/testdata/ballade` tree has been inventoried and the text documentation / reverse-analysis exports reviewed. It contains versioned SNG fixtures for Ballade v1–v4, SNG2GS reference MIDIs for each version, saved pre-fix Glosa MIDI outputs for v2–v4, the SNG2S v3.3 manual and two SNG2S analysis exports, plus MIMPIV4 v4.27 documentation and its analysis export. The private repository also contains private fixture integration tests; keep all SNG/MID fixtures and private analysis dumps out of the public `glosa` repository.
+
+#### New findings
+- SNG2S manual: default SMF Format 1 and SysEx track placement `/X2`; `/X1` puts SysEx in the conductor track; `/XD` disables SysEx conversion; `/F` changes track ordering; `/N` omits parts with no notes; timebase is fixed at 48 PPQN. The actual options used to create the saved reference MIDIs remain unknown.
+- MIMPIV4 manual: playback tempo can be changed with Up/Down and fine-adjusted with `/Tn`; this is documentation of controls, not the SNG tempo-record conversion formula.
+- MIMPIV4 disassembly: `FUN_1FF5_0D61` hooks INT 8 and initializes timer state; `FUN_1FF5_0DFA` derives a hardware divisor from its `CX` input and writes timer-related I/O ports. `0x0440` and `0x7BF0` receive a byte from a format-dependent loaded record. This is a separate timer path, and no proven link from the binary SNG tempo-record table to that timer input has been established.
+
+#### Revised next actions
+1. For SNG2S, continue only with evidence that can recover the initialized data segment / aliases for `0x6EE`, or obtain a runtime trace. The text export's direct references are reads; do not assume `0x6EE = 4`.
+2. For MIMPIV4, identify the binary SNG parser path that loads `0x7BF0` / `0x0440`, then trace whether any SNG tempo-record data changes the timer input or a separate playback interval. Keep timer hardware initialization distinct from MIDI-export tempo meta handling.
+3. Record the reference MIDI generator version/options if recoverable; otherwise keep this as a comparison limitation.
+4. Keep tempo/meta and physical SMF track-order claims unverified until event-level comparisons or runtime evidence exist. Do not change converter/test behavior based only on numeric coincidence.
+
+**No converter or test code was changed by this audit.**
+
+### MIMPIV4 header-field trace update (2026-10-22)
+
+Follow-up inspection of `FUN_1000_22FC` narrowed one previously open item: the initial timer base is copied from a format-dependent byte in the loaded header/record at `0x6568` into `0x7BF0` and `0x0440`. The old-format branch (`0x7800 == 0`) reads offset `+0x1C`; the nonzero format branch reads offset `+0x06`. `FUN_1000_314F` also contains a separate default initialization of `0x7BF0 = 120`.
+
+**Updated priority:** do not spend the next pass rediscovering the initial timer-base byte. Trace whether later SNG playback parsing or event processing changes `0x0440` / `0x7BF0`, and whether the loaded binary tempo-record stream is connected to that update. This connection is not established yet.
+
+### Private fixture metadata consistency check (2026-10-22)
+
+The private repository's `.github/private-tests/PrivateBalladeFixtureTests.cs` contains tests for v1 `TEST.SNG` tempo-event equality and v1 `runner.SNG` Note-event equality. Its `private-data-ci.yml` stages the private fixtures/tests into the requested Glosa ref and runs the full test project without publishing the fixture files. However, `testdata/ballade/README.md`, `manifest.json`, and `v1/sng2gs/README.md` still describe v1 as unsupported / excluded, which no longer matches the current v1 implementation and private tests. Treat those status strings as stale metadata; the actual CI result for the specific Glosa ref remains the authority. The private metadata files were not changed during this audit.
+
+### MIMPIV4 driver-dispatch cross-reference (2026-10-22)
+
+The six additional writers of `0x0440` are reached from the driver-dispatch routine `FUN_1FF5_1344` through its selected branches (`FUN_1FF5_2769`, `FUN_1FF5_3DD2`, `FUN_1FF5_44E0`, `FUN_1FF5_4CF8`, `FUN_1FF5_5114`, `FUN_1FF5_579C`). Their code initializes driver/scheduler state and copies `0x0438` to `0x0440`; this is evidence for a driver setup path, not a proven SNG tempo-record consumer. The unresolved work is to connect the SNG playback entry path to this dispatch, or document the missing static edge and retain runtime tracing as the required next step.
+
+### MIMPIV4 tempo consumer boundary (2026-10-22)
+
+Static tracing now establishes the driver-dispatch and timer-initialization path: `FUN_1FF5_1344` selects driver setup; selected branches copy `0x0438` to `0x0440`; `FUN_1FF5_0D61` installs the INT 8 handler and passes `0x0440` to `FUN_1FF5_0DFA`, which calculates the timer divisor and writes I/O ports. This is initialization evidence only. No static dataflow yet connects the binary SNG tempo-record second word to updates of `0x0438`, `0x0440`, or `0x7BF0` during playback.
+
+**Next action:** trace the playback record parser/caller chain and all writes to those timer globals after initialization. If the static export omits the relevant edge or initialized data, record that gap and require runtime tracing; do not infer the playback formula from SNG2S MIDI-export arithmetic. No converter changes are justified by this finding.
+
+
+### Private v1 fixture CI result (2026-10-23)
+
+Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) passed on Glosa checkout `440000b971e72debcef72bb12407bcf4e944527a`: build succeeded and 977/977 tests passed, including v1 `TEST.SNG` tempo comparison and `runner.SNG` Note-event comparison. The preceding failures were a comparison-order issue for simultaneous Note-off events at tick 4012 (pitches 77 and 82), not evidence of a converter timing/channel mismatch. The canonical test ordering was stabilized by pitch; production converter code was not changed. Current PR head adds docs only after the validated checkout. Remaining v1 limits: this does not establish SysEx byte equality, physical SMF track/chunk order, complete controller/program/pitch-bend equivalence, or runtime playback correctness. Private metadata files still contain stale v1-unsupported descriptions and should be corrected in the private repository separately.
+
+
+## 2026-10-23 — private v1 validation outcome and next priorities
+
+### What is now verified
+
+- Private workflow [run #6](https://github.com/pikachu364/glosa-private-data/actions/runs/39699711256) checked out Glosa commit `440000b971e72debcef72bb12407bcf4e944527a`, built successfully, and passed 977/977 tests, including `PrivateV1TestSngKeepsReferenceTempoEvents` and `PrivateV1RunnerMatchesReferenceNoteEvents`.
+- The prior runner Note-event mismatch was only the ordering of two simultaneous Note-off signatures at tick 4012, channel 1, pitches 77 and 82. Canonical sorting by pitch fixed the test comparison; production converter code did not need a behavior change.
+- The current PR #9 head is documentation-only after that validated converter/test state. Public CI run #824 for the current docs head was cancelled; prior public run #815 succeeded on an older head. Keep these statuses separate.
+
+### Next actions (ordered)
+
+1. **Do not modify note conversion to address the resolved ordering mismatch.** The canonical-order test fix is sufficient for that issue.
+2. Obtain a non-cancelled public CI run for the current PR head; a cancelled run is neither pass nor failure evidence.
+3. Correct the stale v1-unsupported status in the private metadata (`testdata/ballade/README.md`, `manifest.json`, `v1/sng2gs/README.md`) in the private repository, without copying fixture bytes or private analysis exports into public `glosa`.
+4. Continue only on genuine equivalence gaps: setup SysEx payload byte equality, physical SMF track/chunk order, controller/program/pitch-bend coverage, and later changing-tempo reference fixtures.
+5. Keep the SNG2S tick-8 pending-delta / `0x6EE` initialization question and MIMPIV4 runtime tempo-consumer question separate. `0x6EE = 4` remains unproven; no runtime trace or actual playback test has been performed.
+6. PR #9 remains open. Do not merge without explicit user authorization; before merging, review the two commits behind `main` and resolve any conflict deliberately.
+
+## T-018 — v2 setup SysEx producer mapping
+
+**Status:** static disassembly, original executable initialized-data inspection, and reference-MIDI byte comparison complete for the three identified event pairs. No runtime trace was performed.
+
+- [x] Confirm the v2 loader reads `0x4E` bytes into `0x1AE2` from file offset `0x73` for `SHIZUME0.SNG`.
+- [x] Trace the class-1 fallback: `0x1B04=0`, so `0x1AF4` / `0x1AF6` provide `6,6`; `0x7BE=5`.
+- [x] Inspect the original `SNG2S.EXE` initialized image: `DS:0x07BC` maps to file offset `0x6C2C` and is initialized to `0x00`. Adjacent words initialize `0x7BE=5`, `0x7C0=0`, `0x7C2=5`, `0x7C4=3`.
+- [x] Trace the override gates: bits 0–2 of `0x7BC` control assignments to `0x7C0`, `0x7C2`, and `0x7C4`. The available full analysis export contains no direct store to `0x7BC`; indirect/aliased runtime writes are not fully ruled out.
+- [x] Match `FUN_1000_1CE4`'s `0xF34` / `0xF3F` output against reference MIDI ticks 100 and 104. The events at ticks 100 and 104 match the calculated arguments `0,6,6`, checksums, and terminators.
+- [x] Identify the earlier tick-4 / tick-8 pair as `FUN_1000_23C0(4)`: the calculated data values match the reference events at ticks 4 and 8, including checksums and terminators.
+- [x] Correct the earlier mismatch framing: the tick-4/tick-8 pair and tick-100/tick-104 pair are distinct producer paths, not competing expected values.
+- [x] Keep this v2 investigation separate from T-017's v1 tick-8 pending-delta problem and T-016's MIMPIV4 playback-tempo consumer.
+
+**Result:** the `0x7BC` on-disk initial byte and both identified SysEx producer paths are resolved by static analysis and reference-MIDI byte comparison. No converter/test code was changed; no runtime trace, MIDI regeneration, build, or test was performed.
+
+
+### 付属 README による版情報（2026-10-24）
+
+- [x] `README.DOC` を確認し、対象資料が SNG2S Ver 3.3 であること、Ver 3.2 → 3.3 で Ballade 3 + `/N` 時の 11 トラック目以降の変換欠落が修正されたことを記録した（FACTS F-099）。
+- [x] Ver 3.0〜3.1 は正しい変換を行わないという README の警告を記録した。
+- [x] `/DEF` と `/MT` は Ver 2.0 からの追加オプションと分かったが、README には詳細仕様がないため、推測で意味を補わない。
+
+
+### Reference generation command confirmed (2026-10-24)
+- [x] Record the user's confirmation that `runner.MID` / `TEST.MID` and the other `sng2gs` outputs were generated with commands such as `sng2gs.exe runner.sng` and `sng2gs.exe TEST.sng`, with no switches.
+- [x] Treat these files as default-behavior references; do not explain them by assuming explicit `/F`, `/N`, or `/X1` arguments.
+- [ ] Compare observed empty-track retention and track order against the documented default behavior, keeping observed output separate from unproven internal implementation details.

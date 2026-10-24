@@ -290,4 +290,104 @@ public class SngConverterTests
         }
         return data;
     }
+
+    [Fact]
+    public void BalladeV1RunnerProducesReferenceTempoEvents()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+        byte[] smf = SngConverter.ToSmf(sng);
+
+        // SNG2GS runner.MID records: tick 0 = 500000, tick 8 = 869000,
+        // tick 192 = 869565 microseconds per quarter note. The reference
+        // binary is kept outside this repository; assert its recorded facts.
+        Assert.True(ContainsSequence(smf, TempoEvent(500_000)));
+        Assert.True(ContainsSequence(smf, [0x08, .. TempoEvent(869_000)]));
+        // Delta from tick 8 to tick 192 is 184, encoded as the VLQ 0x81 0x38.
+        Assert.True(ContainsSequence(smf, [0x81, 0x38, .. TempoEvent(869_565)]));
+    }
+
+    [Fact]
+    public void BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+        int conductor = 0x46 + 4 * 11 + 2;
+        int conductorSize = (int)BinaryPrimitives.ReadUInt32LittleEndian(sng.AsSpan(0x46));
+        int conductorEnd = Math.Min(sng.Length, conductor + conductorSize);
+        byte[] marker = [0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF];
+        int last = -1;
+        for (int i = conductor; i + marker.Length <= conductorEnd; i++)
+            if (sng.AsSpan(i, marker.Length).SequenceEqual(marker)) last = i;
+        Assert.True(last >= 0);
+
+        // Make a deterministic no-change tempo stream from the public fixture:
+        // value 64 at base tempo 120 maps to 120 BPM.
+        for (int at = last + 10; at + 4 <= conductorEnd; at += 4)
+        {
+            ushort value = BinaryPrimitives.ReadUInt16LittleEndian(sng.AsSpan(at + 2));
+            if (value > 254) break;
+            BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(at + 2), 64);
+        }
+
+        byte[] smf = SngConverter.ToSmf(sng);
+        Assert.True(ContainsSequence(smf, TempoEvent(500_000)));
+        Assert.False(ContainsSequence(smf, TempoEvent(869_000)));
+        Assert.False(ContainsSequence(smf, TempoEvent(869_565)));
+    }
+
+    [Theory]
+    [InlineData("v1", "runner.SNG")]
+    [InlineData("v2", "SHIZUME0.SNG")]
+    [InlineData("v3", "START__0.SNG")]
+    [InlineData("v4", "BOURREE0.SNG")]
+    public void ConvertsCheckedInBalladeFixturesToReadableMidi(string version, string fileName)
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", version, fileName));
+
+        byte[] smf = SngConverter.ToSmf(sng);
+        MidiSequence sequence = SmfReader.Read(smf);
+
+        Assert.True(smf.AsSpan().StartsWith("MThd"u8));
+        Assert.True(sequence.TrackCount >= 2);
+    }
+
+    [Fact]
+    public void BalladeV1RunnerProducesExpectedNoteEventCounts()
+    {
+        string root = FindRepositoryRoot();
+        byte[] sng = File.ReadAllBytes(Path.Combine(root, "testdata", "ballade", "v1", "runner.SNG"));
+
+        MidiSequence actual = SmfReader.Read(SngConverter.ToSmf(sng));
+        var noteEvents = actual.Events
+            .Where(e => e.Kind == MidiEventKind.Channel &&
+                (((e.Status & 0xF0) == 0x90) || ((e.Status & 0xF0) == 0x80)))
+            .ToArray();
+        int noteOns = noteEvents.Count(e =>
+            (e.Status & 0xF0) == 0x90 && e.Data2 != 0);
+        int noteOffs = noteEvents.Count(e =>
+            (e.Status & 0xF0) == 0x80 ||
+            ((e.Status & 0xF0) == 0x90 && e.Data2 == 0));
+
+        // The SNG2GS comparison recorded in the v1 layout investigation contains
+        // 3,295 Note-ons and 3,295 Note-offs. The binary reference MIDI is not
+        // checked into the repository, so this test verifies counts, not event-for-event equality.
+        Assert.Equal(3295, noteOns);
+        Assert.Equal(3295, noteOffs);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (Directory.Exists(Path.Combine(directory.FullName, "testdata", "ballade")))
+                return directory.FullName;
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException(
+            "Could not find the repository root containing testdata/ballade.");
+    }
 }
