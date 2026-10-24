@@ -581,3 +581,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Compared the original executable's `FUN_1000_1CE4` format templates `0xF34` / `0xF3F` with the saved v1 reference MIDI event signatures.
 - The two 12-byte setup SysEx events at ticks 0 and 4 match the formatted template outputs, checksum, and terminator in both fixtures: `runner.MID` uses arguments `0,5,6`; `TEST.MID` uses `0,5,5` (FACTS F-097). Private SysEx payload bytes are not included in the public docs.
 - This closes the first producer pair only. The separate 10-byte events at ticks 8 and 8 remain to be mapped. No converter/test code changed; no runtime execution, MIDI regeneration, build, test, or playback was performed.
+
+
+## 2026-10-24 — SNG2S.DOC option semantics reviewed
+
+- Read the private SNG2S Ver 3.3 manual at `testdata/ballade/sng2gs/SNG2S.DOC`. It documents `/1` as the Format 1 default, `/X2` as the default dedicated SysEx track after the conductor track, `/X1` as conductor-track placement, `/XD` as no SysEx generation, and `/F` as ascending MIDI track order for SNG tracks (FACTS F-098).
+- Because both saved reference MIDIs contain SysEx events, the effective conversion path did not suppress SysEx via `/XD`. The manual does not contain the actual historical invocation; explicit versus omitted default switches cannot be distinguished from that documentation alone.
+- Updated H-015 and the comparison/next-step documents to separate manual-defined behavior from historical invocation evidence. Next, compare reference MIDI track ordering against the manual's `/F` and non-`/F` order tables. No converter/test code changed; no runtime conversion or playback was performed.
