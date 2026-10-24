@@ -426,3 +426,17 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 4. Continue only on genuine equivalence gaps: setup SysEx payload byte equality, physical SMF track/chunk order, controller/program/pitch-bend coverage, and later changing-tempo reference fixtures.
 5. Keep the SNG2S tick-8 pending-delta / `0x6EE` initialization question and MIMPIV4 runtime tempo-consumer question separate. `0x6EE = 4` remains unproven; no runtime trace or actual playback test has been performed.
 6. PR #9 remains open. Do not merge without explicit user authorization; before merging, review the two commits behind `main` and resolve any conflict deliberately.
+
+## T-018 — resolve legacy setup override flags and v2 SysEx payload mapping
+
+**Priority:** high; closes a concrete mismatch between the SNG2S setup-parameter calculation and the v2 reference MIDI.
+
+- [x] Confirm the v2 loader reads `0x4E` bytes into `0x1AE2` from file offset `0x73` for the inspected `SHIZUME0.SNG` fixture.
+- [x] Trace the class-1 fallback calculation: the byte at `0x1B04` is zero, so the candidate pair comes from `0x1AF4` / `0x1AF6` and both values are 6; `0x7BE` is set to 5.
+- [x] Trace the three override gates: `0x7BC` bit 0 controls assignment to `0x7C0`, bit 1 to `0x7C2`, and bit 2 to `0x7C4`. Set bits preserve prior values.
+- [x] Correct the formatter interpretation: `%c` consumes one byte argument; `FUN_1000_1CE4` supplies the three values in order and builds events from templates `0xF34` / `0xF3F`, with `0xFE` normalized to `0x00`. The applicable path can emit two events; another branch can emit a third via `0xF4A`.
+- [ ] Locate the initialization or writer of `0x7BC`. Search the original initialized data, relocation information, all setup paths, and indirect/aliased writes; the current export only shows the three tests.
+- [ ] Reconcile the calculated candidate values with the complete `SHIZUME0.MID` SysEx payloads. The extracted `10 00 0F 03` / `52 00 0F 0F` payloads do not match the all-flags-clear candidate at the argument level; do not assume the flags are clear or that these events necessarily came from this branch.
+- [ ] Keep this v2 setup-parameter problem separate from T-017's v1 tick-8 pending-delta problem and T-016's MIMPIV4 playback-tempo consumer. No converter change is justified until the value origin and event mapping are grounded.
+
+**Current result:** the parameter calculation and formatter call sequence are understood, but the flag writer and exact v2 payload producer mapping remain open. Static analysis only; no runtime trace, MIDI regeneration, build, or test was performed.
