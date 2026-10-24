@@ -1018,3 +1018,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - This directly confirms the token-to-flag mapping `/XD → 0x622 = 1`. It does **not** establish whether `/XD` was present in the command line used to generate the saved `runner.MID` or `TEST.MID`. The `/F` help text is present, but its parser token-to-`0x626` mapping is not established by this finding.
 
 **Source:** private SNG2S executable initialized image and static-analysis export. No runtime invocation trace was performed.
+
+
+## F-097 — v1 setup SysEx at ticks 0 and 4 maps to the two `FUN_1000_1CE4` format templates (2026-10-24)
+
+**Status:** byte-level output comparison supports the static producer mapping for the first two setup events in both saved v1 reference MIDIs; no runtime trace.
+
+- `FUN_1000_1CE4` formats the `0xF34` and `0xF3F` templates with three character arguments, then runs the checksum and terminator path. The original executable's initialized bytes contain the format markers at these addresses.
+- For `runner.MID`, the template outputs at ticks 0 and 4 match the reference events when the three arguments are `0,5,6`. For `TEST.MID`, the corresponding arguments are `0,5,5`. In both files, the generated lengths, checksum results, and terminators match the respective reference events.
+- This confirms the producer-to-event mapping for the first two 12-byte setup SysEx events without reproducing private payload bytes. It does not map the separate 10-byte events at ticks 8 and 8, nor does it prove runtime state or generalization to every v1 file.
+
+**Source:** private SNG2S executable initialized image and private `runner.MID` / `TEST.MID` event inspection. No runtime execution or playback was performed.
