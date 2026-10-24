@@ -159,21 +159,21 @@ v1 の `FUN_1000_1CE4` は条件付きで queue drain の前後に `0xF9A:0xF9C 
 これは tick-8 の既存仮説を強める/確定する証拠ではなく、通常 scheduler loop の `+1` を初回呼び出しに誤適用しないための制約である。runtime trace がなく、`0x6EE` の値も確定していないため、tick 8 は未確認のまま扱い、converter guard を維持する。
 
 
-## H-015 — SNG2S option flags: 0x622 likely maps to /XD and 0x626 likely maps to /F
+## H-015 — SNG2S option flags and reference invocation
 
-**Status:** best-fit static interpretation; neither option token has been verified byte-for-byte against its parser operand, and the reference invocation is unknown.
+**Status:** `/XD → 0x622 = 1` is confirmed from the initialized data image and parser branch (FACTS F-096). The actual command line used to create the saved reference MIDIs remains unknown; `/F → 0x626` is still a best-fit interpretation rather than a direct token-to-flag proof.
 
-- `FUN_1000_184A` compares a two-byte option token at operand `0xF05` and sets `0x622 = 1` on a match. The recovered strings include `/F` help text, but the current text export does not prove that operand `0xF05` points to that string.
-- Downstream use is the key discriminator: `0x622` suppresses SysEx payload output in `FUN_1000_08EC`, which fits `/XD` (disable Exclusive/SysEx conversion); `0x626` selects an alternate track-order table in `FUN_1000_0010`, which fits `/F` (change part-to-track order).
-- Therefore the older claim `0x622 ↔ /F` is withdrawn. The current best-fit mapping is `0x622 ↔ /XD` and `0x626 ↔ /F`, pending direct token/data-segment confirmation.
-- The saved reference MIDIs contain SysEx events, so `/XD` was probably not active for those runs. This is an inference from output, not proof of the actual command line or flag state.
-- Separately, `0x6EE` remains an unresolved delta/interval value. Its possible value of 4 is a hypothesis only; do not use it as a confirmed tick conversion or alter converter behavior on that basis.
+- `FUN_1000_184A` compares a two-character option token at operand `0xF05`. The original executable's initialized data image confirms `DS:0x0F05 = "XD\\0"`; a match writes `1` to `0x622` (FACTS F-096).
+- Downstream use agrees with the documented meaning of `/XD`: `0x622` suppresses SysEx payload output in `FUN_1000_08EC). The executable's help text documents `/XD` as disabling Exclusive/SysEx conversion.
+- `0x626` selects an alternate track-order table in `FUN_1000_0010`, which fits the documented `/F` option, but this finding does not directly prove the `/F` token-to-flag mapping.
+- The saved reference MIDIs contain SysEx events, so `/XD` was probably not active for those runs. This is an inference from output, not proof of the actual command line or runtime flag state.
+- `0x6EE` is now confirmed as initialized value 4 on disk, and the static startup call-order explains the coarse tempo event at tick 8 for the inspected runner path (FACTS F-094/F-095). Runtime trace and generalization remain unverified.
 
-**Next verification:** recover the initialized data/string mapping or obtain a runtime option trace; record the actual SNG2S invocation if it can be recovered. Until then, retain the mapping as a hypothesis.
+**Next verification:** determine the actual SNG2S invocation if recoverable, directly verify the `/F` token-to-flag mapping, and finish the v1 setup-SysEx producer-to-payload comparison. Do not infer actual flags from documented defaults alone.
 
-### H-015 correction note (2026-10-22)
+### H-015 correction note (2026-10-24)
 
-This section replaces the earlier H-015 wording that associated `0x622` with `/F`. The earlier mapping contradicted the observed downstream uses and should not be used as a current conclusion. The most consistent mapping is now `0x622` → `/XD` (SysEx suppression) and `0x626` → `/F` (track-order selection), still at hypothesis level.
+The old `0x622 ↔ /F` mapping is withdrawn. The `/XD → 0x622 = 1` token mapping is directly confirmed by FACTS F-096; the actual reference invocation is unknown. The `0x626 ↔ /F` mapping remains a downstream-use hypothesis until its parser token is directly traced.
 
 ### H-016 — 0x6EE は複数の出力経路で使う delta/間隔値の可能性
 
