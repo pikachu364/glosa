@@ -6,7 +6,7 @@ Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI�
 ## 現在の結論
 - **v1 レイアウト:** v1 専用のパート構造（サイズ +80、長さフィールド +115/+117、13個の相対 seek 値、ノート開始 +145）を支持する静的根拠があり、別 fixture でも容量条件が一致する。jmplayer の後続版共通検証では候補が失敗する。これは静的照合であり、jmplayer 実行時の再現とは区別する。
 - **v1 tempo:** `SngConverter.cs` に `ReadLegacyV1Tempi()` がある。公開テスト `BalladeV1RunnerProducesReferenceTempoEvents()` は参照値 500000 / 869000 / 869565 の byte sequence を確認し、`BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()` は変化しない tempo stream の既定値維持を確認する。
-- **v1 setup SysEx:** `FUN_1000_1CE4` の `0xF34` / `0xF3F` templates は、参照 `runner.MID` / `TEST.MID` の tick 0 / 4 の setup events と arguments・checksum・terminator・length が一致する（F-097）。tick 8 / 8 の別 producer pair は未対応付け。
+- **v1 setup SysEx:** 参照 `runner.MID` / `TEST.MID` の tick 0 / 4 の setup events は `FUN_1000_1CE4` の `0xF34` / `0xF3F` templates に対応し、arguments・checksum・terminator・length が一致する（F-097）。tick 8 / 8 の2件も `FUN_1000_33D4 → FUN_1000_3B68 → FUN_1000_3B78 → FUN_1000_3BA7` の producer path と payload 計算を byte-level で照合済み（F-101）。全件とも静的解析と保存済み MIDI の比較であり、runtime trace・実再生は未実施。Glosa 側での再現は未実装。
 - **SNG2S の tempo 計算:** raw tempo 37 と base tempo 120 から 69 BPM、粗い経路の 869000 µs/qn と grid 経路の 869565 µs/qn を静的解析で説明できる。元の EXE の初期化済み data image から `0x6EE = 4` を確認し、startup call order と pending delta の静的追跡で、参照 fixture の coarse tempo event が tick 8 に出る仕組みを説明できる（F-094/F-095）。runtime trace と全 v1 ファイルへの一般化は未確認。
 - **grid offset:** 192-tick grid と 4/4 は解析対象だが、絶対 offset は記録間で不一致（0x00B5=181、231、0x74+125=241）。未解決として扱い、根拠なく統一しない。
 - **MIMPIV4:** timer 初期化経路は確認済みだが、SNG tempo-record の値が再生中の timer / event interval に入る経路は未特定。SNG2S の MIDI export 式を流用しない。
