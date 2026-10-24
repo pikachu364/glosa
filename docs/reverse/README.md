@@ -9,7 +9,7 @@ Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI�
 - **SNG2S の tempo 計算:** raw tempo 37 と base tempo 120 から 69 BPM、粗い経路の 869000 µs/qn と grid 経路の 869565 µs/qn を静的解析で説明できる。tick 8 の pending-delta / absolute-tick の完全な因果関係は未解決。
 - **grid offset:** 192-tick grid と 4/4 は解析対象だが、絶対 offset は記録間で不一致（0x00B5=181、231、0x74+125=241）。未解決として扱い、根拠なく統一しない。
 - **MIMPIV4:** timer 初期化経路は確認済みだが、SNG tempo-record の値が再生中の timer / event interval に入る経路は未特定。SNG2S の MIDI export 式を流用しない。
-- **v2 setup SysEx:** `FUN_1000_272A` の計算値と `FUN_1000_1CE4` の `%c` 出力経路は追跡済み。ただし `0x7BC` の実値/書き込み元が未特定で、保存済み v2 MIDI の payload と一致する producer mapping は未確定（F-093 / H-019 / T-018）。
+- **v2 setup SysEx:** 静的解析と参照 MIDI の照合で、tick 4/8 の `FUN_1000_23C0(4)` 経路と tick 100/104 の `FUN_1000_1CE4` 経路を別々に説明できる（F-093 / H-019 / T-018）。`0x7BC` の実行時状態や間接書き込みの完全排除、runtime trace は未確認。
 
 ## 次の作業
 未完了作業の正本は [NEXT_STEPS.md](NEXT_STEPS.md) の T-018（v2 setup parameter override flags / SysEx payload mapping）、T-017（v1 tick-8 queue state、`0x6EE` 初期値、setup SysEx mapping、参照 MIDI の生成オプション）、T-014（3/4 固有丸め）、T-015（v2 tempo audit）、T-016（MIMPIV4 再生 tempo）とする。T-011〜T-013 は完了した静的解析の記録として扱い、同じ作業を重複させない。
