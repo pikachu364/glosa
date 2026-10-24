@@ -482,3 +482,20 @@ private `testdata/ballade/sng2gs/README.DOC` は、対象プログラムを SNG2
 - 両メッセージは template `0x3F82` を使用する。`0x3FA0` は別経路の template で、今回の2件には使われない。
 
 これは initialized image・静的命令列・保存済み reference MIDI の照合であり、runtime trace・再生成・実再生は未実施（FACTS F-101）。
+
+
+## 20. v2/v3/v4 saved MIDI physical-track audit (2026-10-25)
+
+Parsed the saved reference and stored Glosa SMF binaries in private testdata. This audits existing files, not fresh output from current source; the stored v2/v3 Glosa outputs remain subject to the documented pre-Tie-fix caveat.
+
+| Version | Reference tracks / tempo events | Stored Glosa tracks / tempo events | First tempo events: reference vs Glosa (tick: µs/qn) |
+|---|---:|---:|---|
+| v2 SHIZUME0 | 12 / 424 | 11 / 439 | ref 0:500000, 128:1000000; Glosa 0:500000, 288:500000 |
+| v3 START__0 | 12 / 10 | 11 / 8 | ref 0:500000, 92:361000, 192:361445; Glosa 0:361445, 192:361445 |
+| v4 BOURREE0 | 18 / 24 | 17 / 23 | ref 0:500000, 116:260000, 192:260869; Glosa 0:260869, 192:260869 |
+
+Each reference has a dedicated second physical track (zero-based index 1) containing SysEx: v2 17 events, v3 41, v4 224. Stored Glosa has one fewer physical track and no SysEx events there. This matches the documented `/X2` default and the already identified missing Exclusive-track writer path.
+
+The reference part order matches the SNG2S v3.3 manual's no-`/F` rule: v2/v3 output parts 10→1; v4 outputs 10, 16→11, 9→1. Stored Glosa part tracks instead run in ascending part order. In v4, reference note-bearing order is Basoon 2, Basoon 1, Oboe 2, Oboe 1, Cembalo, Bass, Cello, Viola, Violin 2, Violin 1; stored Glosa reverses that direction (Violin 1 through Basoon 2).
+
+The saved conductor tracks also differ beyond track count: v2 has 424 vs 439 tempo events, v3 10 vs 8, and v4 24 vs 23. The listed first tempo ticks/values differ as shown above. These are differences in the saved binaries only and do not establish whether current converter logic caused them. Regenerate v2/v3/v4 with current source before treating the tempo differences as current behavior. No converter or test code was changed.
