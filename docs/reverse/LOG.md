@@ -623,3 +623,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 利用者から、`runner.MID` / `TEST.MID` とその他の `sng2gs` 生成物は `sng2gs.exe runner.sng`、`sng2gs.exe TEST.sng` のようにオプションなしで生成したと確認。
 - このため、保存済み MIDI はデフォルト動作の reference として扱う。`/F`、`/N`、`/X1` などの明示指定を仮定しない旨を FACTS F-100、比較文書 section 18、NEXT_STEPS に反映。
 - MIDI の構造確認は既存 reference の静的解析。converter/test code は変更しておらず、再変換・再生・build・test は実施していない。
+
+
+## 2026-10-25 — v1 tick-8 SysEx payload を静的照合
+
+- 元の SNG2S.EXE の CS:0x3F82 initialized bytes が `F0 41 10 16 12 FF` であることを確認。終端 FF を除いた template と body の組み合わせが、SMF SysEx event data の形式に合う。
+- 0x7DE の initialized word 0x004B と、runner.MID / TEST.MID の tick 8 SysEx 2件を比較。A `41 10 16 12 10 00 16 4B 0F F7`、B `41 10 16 12 52 00 10 4B 53 F7` が静的生成式と byte-for-byte 一致した。
+- FACTS F-101、比較文書 section 19、NEXT_STEPS に結果を記録。runtime trace、再生成、実再生、converter/test code の変更は行っていない。
