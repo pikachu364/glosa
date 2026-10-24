@@ -240,15 +240,14 @@ Static tracing of `FUN_1000_3406` confirms that SNG2S reads a tempo value from t
 
 Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute tick 8. `0x6EE` is read by setup paths, but its initialized value is missing from the export. The proposed value 4 remains a hypothesis only. Runtime state or initialized data is needed before changing converter behavior.
 
-### H-019 — `0x7BC` controls preservation of legacy setup parameters; writer not yet located (2026-10-24)
+### H-019 — `0x7BC` override flags and v2 setup SysEx producer mapping (2026-10-24)
 
-**Status:** bit-level consumer and the direct-reference boundary in the available export are confirmed statically; flag initialization and runtime values remain unknown.
+**Status:** The on-disk initial byte and the two observed reference-MIDI producer pairs are explained by static analysis; runtime state and exhaustive alias-write exclusion remain unverified.
 
-- In `FUN_1000_272A`, bits 0–2 of `0x7BC` independently decide whether calculated values replace `0x7C0`, `0x7C2`, and `0x7C4`. A set bit skips the corresponding assignment and retains the prior value.
-- A full search of the available 18,795-line SNG2S analysis export found exactly three decompiler reads and three corresponding assembly `TEST byte ptr [0x7bc], mask` instructions, with no direct store to `0x7BC`. The export's `STRINGS / DEFINED DATA` section does not expose initialized bytes for this global address. This is a limit of the available artifact, not proof that the original executable lacks a writer.
-- In the same export, `0x7C2` and `0x7C4` have no other direct store sites beyond the conditional loader assignments. `0x7C0` has additional writes in the formatter path. These references narrow the direct-write search but do not rule out initialized data, indirect/aliased writes, omitted instructions, or a path outside the export.
-- For v2 `SHIZUME0.SNG`, the calculated fallback values are `0, 6, 6` if all three bits are clear. That conditional result does not match the already-extracted v2 MIDI payload values, so the actual flag state or another setup path must be resolved before claiming a producer-to-payload mapping.
-- Do not set the flags to zero in Glosa or infer their values from the reference MIDI alone.
+- The original `SNG2S.EXE` initialized image maps `DS:0x07BC` to file offset `0x6C2C`, whose initial byte is `0x00`. This is the executable's on-disk initial value, not a runtime trace.
+- Bits 0–2 of `0x7BC` gate assignments to `0x7C0`, `0x7C2`, and `0x7C4`. The complete available 18,795-line analysis export contains three bit-test reads and no direct store to `0x7BC`; indirect/aliased writes or paths outside the export are not fully ruled out.
+- For the inspected v2 `SHIZUME0.SNG`, the class-1 fallback values are `6,6` and `0x7BE=5`. With the on-disk initial flag byte and no intervening write, the conditional assignments would replace the three values with `0,6,6`; this conditional static result should not be promoted to a runtime observation.
+- Two distinct producer paths explain the inspected reference MIDI pairs: `FUN_1000_23C0(4)` matches the pair at ticks 4 and 8, while `FUN_1000_1CE4` templates `0xF34` / `0xF3F` match the pair at ticks 100 and 104. Both comparisons include calculated data, checksum, and terminator. They are separate paths, not competing expected values.
+- Do not change Glosa setup values or add hard-coded SysEx based on this static mapping alone. No converter change, runtime trace, or playback was performed.
 
-**Next evidence:** inspect the original EXE initialized data/relocations and all startup/setup paths that could write or alias `0x7BC`; then compare each generated template byte against the complete reference SysEx events. If the original initialized data or runtime state cannot be recovered, retain the uncertainty rather than inventing a flag default.
-
+**Remaining boundary:** confirm whether runtime code can alter `0x7BC` or the related globals through indirect/aliased writes, and perform a runtime trace if available. The static producer mapping for the four inspected events is complete; runtime behavior is not.
