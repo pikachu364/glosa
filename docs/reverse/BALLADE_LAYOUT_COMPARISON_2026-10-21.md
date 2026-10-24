@@ -379,11 +379,11 @@ runner 比較の失敗ログでは、比較対象の最初の差として、期�
 - `FUN_1000_33D4` 内の最初の `FUN_1000_3406` 呼び出しは、初期化フラグ `0xF96` により通常の scheduler `+1` 経路とは異なる。初回に通常ループの delta 規則を当てはめない。
 - 元の EXE initialized image から `0x6EE = 4` は on-disk 初期値として確認済み（FACTS F-094）。startup call order と pending-delta の静的追跡は、`0x622 == 0` の inspected runner path で coarse tempo が tick 8 になることを説明する（F-095）。runtime trace と全 v1 ファイルへの一般化は未確認。
 
-### Setup SysEx: first producer pair mapped; second pair remains open
+### Setup SysEx: all four reference events mapped (updated 2026-10-25)
 
 - `FUN_1000_1CE4` formats templates `0xF34` / `0xF3F`, then calculates the checksum and appends the terminator. The formatted output matches the first two 12-byte reference SysEx events at ticks 0 and 4 in both `runner.MID` and `TEST.MID`: arguments are `0,5,6` for `runner.MID` and `0,5,5` for `TEST.MID` (FACTS F-097). Private payload bytes are intentionally omitted here.
-- The separate 10-byte events at ticks 8 and 8 still need producer-to-event mapping. `FUN_1000_3BA7` and its helper paths are candidates, but no one-to-one mapping is claimed until formatted/calculated output, checksum, terminator, and event length are compared.
-- SNG2S v3.3 manual documents `/1` (Format 1) and `/X2` (dedicated SysEx track after the conductor) as defaults; `/X1` puts SysEx in the conductor track, and `/XD` disables SysEx conversion. These are documented defaults, not proof of the arguments used to create `runner.MID` / `TEST.MID`. The manual also documents timebase 48 ticks/quarter.
+- The two 10-byte events at ticks 8 and 8 are now mapped to the startup path `FUN_1000_33D4 → FUN_1000_3B68 → FUN_1000_3B78 → FUN_1000_3BA7`. The initialized template at `CS:0x3F82`, initialized word `DS:0x07DE`, body formulas, checksum bytes, and terminators match both saved references byte-for-byte (FACTS F-101).
+- SNG2S v3.3 manual documents `/1` (Format 1) and `/X2` (dedicated SysEx track after the conductor) as defaults; `/X1` puts SysEx in the conductor track, and `/XD` disables SysEx conversion. The user confirmed the reference MIDI was generated without command-line switches. These are static/data-image and saved-MIDI comparisons, not runtime trace or playback evidence. The manual also documents timebase 48 ticks/quarter.
 
 ### Option flag の修正
 
