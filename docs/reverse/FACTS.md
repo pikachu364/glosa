@@ -1055,3 +1055,11 @@ This narrows the source of the initial timer base but does not show that tempo r
 - It points to `SNG2S.DOC` for the detailed option descriptions. The README alone does not define the exact semantics of `/DEF` or `/MT`, establish which switches were used for `runner.MID` / `TEST.MID`, or prove the runtime behavior of any particular fixture.
 
 **Source:** private `glosa-private-data/testdata/ballade/sng2gs/README.DOC` (SNG2S Ver 3.3). The private document itself is not copied into the public repository.
+
+
+## F-100 — Reference MIDI の生成条件（2026-10-24）
+**状態:** 利用者から提供された生成手順。
+
+- `runner.MID` は `sng2gs.exe runner.sng`、`TEST.MID` は `sng2gs.exe TEST.sng` で生成された。
+- どちらもコマンドライン引数にオプションを付けずに実行したデフォルト出力である。
+- したがって、この reference MIDI の挙動を検討するときは、`/F`、`/N`、`/X1` などを明示指定したと仮定せず、マニュアルに記載されたデフォルト設定と比較する。出力に現れた現象と、実際に有効になった内部処理の説明は区別する。
