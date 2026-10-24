@@ -472,11 +472,13 @@ private `testdata/ballade/sng2gs/README.DOC` は、対象プログラムを SNG2
 - 空のパートトラックが出力に残ることは観測事実。ただし、これだけで内部の全処理条件や個々のトラックの由来まで確定したとは扱わない。
 
 
-### 19. v1 tick-8 SysEx の生成式（2026-10-25）
+### 19. v1 tick-8 SysEx の生成式と payload 照合（2026-10-25）
 
-静的解析で `FUN_1000_33D4 → FUN_1000_3B68 → FUN_1000_3B78 → FUN_1000_3BA7` の起動経路を確認した。`FUN_1000_407F` は `CS:BX` の template を `0xFF` まで出力する。
+静的解析で `FUN_1000_33D4 → FUN_1000_3B68 → FUN_1000_3B78 → FUN_1000_3BA7` の起動経路を確認した。`FUN_1000_407F` は `CS:BX` の template を `0xFF` まで出力する。元の `SNG2S.EXE` の CS:`0x3F82` は `F0 41 10 16 12 FF` で、出力 template は `F0 41 10 16 12`。SMF SysEx event data は先頭 `F0` を除くため、後続 body 6 bytes と合わせて event length 10 bytes になる。
 
-- A: template + `10 00 16 t ((-(t + 0x26)) & 0x7F) F7`
-- B: template + `52 00 10 t ((-(t + 0x62)) & 0x7F) F7`
+- A body: `10 00 16 t ((-(t + 0x26)) & 0x7F) F7`
+- B body: `52 00 10 t ((-(t + 0x62)) & 0x7F) F7`
+- `0x7DE` の initialized word は `0x004B`。参照 `runner.MID` と `TEST.MID` の tick 8 payload は、A = `41 10 16 12 10 00 16 4B 0F F7)、B = `41 10 16 12 52 00 10 4B 53 F7` で、式に `t=0x4B` を代入した結果と byte-for-byte 一致する。
+- 両メッセージは template `0x3F82` を使用する。`0x3FA0` は別経路の template で、今回の2件には使われない。
 
-`t` は `0x7DE` の下位 byte。template が4 byteなら各メッセージは10 byteで、参照 MIDI の tick 8 の2件と長さが一致する。template `CS:0x3F82` の実データと実行時 `0x7DE` は未確認のため、payload の完全一致は未確定。静的解析のみで、runtime trace・再生成・実再生は未実施（FACTS F-101）。
+これは initialized image・静的命令列・保存済み reference MIDI の照合であり、runtime trace・再生成・実再生は未実施（FACTS F-101）。
