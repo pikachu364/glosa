@@ -1063,3 +1063,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - `runner.MID` は `sng2gs.exe runner.sng`、`TEST.MID` は `sng2gs.exe TEST.sng` で生成された。
 - どちらもコマンドライン引数にオプションを付けずに実行したデフォルト出力である。
 - したがって、この reference MIDI の挙動を検討するときは、`/F`、`/N`、`/X1` などを明示指定したと仮定せず、マニュアルに記載されたデフォルト設定と比較する。出力に現れた現象と、実際に有効になった内部処理の説明は区別する。
+
+
+## F-101 — v1 の tick-8 10-byte SysEx 候補は FUN_1000_3BA7 の初期出力経路と整合する
+
+**状態:** 静的呼び出し順と出力バイト数から有力候補を確認。参照 payload との byte-for-byte 照合は未完了。
+
+- 起動時の `FUN_1000_33D4` は、tempo-record 処理の `FUN_1000_3406` の後に `FUN_1000_3B68` を呼ぶ。
+- `FUN_1000_3B68` は `0x7DE != 0x10B4` の場合に値を更新して `FUN_1000_3B78` → `FUN_1000_3BA7` を呼ぶ。起動時には `0x10B4` が `0xFFFF` に初期化されるため、比較値が通常値なら初回出力経路へ入る。
+- `FUN_1000_3BA7` は `FUN_1000_3FA6` または `FUN_1000_3FAF` のテンプレート出力と追加 byte を組み合わせる。v1 相当の `0x25DA < 2` では、最初の分岐条件に応じて最大2つのテンプレート付きメッセージを出し、その後の追加出力は return で回避される経路がある。最初の2経路は各6 byteの明示出力とテンプレートを組み合わせるため、テンプレートが4 byteなら合計10 byteとなる。
+- この制御フローと参照 MIDI の tick 8 にある2件の10-byte SysEx は整合する。ただし、テンプレートの初期データ byte と実際の実行時条件が公開解析テキストだけでは確認できず、2件の payload をそれぞれ特定したとは言えない。
+
+**Sources:** private SNG2S decompilation `FUN_1000_33D4`, `FUN_1000_3B68`, `FUN_1000_3BA7`, `FUN_1000_3FA6`, `FUN_1000_3FAF`; private reference MIDI event lengths. Static analysis only; no runtime trace or playback.
