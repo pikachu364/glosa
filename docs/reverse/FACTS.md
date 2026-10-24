@@ -574,14 +574,15 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 
 ## F-054 — v1 reference MIDI physical track-chunk order includes title/conductor and reverse part order
 
-**状態:** `v1/sng2gs/runner.MID` の SMF chunk 順を直接解析。Glosa 出力との物理 chunk 順比較・互換実装は未完了。
+**状態:** `v1/sng2gs/runner.MID` の SMF chunk 順を直接解析。reference の default order は SNG2S.DOC の既定順と整合する。現行 Glosa との physical chunk layout 差は確認済みで、互換実装は未変更。
 
-- 参照 MIDI は 12 個の `MTrk` chunk を持つ。index 0 はタイトル文字列を含む track、index 1 は名前のない track、index 2〜10 は Note-on を持つパート、index 11 は Note-on のない `Keyboard` track。
+- 参照 MIDI は 12 個の `MTrk` chunk を持つ。index 0 はタイトル文字列と conductor metadata を含む track、index 1 は Text meta `Exclusive` と SysEx 4件を含む track、index 2〜10 は Note-on を持つ part track、index 11 は Note-on のない `Keyboard` track（FACTS F-057）。
 - Note-on を持つ track の順は channel 9 / part 10（Rhythm、928件）、channel 8 / part 9（Per.、480件）、channel 7 / part 8（Bass、61件）、channel 6 / part 7（Backing、688件）、channel 5 / part 6（Chord2、146件）、channel 4 / part 5（Chord1、234件）、channel 3 / part 4（Mero.3、110件）、channel 2 / part 3（Mero.2、175件）、channel 1 / part 2（Mero.1、473件）。末尾 track は channel 0 / part 1（Keyboard）で Note-on は0件。
-- これは SNG part のチャンネル対応が part-1 であることと、参照 MIDI の physical track 順が part 昇順ではなく降順であることを裏付ける。現在の Glosa writer は conductor track 1本と `tracks` の追加順で chunk を書くため、参照 MIDI のタイトル track、独立 conductor track、part 10→1 の並びと一致するとは限らない。
+- ユーザーが確認した生成方法はオプションなしの `sng2gs.exe runner.sng`。したがって、観測された part 10→1 順はマニュアルの v1〜v3 default order と整合し、`/F` を指定したと仮定する必要はない（FACTS F-098/F-100）。
+- 現行 `SngConverter.ToSmf` は conductor track 1本の後に `tracks` を part 1→N の順で書き、独立した `Exclusive` track を生成しない。このため physical track count / role / order は参照 MIDI と異なる。channel `part - 1` が一致することとは別の互換性差である。
 - track name は旧コードページ由来の文字列を含むため、単純な ASCII 文字列比較は正しい互換性検証にならない可能性がある。
 
-**次の調査:** index 0 / 1 / 11 の各 track の meta event と役割をバイト列で確定し、タイトル文字列の encoding、part 1 の空 track を含む正確な順序をテストにする。実装変更前に v2/v3/v4 の track order も比較する。
+**残る確認:** `/F` の実行時出力は参照実行ファイルがないため未検証。ただし default reference の order は確認済み。互換実装前に v2/v3/v4 の物理 track order、title/conductor track と Exclusive track の生成条件、空 track 保持を回帰テスト計画に含める。
 
 
 ## F-055 — SNG2S conductor metadata buffers are dispatched separately
