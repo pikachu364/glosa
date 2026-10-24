@@ -242,11 +242,13 @@ Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute t
 
 ### H-019 — `0x7BC` controls preservation of legacy setup parameters; writer not yet located (2026-10-24)
 
-**Status:** bit-level consumer is confirmed statically; flag initialization and runtime values remain unknown.
+**Status:** bit-level consumer and the direct-reference boundary in the available export are confirmed statically; flag initialization and runtime values remain unknown.
 
 - In `FUN_1000_272A`, bits 0–2 of `0x7BC` independently decide whether calculated values replace `0x7C0`, `0x7C2`, and `0x7C4`. A set bit skips the corresponding assignment and retains the prior value.
-- A search of the available SNG2S export found the three bit tests in the loader and no direct store to `0x7BC`. This only establishes that a writer was not found in the available export text; it does not rule out initialized data, an indirect/aliased write, omitted instructions, or a path outside the export.
+- A full search of the available 18,795-line SNG2S analysis export found exactly three decompiler reads and three corresponding assembly `TEST byte ptr [0x7bc], mask` instructions, with no direct store to `0x7BC`. The export's `STRINGS / DEFINED DATA` section does not expose initialized bytes for this global address. This is a limit of the available artifact, not proof that the original executable lacks a writer.
+- In the same export, `0x7C2` and `0x7C4` have no other direct store sites beyond the conditional loader assignments. `0x7C0` has additional writes in the formatter path. These references narrow the direct-write search but do not rule out initialized data, indirect/aliased writes, omitted instructions, or a path outside the export.
 - For v2 `SHIZUME0.SNG`, the calculated fallback values are `0, 6, 6` if all three bits are clear. That conditional result does not match the already-extracted v2 MIDI payload values, so the actual flag state or another setup path must be resolved before claiming a producer-to-payload mapping.
 - Do not set the flags to zero in Glosa or infer their values from the reference MIDI alone.
 
-**Next evidence:** inspect the original EXE initialized data/relocations and all startup/setup paths that could write or alias `0x7BC`; then compare each generated template byte against the complete reference SysEx events. If static export cannot resolve the writer, retain the uncertainty rather than inventing a flag default.
+**Next evidence:** inspect the original EXE initialized data/relocations and all startup/setup paths that could write or alias `0x7BC`; then compare each generated template byte against the complete reference SysEx events. If the original initialized data or runtime state cannot be recovered, retain the uncertainty rather than inventing a flag default.
+
