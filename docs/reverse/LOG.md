@@ -570,7 +570,7 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 
 ## 2026-10-24 — SNG2S option token cross-reference
 
-- Decoded the original executable's initialized data image and confirmed `DS:0x0F05` contains the two-character token `XD\\0` (file offset `0x7375`). The parser compares the two-character option token against it and sets `0x622 = 1` on a match; this confirms `/XD → 0x622` (FACTS F-096).
+- Decoded the original executable's initialized data image and confirmed `DS:0x0F05` contains the two-character token `XD\0` (file offset `0x7375`). The parser compares the two-character option token against it and sets `0x622 = 1` on a match; this confirms `/XD → 0x622` (FACTS F-096).
 - The help text documents `/XD` as disabling Exclusive/SysEx conversion and documents `/X1` / `/X2` placement choices. This does not establish which options were used to create the saved reference MIDI files. The `/F` token-to-`0x626` mapping remains unconfirmed.
 - Updated H-015, marked the parser-token check complete in T-017, and explicitly retained the reference invocation and v1 producer-to-payload mapping as open work. Reframed the older H-016 note as superseded history so it no longer contradicts F-094/F-095.
 - No converter/test code changed; no runtime invocation, MIDI regeneration, build, test, or playback was performed. Private executable, fixtures, and analysis export remain private.
