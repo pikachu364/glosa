@@ -459,3 +459,9 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 - [x] Record the user's confirmation that `runner.MID` / `TEST.MID` and the other `sng2gs` outputs were generated with commands such as `sng2gs.exe runner.sng` and `sng2gs.exe TEST.sng`, with no switches.
 - [x] Treat these files as default-behavior references; do not explain them by assuming explicit `/F`, `/N`, or `/X1` arguments.
 - [ ] Compare observed empty-track retention and track order against the documented default behavior, keeping observed output separate from unproven internal implementation details.
+
+
+### v1 tick-8 SysEx の byte 照合（2026-10-25）
+- [x] 元の SNG2S.EXE の CS:0x3F82 を読み、template が F0 41 10 16 12、終端が FF であることを確認。
+- [x] 0x7DE の initialized word 0x004B と、runner.MID / TEST.MID の tick 8 SysEx 2 payload を照合。A は 41 10 16 12 10 00 16 4B 0F F7、B は 41 10 16 12 52 00 10 4B 53 F7 で、静的生成式と byte-for-byte 一致。
+- [ ] runtime trace や再生での確認は未実施。今回の一致は EXE initialized image・静的命令列・保存済み MIDI の比較による。
