@@ -461,3 +461,12 @@ private `testdata/ballade/sng2gs/README.DOC` は、対象プログラムを SNG2
 - `/DEF` と `/MT` の詳細な意味は README だけでは分からず、README 自身が `SNG2S.DOC` を参照するよう案内している。
 
 これは付属 README に書かれたリリース情報であり、保存済み `runner.MID` / `TEST.MID` の実際の起動オプションや、個々の fixture における実行時挙動を証明するものではない。private README の本文や fixture データは public repository に複製していない。
+
+
+## 18. 追加確認（2026-10-24）：reference MIDI はオプションなしで生成
+
+利用者から、`runner.MID` / `TEST.MID` および他の `sng2gs` 変換生成物は、`sng2gs.exe runner.sng`、`sng2gs.exe TEST.sng` のようにオプションを付けずに生成したとの情報を得た（FACTS F-100）。したがって、これらのファイルはデフォルト動作の reference として扱う。
+
+- `/1`、`/X2` などマニュアルでデフォルトと記載された動作は、オプションなしの実行条件と整合する。
+- `/F`、`/N`、`/X1` などを明示指定したものとして説明してはならない。
+- 空のパートトラックが出力に残ることは観測事実。ただし、これだけで内部の全処理条件や個々のトラックの由来まで確定したとは扱わない。
