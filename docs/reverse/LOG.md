@@ -550,3 +550,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Matched the distinct reference-MIDI event pairs: `FUN_1000_23C0(4)` explains ticks 4/8, while `FUN_1000_1CE4` templates explain ticks 100/104. The comparisons include calculated data, checksums, and terminators.
 - Corrected the interpretation of the earlier mismatch: it compared two different producer paths. Updated the existing H-019, README conclusion, and comparison section 15; T-018 remains complete for static producer mapping.
 - No converter/test code changed; no runtime trace or playback was performed. Private fixtures and full raw event sequences remain private.
+
+## 2026-10-24 — SNG2S `0x6EE` reference audit
+
+- Re-scanned the complete private SNG2S analysis export (18,795 lines). The address appears 58 times across decompiler and assembly views; the assembly references are reads, and no direct store to `0x6EE` appears.
+- This does not establish the initialized value: the text export omits initialized data-segment bytes, and indirect/aliased writes are not excluded. The proposed value `4` remains unproven.
+- Updated H-016 and the existing T-017 checklist to record the completed full-export scan and keep the remaining work focused on recovering initialized data/runtime state, the v1 setup-SysEx payload mapping, and reference command-line options.
+- No converter/test code changed; no build, test, runtime trace, or playback was performed. Private executable, fixtures, and analysis export remain private.
