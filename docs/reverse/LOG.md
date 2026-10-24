@@ -557,3 +557,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - This does not establish the initialized value: the text export omits initialized data-segment bytes, and indirect/aliased writes are not excluded. The proposed value `4` remains unproven.
 - Updated H-016 and the existing T-017 checklist to record the completed full-export scan and keep the remaining work focused on recovering initialized data/runtime state, the v1 setup-SysEx payload mapping, and reference command-line options.
 - No converter/test code changed; no build, test, runtime trace, or playback was performed. Private executable, fixtures, and analysis export remain private.
+
+
+## 2026-10-24 — T-017 tick-8 queue-order trace
+
+- Confirmed main startup order in SNG2S: `1000:0448` calls `FUN_1000_1C70` (which dispatches to the v1 `FUN_1000_1CE4` setup producer for the legacy path); `1000:044B` then calls `FUN_1000_33D4`; and `1000:0463` calls `FUN_1000_08EC` to drain the queued tempo event.
+- In the v1 setup producer, each of the first two SysEx-style events is drained by `FUN_1000_08EC`, then `0x6EE` is copied into pending delta `0xF9A:0xF9C`. With the confirmed on-disk initial value 4, this advances the setup-event sequence by four ticks per drain.
+- `FUN_1000_33D4` calls `FUN_1000_3DE2`, then `FUN_1000_3406` while `0xF96` still has its initial nonzero value; the first scheduler call therefore skips the normal pending-delta +1 path. The main routine then preserves pending delta when `0x622 == 0), drains the queued tempo event at `1000:0463`, and computes the next delta from the absolute tick/grid calculation.
+- This static call-order chain explains the reference tick-8 coarse tempo placement under the observed legacy path and the `0x622 == 0` condition. It is not a runtime trace; indirect writes and fixture-specific state still bound the conclusion.
+- No converter/test code changed. Runtime execution, MIDI regeneration, and playback were not performed.
