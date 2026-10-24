@@ -1029,3 +1029,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - This confirms the producer-to-event mapping for the first two 12-byte setup SysEx events without reproducing private payload bytes. It does not map the separate 10-byte events at ticks 8 and 8, nor does it prove runtime state or generalization to every v1 file.
 
 **Source:** private SNG2S executable initialized image and private `runner.MID` / `TEST.MID` event inspection. No runtime execution or playback was performed.
+
+
+## F-098 — SNG2S.DOC defines option semantics and defaults, but not the reference invocation (2026-10-24)
+
+**Status:** confirmed from the private version-3.3 manual; actual historical command line remains unknown.
+
+- Usage is documented as `SNG2S sng_file [/sw]`; the manual says the input extension may be omitted and the converter creates a same-basename `.MID` file.
+- `/1` (Format 1) is the documented default when neither `/0` nor `/1` is specified.
+- `/X2` is explicitly documented as the default: SysEx is placed in a dedicated track after the conductor track. `/X1` places SysEx in the conductor track; `/XD` suppresses SysEx generation.
+- `/F` changes SNG track ordering to ascending MIDI track numbers. Without `/F`, the manual documents a different order for Ballade 3 versus other supported formats.
+- These statements describe documented behavior/defaults only. The manual does not record the command line used to generate the saved `runner.MID` / `TEST.MID`; an output consistent with a default cannot distinguish an omitted switch from an explicitly supplied default switch.
+
+**Source:** `glosa-private-data/testdata/ballade/sng2gs/SNG2S.DOC` (SNG2S Ver 3.3). The private manual is not copied into the public repository.
