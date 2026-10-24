@@ -77,7 +77,7 @@
 - [x] 参照 MIDI の物理 track layout を記録するテストを追加。12 track、track-name chunk index、Note-on track の順序/channel/件数、Note-on のない part-1/Keyboard track を検証する（F-054/F-056）。CI run [39400722489](https://github.com/pikachu364/glosa/actions/runs/39400722489) で Ubuntu/macOS/Windows の全 job が成功。
 - [ ] 現行 Glosa 出力と参照の物理 chunk 順を比較する。タイトル/conductor track と Exclusive/SysEx track の役割・生成元が未確定のため、part track の並べ替えだけを先行させない。
 - [x] 参照 track 1 に Text meta `Exclusive` と tick 0/4/8/8 の SysEx 4件があることを確認し、payload を回帰テストへ記録。CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) で3 OS成功（FACTS F-057）。
-- [ ] SysEx 4件の SNG 側生成元を追い、SNG2S の `/X1`、`/X2`、`/XD` オプションとの関係を確認する。生成元を特定するまでは payload を converter にハードコードしない。 元 SNG で payload と共通先頭列 `41 10 16 12` の literal byte sequence は見つからなかったが、これは生成元を確定する証拠ではない（H-013）。
+- [x] 参照 SysEx 4件を静的 producer path / initialized template / checksum / terminator と照合した（tick 0/4: F-097、tick 8/8: F-101）。reference はオプションなし生成で、`/X2` の documented default と track 1 `Exclusive` は整合する。`/X1`・`/XD` の alternate output は未実行。payload を converter にハードコードする実装判断は、生成条件と version scope の回帰方針が決まるまで保留する。
 - [x] v1 専用レイアウト分岐を v2〜v4 と分離し、fixture の参照 Note-on/off 比較テストを追加。作業ブランチ `docs/ballade-version-testdata` の CI run [39253494378](https://github.com/pikachu364/glosa/actions/runs/39253494378) は Ubuntu・macOS・Windows の全 job が成功。
 
 **完了条件:** 候補がソース解析または参照 MIDI と一致する。整合性だけを根拠に実装へ反映しない。
@@ -86,7 +86,7 @@
 
 - [x] リポジトリ内の `SNG2S.DOC` を確認し、SNG2S Ver. 3.3 の対応バージョン、timebase 48、出力オプションの説明を FACTS F-001 に記録した。
 - [x] tempo-record の整数計算と v1/v3/v4 の参照値を静的解析で対応付けた（FACTS F-071/F-073/F-085）。
-- [ ] 保存済み参照 MIDI の実際の実行ファイル・バージョン・オプションは未特定。残件は T-017 で一元管理する。
+- [x] 参照生成コマンドは利用者確認済み：`sng2gs.exe runner.sng` / `sng2gs.exe TEST.sng`、どちらもオプションなし（FACTS F-100）。実行ファイルの hash / 実行時バージョンは未特定。内部 option flag の runtime trace も未実施のため、静的 parser mapping と実際の flag 値は区別する。
 - [x] 以前の汎用 `ReadTempi` 適用が v1 に不適切な候補を出す問題をガードし、後続の `ReadLegacyV1Tempi()` と tempo regression tests を追加した。過去の CI 記録は当時の commit に対する結果であり、現在の branch head の CI 成功を意味しない。
 
 **完了条件:** マニュアルに書かれたオプション説明と、参照 MIDI を実際に生成したオプションを区別する。実行条件が特定できなければ未確認のまま記録し、推測で埋めない。
@@ -326,7 +326,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Cross-check the setup-output schedule against both private reference files: `runner.MID` and `TEST.MID` each contain SysEx events at ticks 0, 4, 8, and 8 (payload lengths 12, 12, 10, 10). `TEST.MID` has no changed-tempo event because its tempo stream normalizes to the default 120 BPM (FACTS F-082).
 - [x] Re-scan the complete 18,795-line SNG2S export: `0x6EE` appears 58 times across decompiler and assembly views; the assembly references are reads, with no direct store found. The export alone omits initialized data-segment bytes; the original EXE's on-disk initial value is recorded in the next item.
 - [x] Recover the on-disk initialized value of `0x6EE`: `DS:0x06EE` maps to file offset `0x6B5E`, whose bytes `04 00` encode little-endian word value 4 (FACTS F-094).
-- [x] Confirm the parser mapping `/XD → 0x622 = 1` from the original executable's initialized bytes and comparison branch (FACTS F-096). The actual options used to create `runner.MID` / `TEST.MID` remain unknown; `/F` token-to-flag mapping is also not directly confirmed.
+- [x] Confirm the parser mapping `/XD → 0x622 = 1` from the original executable's initialized bytes and comparison branch (FACTS F-096). The user confirmed that reference generation used no switches, so `/XD` was not explicitly requested; runtime tracing of the resulting internal flag was not performed. `/F` token-to-flag mapping is also not directly confirmed.
 - [x] Map the first two v1 setup SysEx events at ticks 0 and 4 to `FUN_1000_1CE4` templates `0xF34` / `0xF3F`; formatted arguments, checksums, terminators, and lengths match both `runner.MID` and `TEST.MID` (FACTS F-097). Private payload bytes are not copied into public docs.
 - [x] Trace the startup call `FUN_1000_33D4` → `FUN_1000_3B68` → `FUN_1000_3B78` → `FUN_1000_3BA7`; identify the two message bodies and checksum formulas (FACTS F-101).
 - [x] Read the initialized bytes at `CS:0x3F82`: `F0 41 10 16 12 FF`. The four payload-template bytes after the SMF SysEx status are `41 10 16 12`; `0xFF` is the template terminator.
