@@ -204,20 +204,16 @@ This section replaces the earlier H-015 wording that associated `0x622` with `/F
 追加の対応根拠（2026-10-21）: 参照 MIDI の最初の2件の SysEx は、どちらも payload 12 bytes で共通 prefix を持つ。一方、`FUN_1000_1CE4` の最初の2経路は同じ SysEx-style builder を使い、異なる文字列 offset `0xF34` / `0xF3F` のデータを出力して checksum と `F7` を追加する。event 数・形式・順序・tick 間隔が整合するため、これらが tick 0 / 4 の2件に対応し `0x6EE = 4` となる推定は以前より強い。ただし文字列データ本体が解析資料にないため byte-for-byte の照合は未完了で、確定事実には格上げしない。
 
 
-### H-015 follow-up — string-table evidence found (2026-10-21)
+### H-015 follow-up — command-line token mapping refined (2026-10-24)
 
-Private analysis file `testdata/ballade/sng2gs/sng2gs解析データ.txt` includes a `STRINGS / DEFINED DATA` section. It contains the `/F` help text at `1627:0147`: `Part 1-16 -> Track 2-11 (default=Track 16-2)`. This confirms that the executable's documented `/F` option text is present in the recovered string table, correcting the earlier statement that no option string was available in the analysis text. It does **not** yet prove that the parser's comparison operand `0xF05` points to that string; segment/offset mapping or a direct data cross-reference is still needed. The earlier `0x622 ↔ /F` claim is superseded: downstream use fits `0x622 ↔ /XD` and `0x626 ↔ /F`, but the token-to-string mapping and reference invocation remain unconfirmed.
+The original executable's initialized data image and parser control flow now directly confirm `DS:0x0F05 = "XD\\0"`: the parser compares a two-character option token against this string and writes `1` to `0x622` on a match (FACTS F-096). Thus `/XD → 0x622 = 1` is confirmed; the previous statement that the token-to-string mapping was unconfirmed is superseded. The help text documents `/XD` as disabling Exclusive/SysEx conversion.
+
+Still unknown: whether `/XD` was actually supplied when the saved `runner.MID` / `TEST.MID` files were generated. The `/F` help text is present, and downstream use is consistent with `0x626`, but the `/F` parser token-to-flag mapping and the reference invocation are not established. Do not infer the actual reference flags from documented defaults alone.
 
 
-### H-016 follow-up — 0x6EE is a shared setup spacing value, but its initialized numeric value is unknown (2026-10-22)
+### H-016 earlier follow-up — superseded by initialized-image and startup-order evidence (2026-10-24)
 
-**Status:** repeated use confirmed by static control flow; numeric value and exact event mapping unconfirmed.
-
-- The SNG2S export contains repeated reads of `0x6EE` across setup/preamble emitters. Observed paths add it to `0x1ED8:0x1EDA` and set it as pending delta in `0xF9A:0xF9C`.
-- A full scan of the available 18,795-line export found 58 textual occurrences of `0x6EE` (decompiler and assembly views of the same code included); the assembly references are reads and no direct store appears. The initialized data segment is not included, so the numeric value cannot be read from this artifact.
-- `FUN_1000_08EC` serializes pending delta through `FUN_1000_16E6` and advances output absolute tick `0x6F2:0x6F4`. This establishes the scheduler relationship, not the value of `0x6EE`.
-- The value 4 remains compatible with reference SysEx events at ticks 0/4/8, but the event-by-event mapping and initial value are not proven. Do not promote `0x6EE = 4` to a fact or use it to alter converter behavior.
-- Best next evidence: the original initialized data segment or a runtime trace that records `0x6EE` and the scheduler state at each setup emission.
+The 2026-10-22 note below is retained as investigation history only. Its statements that the initialized value of `0x6EE` was unknown and that the tick-8 path had not been explained are superseded by FACTS F-094/F-095: the original executable's on-disk initialized value is 4, and static startup call-order/dataflow explains the coarse tempo event at tick 8 for the inspected runner path. Runtime trace, indirect writes, and generalization to all v1 files remain unverified. The v1 setup payload-to-event mapping and actual reference command-line invocation remain open.
 
 
 ### H-017 — MIMPIV4 playback tempo controls are independent of the unresolved SNG tempo-record consumer (2026-10-22)
