@@ -672,3 +672,13 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Re-read the SNG2S v3.3 manual: default output is Format 1; `/X2` is the default and creates a dedicated Exclusive track immediately after the conductor track. Without `/F`, non-Ballade-3 files use part order 10→1; Ballade 3 uses 10, 16→11, 9→1. The user-confirmed reference generation command has no switches, so these documented defaults are the appropriate comparison baseline.
 - This documents expected ordering from the manual, not a new binary inspection of every v2/v3/v4 reference MIDI. The existing v4 saved-MIDI observation (18 reference tracks vs 17 saved Glosa tracks) is consistent with one missing dedicated Exclusive track, but the cause of tempo-event count/value differences remains unresolved.
 - No converter or test code changed.
+
+
+## 2026-10-25 — v2/v3/v4 saved MIDI の物理 track / tempo audit
+
+- private testdata にある v2 SHIZUME0、v3 START__0、v4 BOURREE0 の reference MIDI と保存済み Glosa MIDI を SMF chunk/event 単位で解析し、比較文書 §20 に track 数、tempo event 数、初期 tempo event、独立 SysEx track、part order を記録。
+- 3版とも reference は Glosa 保存出力より物理 track が1本多く、reference の track index 1 に SysEx を持つ独立 track がある。reference の part order は SNG2S v3.3 manual のオプションなし default と整合し、保存済み Glosa は part 昇順。
+- tempo event の差も記録したが、比較対象の Glosa MIDI は保存済み旧生成物であり、現行 converter の挙動とは断定していない。
+- 現行 PR head `ab381d4b82865312d973377c860616d1bc4a7e6f` の CI run #1080 は成功完了を確認。
+- private fixture workflow の YAML を確認。workflow_dispatch の `glosa_ref` で branch/tag/commit を指定して再変換・テストできる設計だが、この環境から workflow dispatch を起動する GitHub action は利用できなかった。現行コードからの再生成比較は未実施。
+- converter/test code は変更していない。次は private fixture workflow を現行 PR head で実行し、再生成 MIDI の track layout / tempo event を比較する。
