@@ -56,6 +56,7 @@
 - [x] Tie 開始 tick と選択候補の予定 Note-off tick をイベント単位で照合。v2 は 1,070 Tie 中 1,021 件が tick 一致、49 件が 4〜33 ticks の gap。v3 は 357 Tie 中 353 件が一致、4 件が 1〜3 ticks の gap。オフラインモデルの Note-on/off 署名は参照 MIDI と v2 5,426 件 / v3 10,724 件で差分 0 件（FACTS F-032）。
 - [x] v2/v3 参照 MIDI のトラック内走査で同音高 Note-on の重なり 0 件、同 tick の最新 Tie 候補の競合 0 件を確認。実データは合成 fixture の同 tick 候補 tie-break を直接検証できない。
 - [ ] FIFO/LIFO を正解と仮定せず、Note-off の所有ノートと例外を特定する。
+- [x] F-006 と現行 private-CI の差分を再確認し、v2 の part-track lead-in を `barLength`（SHIZUME0 の 6/4 では 288）ではなく 128 ticks とする版別処理を `SngConverter.cs` に追加した。commit `6763872893fd680e16eb228c2cfddf0babb99c9e`。この修正は v2 Note event の一律 160-tick 差を対象とする。private CI の再実行はまだ行っていないため、成功扱いにはしない。tempo event は別処理のため未修正。
 
 **完了条件:** イベント規則のオフライン照合は完了。CI と修正後の実出力比較を確認してクローズする。
 
