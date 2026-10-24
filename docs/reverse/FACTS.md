@@ -609,16 +609,16 @@ FUN_1000_59AC の先頭では handle が `0x1780` の上限内か確認し、han
 - 参照 MIDI の物理 track layout を記録する回帰テストも作業ブランチに追加した。12 track、track-name を持つ chunk index、Note-on を持つ track の順序・channel・件数、および末尾の part-1/Keyboard track が Note-on を持たないことを固定する。これは参照 fixture の構造テストであり、現行 Glosa 出力との物理 chunk 順一致を証明しない。テストコミット b03cebb06a27c9efe509447d8bb369c8fa89c499。最新 branch HEAD の CI run 39400722489 で3 OSの build/test 成功を確認。
 
 
-## F-057 — v1 reference MIDI の Exclusive track に4件の SysEx がある
+## F-057 — v1 reference MIDI の Exclusive track と4件の SysEx
 
-**状態:** `v1/sng2gs/runner.MID` の SMF track 1 をバイト列から解析し、参照構造テストを追加。SNG 内の生成元および Glosa での再現は未解決。
+**状態（2026-10-25 更新）:** 参照 SMF の track 構造を直接確認。4件の payload は F-097 / F-101 の静的 producer-path と byte-level 比較で対応付け済み。Glosa での再現は未実装。
 
 - track index 1 は Track Name meta ではなく Text meta `Exclusive` を持ち、tick 0 / 4 / 8 / 8 に4件の SysEx がある。
-- SNG2S.DOC は `/X2` を既定動作とし、コンダクター track の直後に Exclusive 専用 track を生成すると説明している。参照 MIDI の track 1 はこの配置と整合する。ただし、runner.MID の生成時に実際にどのオプションを指定したかを示す実行記録は未確認。
-- payload（SMF の F0 イベントに続く長さフィールド内のデータ）は順に `41 10 16 12 10 00 01 00 05 06 64 F7`、`41 10 16 12 52 00 01 00 05 06 22 F7`、`41 10 16 12 10 00 16 4B 0F F7`、`41 10 16 12 52 00 10 4B 53 F7`。
-- SNG2S マニュアルは /X1（Conductor track）、/X2（Track 2）、/XD（SysEx 無効化）を記載する。参照ファイルの track 1 が SysEx 用であることは実データで確認できたが、これら4件の SNG 側の生成元、/X オプションとの対応、Glosa で再現すべき互換範囲は未確定。
-- 元 SNG（85,897 bytes）を走査したところ、4件の payload そのものも、共通先頭列 `41 10 16 12` も、バイト列としては見つからなかった。これは literal な埋め込みがないという事実のみで、SNG2S が合成するのか、別フィールドから導出するのかはまだ判別できない。
-- 作業ブランチに上記4件を固定する回帰テストを追加。これは参照 MIDI の事実を固定するテストであり、converter が SysEx を生成できることを意味しない。テストコミット `cefcac720b993871534ce655a12494462d9f99e5` は `F0` ステータスも含めるよう期待値を修正（commit `335b23e0aef2763f1eaadd949a7a9804267a4f28`）。CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) で Ubuntu/macOS/Windows の全 build/test job が成功。
+- SNG2S.DOC は `/X2` を既定動作とし、conductor track の直後に Exclusive 専用 track を生成すると説明する。ユーザー確認の参照生成コマンドは `sng2gs.exe runner.sng` / `sng2gs.exe TEST.sng` で、オプションなし。従って observed layout は documented default と整合する。`/X1` / `/XD` の別出力は実行時に検証していない。
+- payload は順に `41 10 16 12 10 00 01 00 05 06 64 F7`、`41 10 16 12 52 00 01 00 05 06 22 F7`、`41 10 16 12 10 00 16 4B 0F F7`、`41 10 16 12 52 00 10 4B 53 F7`。
+- tick 0 / 4 の2件は `FUN_1000_1CE4` の templates `0xF34` / `0xF3F` に対応し、format arguments / checksum / terminator / length が reference MIDI と一致する（F-097）。tick 8 / 8 の2件は `FUN_1000_33D4 → FUN_1000_3B68 → FUN_1000_3B78 → FUN_1000_3BA7` の経路に対応し、initialized template `CS:0x3F82`、`DS:0x07DE = 0x004B`、body/checksum/terminator が一致する（F-101）。
+- 元 SNG 内に payload 全体や共通先頭列 `41 10 16 12` が literal bytes として存在しないことは確認済み。これは生成元が存在しない意味ではなく、SNG2S が生成時に組み立てる経路と整合する。
+- 回帰テストは参照 MIDI の track layout と payload を固定するが、現行 converter が SysEx track を生成できることを意味しない。CI run [39401367632](https://github.com/pikachu364/glosa/actions/runs/39401367632) は当時の commit で Ubuntu/macOS/Windows の全 build/test job が成功。現在の branch head の CI 状態は最新 run を参照。
 
 
 ## F-062 — v1 の time-signature buffer 先頭 byte は 192-tick 周期計算にも使われる
