@@ -427,18 +427,17 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 5. Keep the SNG2S tick-8 pending-delta / `0x6EE` initialization question and MIMPIV4 runtime tempo-consumer question separate. `0x6EE = 4` remains unproven; no runtime trace or actual playback test has been performed.
 6. PR #9 remains open. Do not merge without explicit user authorization; before merging, review the two commits behind `main` and resolve any conflict deliberately.
 
-## T-018 — resolve legacy setup override flags and v2 SysEx payload mapping
+## T-018 — v2 setup SysEx producer mapping
 
-**Priority:** high; closes a concrete mismatch between the SNG2S setup-parameter calculation and the v2 reference MIDI.
+**Status:** static disassembly, original executable initialized-data inspection, and reference-MIDI byte comparison complete for the three identified event pairs. No runtime trace was performed.
 
-- [x] Confirm the v2 loader reads `0x4E` bytes into `0x1AE2` from file offset `0x73` for the inspected `SHIZUME0.SNG` fixture.
-- [x] Trace the class-1 fallback calculation: the byte at `0x1B04` is zero, so the candidate pair comes from `0x1AF4` / `0x1AF6` and both values are 6; `0x7BE` is set to 5.
-- [x] Trace the three override gates: `0x7BC` bit 0 controls assignment to `0x7C0`, bit 1 to `0x7C2`, and bit 2 to `0x7C4`. Set bits preserve prior values.
-- [x] Correct the formatter interpretation: `%c` consumes one byte argument; `FUN_1000_1CE4` supplies the relevant byte values to templates `0xF34` / `0xF3F`, with `0xFE` normalized to `0x00`. The applicable path can emit two events; another branch can emit a third via `0xF4A`.
-- [x] Re-scan the complete available SNG2S text export (18,795 lines): the only `0x7BC` references are the three decompiler bit tests and corresponding assembly `TEST` instructions; no direct store is present in this export. `0x7C2` / `0x7C4` have no other visible direct store sites, while `0x7C0` has additional formatter-path writes (FACTS F-093).
-- [ ] Locate the initialization or writer of `0x7BC`. The text export does not expose initialized bytes for this global address. Continue with the original EXE's initialized data/relocations, startup/setup paths, and possible indirect or aliased writes; do not treat the absence of a direct store in the export as proof that no writer exists.
-- [ ] Reconcile the calculated candidate values with the complete `SHIZUME0.MID` SysEx events, including headers, payload bytes, checksum, and `F7`. The extracted `10 00 0F 03` / `52 00 0F 0F` payloads do not match the all-flags-clear candidate at the argument level; do not assume the flags are clear or that these events necessarily came from this branch.
-- [ ] Keep this v2 setup-parameter problem separate from T-017's v1 tick-8 pending-delta problem and T-016's MIMPIV4 playback-tempo consumer. No converter change is justified until the value origin and event mapping are grounded.
+- [x] Confirm the v2 loader reads `0x4E` bytes into `0x1AE2` from file offset `0x73` for `SHIZUME0.SNG`.
+- [x] Trace the class-1 fallback: `0x1B04=0`, so `0x1AF4` / `0x1AF6` provide `6,6`; `0x7BE=5`.
+- [x] Inspect the original `SNG2S.EXE` initialized image: `DS:0x07BC` maps to file offset `0x6C2C` and is initialized to `0x00`. Adjacent words initialize `0x7BE=5`, `0x7C0=0`, `0x7C2=5`, `0x7C4=3`.
+- [x] Trace the override gates: bits 0–2 of `0x7BC` control assignments to `0x7C0`, `0x7C2`, and `0x7C4`. The available full analysis export contains no direct store to `0x7BC`; indirect/aliased runtime writes are not fully ruled out.
+- [x] Match `FUN_1000_1CE4`'s `0xF34` / `0xF3F` output against reference MIDI ticks 100 and 104. The events `F0 41 10 16 12 10 00 01 00 06 06 63 F7` and `F0 41 10 16 12 52 00 01 00 06 06 21 F7` match the calculated arguments `0,6,6`, checksums, and terminators.
+- [x] Identify the earlier tick-4 / tick-8 pair as `FUN_1000_23C0(4)`: the calculated data `10 00 0F 03` and `52 00 0F 0F` match reference events `F0 41 10 16 12 10 00 0F 03 5E F7` and `F0 41 10 16 12 52 00 0F 0F 10 F7`, including checksum and `F7`.
+- [x] Correct the earlier mismatch framing: the tick-4/tick-8 pair and tick-100/tick-104 pair are distinct producer paths, not competing expected values.
+- [x] Keep this v2 investigation separate from T-017's v1 tick-8 pending-delta problem and T-016's MIMPIV4 playback-tempo consumer.
 
-**Current result:** the parameter calculation, formatter call sequence, and direct-reference boundary in the available export are understood. The flag's initialized value/writer and exact v2 payload producer mapping remain open. Static analysis only; no runtime trace, MIDI regeneration, build, or test was performed.
-
+**Result:** the `0x7BC` on-disk initial byte and both identified SysEx producer paths are resolved by static analysis and reference-MIDI byte comparison. No converter/test code was changed; no runtime trace, MIDI regeneration, build, or test was performed.
