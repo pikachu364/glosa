@@ -1,5 +1,12 @@
 # 調査ログ
 
+## 2026-10-25 — tick-8 SysEx format and checksum expressions recovered
+
+- Followed `FUN_1000_407F` to establish that template output stops at byte `0xFF`; traced `FUN_1000_3BA7` instructions for both tick-8 message bodies.
+- Recorded message forms `template + 10 00 16 t checksum F7` and `template + 52 00 10 t checksum F7`, with checksum expressions `(-(t+0x26)) & 0x7F` and `(-(t+0x62)) & 0x7F`, where `t = low byte of 0x7DE`.
+- The output lengths match the two 10-byte reference events if the template has four bytes. Template contents and runtime `0x7DE` remain unverified; no byte-for-byte mapping or runtime execution is claimed.
+
+
 ## 2026-10-25 — v1 tick-8 SysEx producer path narrowed
 
 - Static call-chain review found startup calls `FUN_1000_3B68` after `FUN_1000_3406`; `FUN_1000_3B68` can call `FUN_1000_3BA7` when `0x7DE` changes.
