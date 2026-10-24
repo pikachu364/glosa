@@ -440,3 +440,12 @@ The private fixture workflow's latest successful run is [run #6](https://github.
 従って、以前の「payload 不一致」は異なる2つの producer path を競合候補として比較したことによるものだった。ここで照合した4イベントの静的 producer mapping は説明できる。一方、実行時の `0x7BC` 状態や別経路での global 変更、全イベントへの一般化は未証明であり、converter の変更根拠にはしない。
 
 **残る確認:** 可能なら runtime trace で `0x7BC` と関連 global の実行時値・書き込み経路を確認する。private fixture / reverse export の内容自体は public repository に追加しない。
+
+
+## 16. 追加資料（2026-10-24）：SNG2S.DOC で確認できるオプション仕様
+
+private `testdata/ballade/sng2gs/SNG2S.DOC`（SNG2S Ver 3.3）には、起動形式 `SNG2S sng_file [/sw]`、`/1` の Format 1 default、`/X2` の SysEx 専用トラック default、`/X1` の conductor track 出力、`/XD` の SysEx 出力抑止、`/F` の SNG トラックを若い MIDI トラック番号順に出力する動作が記載されている（FACTS F-098）。
+
+参照 MIDI に SysEx events があるため、実効変換では `/XD` による SysEx 抑止は有効でなかった。一方、マニュアルは `runner.MID` / `TEST.MID` を作成した実際のコマンドラインを記録していない。特に `/1` と `/X2` はデフォルトなので、出力だけから「省略された」のか「明示された」のかは区別できない。
+
+**次の確認:** reference MIDI のトラック順を manual の `/F` 有無の規則と比較する。これは実効挙動の推定には役立つ可能性があるが、実際に入力された command line の証拠とは区別する。
