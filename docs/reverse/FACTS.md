@@ -980,3 +980,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - Comparing the validated checkout with the current PR #9 branch shows only documentation changes after that checkout; converter and test source are unchanged from the passing code state.
 
 **Limitations:** this establishes the scoped tempo-event and Note-event tests, not byte-for-byte SMF equivalence, SysEx payload identity, physical track/chunk ordering, complete controller/program/pitch-bend equivalence, or actual player playback. The current PR head's public CI run #824 was cancelled; do not mark that run as passed.
+
+## F-093 — SNG2S legacy setup parameters and v2 SysEx formatter path (2026-10-24)
+
+**Status:** static disassembly plus private v2 fixture byte inspection; final runtime values of the override flags are unknown.
+
+- `FUN_1000_272A` classifies the header byte into internal classes 0–3: bytes below ASCII '2' select class 0; '2' selects class 1; values above '2' select class 2, and values above '3' select class 3. `FUN_1000_1C70` uses the older `FUN_1000_1CE4` path for classes 0–1 and the newer `FUN_1000_1E6C` path for classes 2–3.
+- For the inspected v2 `SHIZUME0.SNG`, `FUN_1000_272A` reads a `0x4E`-byte version block into `0x1AE2` from file offset `0x73`. In this sample, the byte at `0x1B04` is zero; the class-1 branch therefore selects the fallback pair at `0x1AF4` / `0x1AF6` (both `0x06`), and sets `0x7BE` to 5.
+- Assignments to `0x7C0`, `0x7C2`, and `0x7C4` are gated by bits 0, 1, and 2 of `0x7BC`: a clear bit allows the calculated value to replace the prior value; a set bit preserves the prior value. If all three bits are clear, this sample's calculated values are `0x7C0=0`, `0x7C2=6`, and `0x7C4=6`. This is conditional, not a confirmed final state.
+- `FUN_1000_1CE4` passes these three values as three `%c` arguments to the `0xF34` and `0xF3F` templates, producing two SysEx-style events on the applicable branch. `%c` consumes one byte argument; the template's `0xFE` marker is converted to `0x00` before checksum generation. A separate `0xF4A` event can be emitted on another branch, so the routine is not limited to two events in every path.
+- The conditional values above do not explain the previously extracted v2 `SHIZUME0.MID` payload bytes (`10 00 0F 03` and `52 00 0F 0F`). The actual `0x7BC` state and the origin of its bits are not established; do not force a match by assuming the flags are clear.
+
+**Source:** private SNG2S static-analysis export and private v2 fixture inspection. The private binary, fixture, and analysis export remain in the private repository. No runtime trace or converter change was made.
