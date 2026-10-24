@@ -588,3 +588,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Read the private SNG2S Ver 3.3 manual at `testdata/ballade/sng2gs/SNG2S.DOC`. It documents `/1` as the Format 1 default, `/X2` as the default dedicated SysEx track after the conductor track, `/X1` as conductor-track placement, `/XD` as no SysEx generation, and `/F` as ascending MIDI track order for SNG tracks (FACTS F-098).
 - Because both saved reference MIDIs contain SysEx events, the effective conversion path did not suppress SysEx via `/XD`. The manual does not contain the actual historical invocation; explicit versus omitted default switches cannot be distinguished from that documentation alone.
 - Updated H-015 and the comparison/next-step documents to separate manual-defined behavior from historical invocation evidence. Next, compare reference MIDI track ordering against the manual's `/F` and non-`/F` order tables. No converter/test code changed; no runtime conversion or playback was performed.
+
+
+## 2026-10-24 — SNG2S README.DOC の版履歴を反映
+
+- private `testdata/ballade/sng2gs/README.DOC` を確認し、SNG2S Ver 3.3 の版履歴を FACTS F-099 と比較メモに追加。
+- README に明記された Ver 2.0 からの変更（Ballade 3 対応、タイトル/トラック名の meta-event `FF 03` 化、`/DEF` と `/MT` の追加）、Ver 3.2 → 3.3 の `/N` 使用時に Ballade 3 の 11 トラック目以降が欠落する不具合修正、Ver 3.0〜3.1 の使用警告を記録した。
+- `/DEF` と `/MT` の具体的な仕様、保存済み reference MIDI の実際の起動オプション、個別 fixture の runtime behavior は README からは確定できないと明記。詳細オプションは `SNG2S.DOC` を参照するという README の案内も保持。
+- private README の本文や private fixture / payload bytes は public repository に複製していない。converter/test code の変更、build、test、runtime conversion、playback は行っていない。
