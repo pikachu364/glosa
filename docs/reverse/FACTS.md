@@ -994,3 +994,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - The earlier suspected mismatch was a comparison between two distinct producer paths. Both identified event pairs are explained by the static code and reference MIDI. `FUN_1000_1CE4` uses `%c` arguments and normalizes template marker `0xFE` to `0x00` before checksum generation; another branch can emit a separate `0xF4A` event.
 
 **Source:** private SNG2S executable, static-analysis export, and v2 fixture/reference MIDI inspection. Private binaries, SNG/MIDI fixtures, and analysis exports remain in the private repository. No converter change, runtime trace, MIDI regeneration, build, or test was performed.
+
+
+## F-095 — SNG2S v1 startup order explains the coarse tick-8 tempo placement (2026-10-24)
+
+**Status:** supported by static call-order/dataflow analysis and the private runner reference MIDI; no runtime trace.
+
+- The main startup routine calls `FUN_1000_1C70` at `1000:0448`, then `FUN_1000_33D4` at `1000:044B`, and then drains the queued event through `FUN_1000_08EC` at `1000:0463`.
+- For the legacy v1 path, `FUN_1000_1C70` calls `FUN_1000_1CE4`. The first two setup SysEx-style events each call `FUN_1000_08EC`; after each drain, the producer adds `0x6EE` to the setup absolute accumulator and stores that value as pending delta `0xF9A:0xF9C`. The original executable's initialized image confirms `0x6EE = 4` on disk (F-094).
+- `FUN_1000_33D4` calls `FUN_1000_3DE2` and then `FUN_1000_3406`. The latter skips its normal pending-delta increment while `0xF96` is nonzero; `FUN_1000_33D4` clears `0xF96` only after that first call.
+- Back in the main routine, the pending delta is explicitly cleared only if `0x622 != 0`. When `0x622 == 0`, the pending value 4 from the second setup event survives to the subsequent `FUN_1000_08EC` drain of the queued tempo meta. Together with the accumulated absolute tick, this accounts for the coarse tempo event being serialized at tick 8 in the inspected runner reference.
+- This is a static explanation of the observed startup path, not proof that every v1 file or runtime state follows the same path. The exact runtime value of `0x622`, indirect writes, and generalization beyond the inspected fixture remain caveats.
+
+**Source:** private SNG2S static-analysis export, original executable initialized image, and private runner reference MIDI. No runtime trace or playback was performed.
