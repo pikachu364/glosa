@@ -6,6 +6,7 @@
 
 - **T-017 の進展:** 元 EXE initialized image から `DS:0x06EE = 4`、`DS:0x07DE = 0x004B`、`CS:0x3F82 = F0 41 10 16 12 FF` を確認。静的 call order と reference MIDI を照合し、tick 0/4 の 12-byte SysEx 2件、tick 8 の 10-byte SysEx 2件すべてを producer path / payload と対応付けた（FACTS F-094/F-095/F-097/F-101）。
 - **tempo event:** `runner.MID` の tempo は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。`TEST.MID` は tick 0 の 500,000 のみ。coarse tempo の tick 8 placement は、setup drains の後に pending delta 4 が残る startup path と整合する。tick 192 の exact tempo は別の 192-tick grid path（FACTS F-072/F-080/F-095）。
+- **v2〜v4 saved MIDI audit (2026-10-25):** reference と保存済み Glosa MIDI をバイナリ解析し、各版で Glosa 側が物理 track 1本少ないこと、reference track index 1 に独立 SysEx track があること、パート順が逆方向であること、tempo event に差があることを記録（比較文書 §20）。これは保存済み旧出力の比較であり、現行コードからの再生成結果ではない。次は private fixture workflow で現行 PR head を指定して再検証し、現行挙動と旧生成物の差を切り分ける。
 - **オプションフラグ:** parser の文字列と分岐から `/XD → 0x622 = 1` は直接確認済み（F-096）。reference MIDI の生成時に `/XD` が指定されたかは不明だが、ユーザー確認では生成コマンドにオプションなし。`/F` token-to-flag の直接対応は未確認。
 - **残る制約:** 解析は original EXE initialized image、静的命令列、保存済み MIDI の照合であり、runtime trace / 実再生は未実施。indirect writes と inspected fixture 以外への一般化は未証明。converter と tempo regression tests は変更しない。
 ## reverse 文書全体の監査（2026-10-22）
