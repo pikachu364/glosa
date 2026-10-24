@@ -445,3 +445,10 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 - [x] Keep this v2 investigation separate from T-017's v1 tick-8 pending-delta problem and T-016's MIMPIV4 playback-tempo consumer.
 
 **Result:** the `0x7BC` on-disk initial byte and both identified SysEx producer paths are resolved by static analysis and reference-MIDI byte comparison. No converter/test code was changed; no runtime trace, MIDI regeneration, build, or test was performed.
+
+
+### 付属 README による版情報（2026-10-24）
+
+- [x] `README.DOC` を確認し、対象資料が SNG2S Ver 3.3 であること、Ver 3.2 → 3.3 で Ballade 3 + `/N` 時の 11 トラック目以降の変換欠落が修正されたことを記録した（FACTS F-099）。
+- [x] Ver 3.0〜3.1 は正しい変換を行わないという README の警告を記録した。
+- [x] `/DEF` と `/MT` は Ver 2.0 からの追加オプションと分かったが、README には詳細仕様がないため、推測で意味を補わない。
