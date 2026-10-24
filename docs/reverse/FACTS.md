@@ -1007,3 +1007,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - This is a static explanation of the observed startup path, not proof that every v1 file or runtime state follows the same path. The exact runtime value of `0x622`, indirect writes, and generalization beyond the inspected fixture remain caveats.
 
 **Source:** private SNG2S static-analysis export, original executable initialized image, and private runner reference MIDI. No runtime trace or playback was performed.
+
+
+## F-096 — SNG2S command parser maps the `XD` token to the SysEx-disable flag (2026-10-24)
+
+**Status:** confirmed by executable data bytes and static parser control flow; reference invocation remains unknown.
+
+- The original `SNG2S.EXE` initialized data image contains the two-byte token `XD\0` at `DS:0x0F05` (file offset `0x7375`). The command parser compares the parsed option token against this string with a length of 2.
+- When the comparison succeeds, the parser writes `1` to `0x622`. The option help string identifies `/XD` as “Exclusive disable”; the downstream startup path clears pending delta only when `0x622 != 0`.
+- This directly confirms the token-to-flag mapping `/XD → 0x622 = 1`. It does **not** establish whether `/XD` was present in the command line used to generate the saved `runner.MID` or `TEST.MID`. The `/F` help text is present, but its parser token-to-`0x626` mapping is not established by this finding.
+
+**Source:** private SNG2S executable initialized image and static-analysis export. No runtime invocation trace was performed.
