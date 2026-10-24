@@ -377,17 +377,17 @@ runner 比較の失敗ログでは、比較対象の最初の差として、期�
 - 参照 `runner.MID` の tempo meta は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。869,000 は `floor(60,000 / 69) × 1,000`、869,565 は `floor(60,000,000 / 69)` に対応し、同じ 69 BPM の別々の整数丸め経路と整合する。
 - `FUN_1000_3406` が coarse 869,000 event を queue すること、192-tick grid path が exact 869,565 event を生成することは静的解析で支持される。tick 192 への grid alignment は説明できるが、tick 8 の pending-delta / absolute-tick state は未確定。数値の一致だけで tick placement の因果関係を証明したことにはしない。
 - `FUN_1000_33D4` 内の最初の `FUN_1000_3406` 呼び出しは、初期化フラグ `0xF96` により通常の scheduler `+1` 経路とは異なる。初回に通常ループの delta 規則を当てはめない。
-- `0x6EE = 4` は setup SysEx の tick 0 / 4 と条件付き queue drain を結びつける仮説であり、確認済み事実ではない。
+- 元の EXE initialized image から `0x6EE = 4` は on-disk 初期値として確認済み（FACTS F-094）。startup call order と pending-delta の静的追跡は、`0x622 == 0` の inspected runner path で coarse tempo が tick 8 になることを説明する（F-095）。runtime trace と全 v1 ファイルへの一般化は未確認。
 
-### Setup SysEx: producer は絞れたが payload mapping は未完了
+### Setup SysEx: first producer pair mapped; second pair remains open
 
-- SNG2S の `FUN_1000_3BA7` と helper routines は template bytes を走査し、明示 byte・計算値・checksum・`F7` を含む SysEx-style output を組み立てる経路を持つ。
-- 解析テキストに initialized data bytes at `0x3F82` / `0x3FA0` が含まれないため、template 全体の値と参照 MIDI の各 SysEx payload との byte-for-byte 対応はまだ取れない。
-- SNG2S v3.3 manual は `/1` (Format 1) と `/X2` (conductor の直後の dedicated SysEx track) を既定値として記載し、`/X1` は conductor track、`/XD` は SysEx conversion off とする。これは文書化された defaults であって、`runner.MID` / `TEST.MID` を作った実際の引数が確認されたわけではない。manual は timebase 48 ticks/quarter も記載する。
+- `FUN_1000_1CE4` formats templates `0xF34` / `0xF3F`, then calculates the checksum and appends the terminator. The formatted output matches the first two 12-byte reference SysEx events at ticks 0 and 4 in both `runner.MID` and `TEST.MID`: arguments are `0,5,6` for `runner.MID` and `0,5,5` for `TEST.MID` (FACTS F-097). Private payload bytes are intentionally omitted here.
+- The separate 10-byte events at ticks 8 and 8 still need producer-to-event mapping. `FUN_1000_3BA7` and its helper paths are candidates, but no one-to-one mapping is claimed until formatted/calculated output, checksum, terminator, and event length are compared.
+- SNG2S v3.3 manual documents `/1` (Format 1) and `/X2` (dedicated SysEx track after the conductor) as defaults; `/X1` puts SysEx in the conductor track, and `/XD` disables SysEx conversion. These are documented defaults, not proof of the arguments used to create `runner.MID` / `TEST.MID`. The manual also documents timebase 48 ticks/quarter.
 
 ### Option flag の修正
 
-以前の仮説 `0x622 ↔ /F` は撤回する。静的解析上、`0x622` は SysEx payload 出力の抑制、`0x626` は track-order table 選択に使われる。manual の説明との対応から、現時点の最良仮説は `0x622 ↔ /XD`、`0x626 ↔ /F`。option token bytes と reference invocation は未確認なので、確定事実として扱わない。
+以前の仮説 `0x622 ↔ /F` は撤回する。元の EXE initialized image と parser branch から、`/XD → 0x622 = 1` は直接確認済み（FACTS F-096）。`0x626` は track-order table 選択に使われ、文書上の `/F` と整合するが、`/F` token-to-flag の直接対応は未確認。保存済み reference MIDI の実際の command line と runtime flag state も未確認なので、文書化された defaults だけで実行引数を推定しない。
 
 ### MIMPIV4 playback は別の未解決問題
 
