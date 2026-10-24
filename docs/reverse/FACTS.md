@@ -1065,17 +1065,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - したがって、この reference MIDI の挙動を検討するときは、`/F`、`/N`、`/X1` などを明示指定したと仮定せず、マニュアルに記載されたデフォルト設定と比較する。出力に現れた現象と、実際に有効になった内部処理の説明は区別する。
 
 
-## F-101 — v1 tick-8 SysEx 2件の生成処理は FUN_1000_3BA7 に対応する（2026-10-25）
+## F-101 — v1 tick-8 SysEx 2件の生成処理と payload を照合（2026-10-25）
 
-**状態:** 静的な命令列からメッセージ形式と可変 byte の式を特定。先頭4-byte template の実データ値と参照イベントの完全照合は未完了。
+**状態:** 元 EXE の initialized image、静的命令列、保存済み reference MIDI の payload を照合済み。runtime trace・実再生は未実施。
 
-- 起動時の `FUN_1000_33D4` は `FUN_1000_3406` の後に `FUN_1000_3B68` を呼ぶ。`FUN_1000_3B68` は `0x7DE != 0x10B4` の場合に `FUN_1000_3B78` → `FUN_1000_3BA7` を呼ぶ。`FUN_1000_3DE2` は `0x10B4` を `0xFFFF` に初期化するため、通常値の `0x7DE` なら起動時にこの経路へ入る。
-- `FUN_1000_407F` は `BX` が指す CS template を byte ごとに出力し、`0xFF` で終了する。`FUN_1000_3FA6` は template address `0x3F82`、`FUN_1000_3FAF` は `0x3FA0` を使う。
-- `FUN_1000_3BA7` の最初の2メッセージは `FUN_1000_3FA6` template の後に次の byte を出力する。先頭 template が4 byteなら、合計10 byteとなり参照イベント長に一致する。
-  - Message A: `10 00 16 t ((-(t + 0x26)) & 0x7F) F7`
-  - Message B: `52 00 10 t ((-(t + 0x62)) & 0x7F) F7`
-  - `t` は `0x7DE` の下位 byte。checksum 式は命令列の `ADD CL` → `NEG CL` → `AND AL,0x7F` から直接導ける。
-- `0x25DA < 2` の分岐では、Message A の後に `0x6FA != 2` の場合だけ Message B を出力し、その後 return する。従って v1 の2件と処理構造が整合する。
-- template `0x3F82` の先頭4 byte と実行時の `0x7DE` 値が未確認なので、参照 MIDI の2 payload と byte-for-byte 一致したとはまだ結論しない。
+- 起動時の `FUN_1000_33D4` は `FUN_1000_3406` の後に `FUN_1000_3B68` を呼ぶ。`FUN_1000_3B68` は `0x7DE != 0x10B4` の場合に `FUN_1000_3B78` → `FUN_1000_3BA7` を呼ぶ。`FUN_1000_3DE2` は `0x10B4` を `0xFFFF` に初期化するため、確認対象の起動経路はこの条件を満たす。
+- `FUN_1000_407F` は `CS:BX` の template を byte ごとに出力し、`0xFF` で終了する。`FUN_1000_3FA6` は template address `0x3F82` を使い、今回の2メッセージはいずれもこの template path を呼ぶ。
+- 元の `SNG2S.EXE` の CS:`0x3F82` の initialized bytes は `F0 41 10 16 12 FF`。出力 template は `F0 41 10 16 12`。SMF SysEx event payload は先頭の `F0` を除くため、後続 body 6 bytes と合わせて event length 10 bytes になる。
+- `0x7DE` の initialized word は `0x004B`。参照 `runner.MID` と `TEST.MID` の tick 8 payload は、下記の式に `t=0x4B` を代入した結果と byte-for-byte 一致する。
+  - A: `41 10 16 12 10 00 16 4B 0F F7`; body `10 00 16 t ((-(t + 0x26)) & 0x7F) F7`
+  - B: `41 10 16 12 52 00 10 4B 53 F7`; body `52 00 10 t ((-(t + 0x62)) & 0x7F) F7`
+- `0x25DA < 2` の分岐では A の後、`0x6FA != 2` の場合だけ B を出力して return する。`0x3FA0` は別経路の template で、今回の tick-8 2件には使われない。
 
-**Sources:** private SNG2S decompilation `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3B68`, `FUN_1000_3BA7`, `FUN_1000_3FA6`, `FUN_1000_3FAF`, `FUN_1000_407F`; private reference MIDI event lengths. Static analysis only; no runtime trace or playback.
+**Sources:** private `SNG2S.EXE` initialized image; static paths `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3B68`, `FUN_1000_3BA7`, `FUN_1000_3FA6`, `FUN_1000_407F`; private `runner.MID` and `TEST.MID` SysEx payloads. Static image/payload comparison only; no runtime trace, MIDI regeneration, or playback.
