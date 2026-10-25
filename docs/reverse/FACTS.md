@@ -1122,3 +1122,8 @@ This narrows the source of the initial timer base but does not show that tempo r
 - v2 `SHIZUME0` は tick 0 = 500000、tick 128 = 1000000。v2 は base-tempo semantics と 6/4 grid が異なるため、v3/v4 の仮説をそのまま適用しない。
 
 **結論:** 次の実装変更では `ReadTempi()` の既存 `TempoPoint` 列だけを使い回すのでは不十分な可能性が高い。SNG record stream を読み取る層と、SNG2S scheduler / MIDI tempo event を再現する層を分け、fixture で event-by-event に検証する。未確定の時刻則をコードに推測実装しない。
+
+
+## F-105 — v2〜v4 raw tempo record と reference event の突合せ（2026-10-25）
+
+保存済み SNG と SNG2S reference MIDI を比較した。v3 value 89 は 166 BPM となり、reference の 361000 と 361445 µs/qn は整数 millisecond 丸め値と整数除算値に一致する。v4 value 123 は 230 BPM となり、reference の 260000 と 260869 µs/qn に同じ関係がある。後続 coarse event の複数例は累積 record boundary の1 tick前に出るが、初回 event は v3 tick 92 / v4 tick 116 で同じ規則に乗らない。v2 の先頭 value 64 は後続版の式では120 BPMだが、reference は tick 128 に 1000000 µs/qn を出すため別途解明が必要。結論として値の数値対応は確認できたが、scheduler tick rule は未解決。保存済みファイルの静的比較であり、runtime trace / playback / converter test は未実施。
