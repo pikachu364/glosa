@@ -727,3 +727,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - The initial call and repeated calls do not follow identical pending-delta increment conditions: the initial nonzero `0xF96` state skips the normal increment path before the state is changed for subsequent processing.
 - These observations narrow the call order but do not yet derive the reference coarse tempo event ticks 92 (v3) and 116 (v4), the later boundary-minus-one cases, or v2 tick 128. Keep T-015 open; do not apply a fixed tick correction based on this static trace alone.
 - Static analysis only: no runtime trace, MIDI regeneration, playback, converter change, or test change was performed.
+
+
+## 2026-10-26 — T-015 scheduler ordering narrowed
+
+- Re-read the exact decompiler and instruction sequence for `FUN_1000_3406`, `FUN_1000_3DE2`, and `FUN_1000_33D4` in the private SNG2S Ver. 3.3 export.
+- Confirmed normal-call ordering: pending delta `0xF9A:0xF9C` increments before tempo countdown `0x10AA` is processed; when the countdown is already zero, the next 4-byte tempo record is consumed and any changed-tempo bytes are queued during that call.
+- Confirmed startup differs: `FUN_1000_3DE2` sets `0xF96=0xFFFF`; `FUN_1000_33D4` performs one scheduler call before setting `0xF96=0`. Added FACTS F-109 and updated the existing T-015 checklist.
+- This narrows the state transition but does not yet explain the absolute SMF positions tick 92 / 116 or all later boundary-minus-one cases, because queue production and SMF draining are separate stages. No converter/test code changed; no runtime trace, MIDI regeneration, build, test, or playback was performed.
