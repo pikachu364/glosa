@@ -1254,3 +1254,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - この静的順序は、tempo countdown の開始点が main loop の最初の通常呼び出しより前にあることを確定する。ただし、`0x21E0` の先頭 record 値とその時点の実行時状態を fixture ごとに読み取れていないため、tick 92 / 116 を導出したものではない。record step と MIDI absolute tick を同一視しない。
 
 **Sources:** private `sng2gs解析データ.txt` の `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`; F-108/F-111/F-115. Static analysis only.
+
+
+## F-117 — v2〜v4 reference MIDI の初回 tempo meta をバイナリ再読（2026-10-26）
+
+**状態:** private reference MIDI の SMF chunk / VLQ / tempo meta を直接解析。SNG2S の実行時トレースではない。
+
+- v2 `SHIZUME0.MID`（SHA `a0d8e4be808d03a55a545d8502ca70c20ea834e8`）は Format 1、12 tracks、PPQN 48。tempo track の先頭は tick 0 = 500000 µs/qn、その次は tick 128 = 1000000 µs/qn。
+- v3 `START__0.MID`（SHA `86d12ef849f2f808a1742ef56fc8e10fc11c4b84`）は Format 1、12 tracks、PPQN 48。先頭は tick 0 = 500000、初回変更は tick 92 = 361000、次は tick 192 = 361445 µs/qn。
+- v4 `BOURREE0.MID`（SHA `8bd4814a57d0b4585388be18175b99d97969d5d5`）は Format 1、18 tracks、PPQN 48。先頭は tick 0 = 500000、初回変更は tick 116 = 260000、次は tick 192 = 260869 µs/qn。
+- したがって tick 92 / 116 / 128 は保存済み reference MIDI の tempo meta の absolute tick として再確認できた。tick 0 の 500000 はSMFの初期テンポであり、後続の coarse 値はそれぞれ v3 166 BPM、v4 230 BPM の millisecond 丸め経路と整合する（F-105/F-106）。
+- これは MIDI 側の観測を再確認した結果であり、raw SNG tempo record の step/countdown からこれらの absolute tick が生成される規則を導出したものではない。v2 の tick 128 = 1000000 µs/qn も未解決。converter / tests は変更していない。
+
+**Sources:** private `testdata/ballade/v2/sng2gs/SHIZUME0.MID`, `v3/sng2gs/START__0.MID`, `v4/sng2gs/BOURREE0.MID`; direct SMF binary parse. No runtime trace, playback, or MIDI regeneration.
