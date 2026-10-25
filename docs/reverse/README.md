@@ -4,6 +4,7 @@
 Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI・実装・テスト・静的解析の根拠に沿って整理する。調査項目を増やすことではなく、確認済み事項と未解決事項を区別する。
 
 ## 現在の結論
+- **PR #9 / main CI（2026-10-25）:** Ballade SNG v1 legacy layout parsing の PR #9 は merge commit `5571b4d059620ba300971d7fd1444013532232a9` で main にマージ済み。PR CI #1122 と merge 後 main CI #1123 は成功。これは CI 成功の確認であり、実再生や v2〜v4 の tempo/note 差解消を意味しない（FACTS F-107）。
 - **v1 レイアウト:** v1 専用のパート構造（サイズ +80、長さフィールド +115/+117、13個の相対 seek 値、ノート開始 +145）を支持する静的根拠があり、別 fixture でも容量条件が一致する。jmplayer の後続版共通検証では候補が失敗する。これは静的照合であり、jmplayer 実行時の再現とは区別する。
 - **v1 tempo:** `SngConverter.cs` に `ReadLegacyV1Tempi()` がある。公開テスト `BalladeV1RunnerProducesReferenceTempoEvents()` は参照値 500000 / 869000 / 869565 の byte sequence を確認し、`BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()` は変化しない tempo stream の既定値維持を確認する。
 - **v1 setup SysEx:** 参照 `runner.MID` / `TEST.MID` の tick 0 / 4 の setup events は `FUN_1000_1CE4` の `0xF34` / `0xF3F` templates に対応し、arguments・checksum・terminator・length が一致する（F-097）。tick 8 / 8 の2件も `FUN_1000_33D4 → FUN_1000_3B68 → FUN_1000_3B78 → FUN_1000_3BA7` の producer path と payload 計算を byte-level で照合済み（F-101）。全件とも静的解析と保存済み MIDI の比較であり、runtime trace・実再生は未実施。Glosa 側での再現は未実装。
@@ -28,4 +29,4 @@ Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI�
 ## 検証上の制約
 公開テスト、private fixture CI、静的解析、実行時トレース、実再生は別の検証段階である。private workflow の成功は、その run が checkout した commit と実行したテスト範囲に限る。Note-event signature や tempo byte sequence の一致を、SMF 全体の byte-for-byte 一致、SysEx payload の一致、または再生結果の完全一致と言い換えない。
 
-private fixture と逆解析 dump は private repository 内に保持し、この公開 repository に追加しない。PR #9 は明示的な許可なしに merge しない。
+private fixture と逆解析 dump は private repository 内に保持し、この公開 repository に追加しない。PR #9 はマージ済み。以後のコード変更は新しい調査結果と回帰検証を根拠に別途判断する。
