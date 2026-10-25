@@ -750,3 +750,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Reconfirmed `XD\\0` at DS:`0x0F05` and its parser write `0x622=1` (F-096). Initialized words at DS:`0x0622` / `0x0626` are both zero in the EXE image (file offsets `0x6A92` / `0x6A96`). The user-confirmed reference commands have no options (F-100), so the static path is consistent with both flags remaining at defaults; this is not a runtime trace and indirect runtime writes are not fully excluded.
 - Added FACTS F-113 with the binary bytes, parser control flow, initial flag values, and limitations. Updated the current T-017 checklist in `NEXT_STEPS.md`: the `0x6EE` initialized value, option-token mappings, no-option invocation, all four setup SysEx payload mappings, and the static tick-8 pending-delta path are now marked complete with existing evidence references. Runtime trace remains open; converter and regression tests remain unchanged.
 - No converter or test code changed. No original-executable runtime trace, MIDI regeneration, playback, or new test run was performed.
+
+## 2026-10-26 — T-017 option downstream effects reviewed
+
+- Checked all visible static uses of `0x626` and `0x622` across the private SNG2S analysis export. `0x626` selects the track-order table / part-count setup; no direct write to tempo stream `0x21E0`, countdown `0x10AA`, or tempo record offset `0x10AC` was identified in the inspected paths. `0x622` affects SysEx and preceding-delta output in `FUN_1000_08EC`, and also resets pending-delta / absolute-tick-related state during initialization.
+- Added FACTS F-114 to distinguish these actual downstream effects from a causal explanation for reference ticks 92 / 116. Since the confirmed reference invocation has no options and both initialized flags are zero, the option parser alone does not explain the discrepancy. This does not prove the complete runtime call sequence.
+- Updated NEXT_STEPS to focus the next pass on `FUN_1000_0010` startup tempo setup through scheduler calls, queue insertion/dequeue, pending-delta flush, and absolute-tick update.
+- CI run #1148 for commit `2f02960db1d9eef03aea2e118fd2269f7bb56ac1` completed successfully: https://github.com/pikachu364/glosa/actions/runs/40241526565
+- No converter or test code changed. No runtime trace, MIDI regeneration, playback, or new test run was performed.
