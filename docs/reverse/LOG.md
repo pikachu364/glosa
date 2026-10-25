@@ -699,3 +699,13 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 同関数の coarse writer は 60000 / BPM の整数除算後に 1000 を掛けるため、v3 166 BPM → 361000、v4 230 BPM → 260000 µs/qn を説明する。
 - 別の FUN_1000_0010 path は FUN_1000_618a(0x8700, 0x393, BPM, 0) を呼び、60,000,000 / BPM の整数除算を行うため exact 値 361445 / 260869 を説明する。F-106 に根拠と制約を記録し、T-015 は tick accumulator / call order の調査に絞った。
 - まだ初回 coarse event tick 92 / 116 と後続 boundary-minus-one を完全には説明できていない。converter / tests は変更せず、private workflow も実行していない。静的逆解析であり runtime trace / playback は未実施。
+
+
+## 2026-10-25 — PR #9 merged; main CI #1123 passed
+
+- Confirmed PR #9「fix: add Ballade SNG v1 legacy layout parsing」is merged.
+- Merge commit: `5571b4d059620ba300971d7fd1444013532232a9`.
+- PR checks: CI run #1122 passed; the user verified the three successful matrix checks for macOS, Ubuntu, and Windows.
+- Post-merge main CI run #1123 completed successfully on the merge commit.
+- Updated FACTS F-107, the reverse README, and NEXT_STEPS to remove stale claims that PR #9 remained open and to distinguish CI success from runtime playback or v2–v4 tempo equivalence.
+- No converter or test code was changed in this documentation pass.
