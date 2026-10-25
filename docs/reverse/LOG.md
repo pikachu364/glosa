@@ -708,6 +708,3 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - `FUN_1000_0010` には、grid / scheduler 側から取得した値が初期 tempo event の delta 計算に関係する経路があることを確認した。ただし、reference MIDI の初期 tempo event が v3 `START__0.SNG` で tick 92、v4 `BOURREE0.SNG` で tick 116 に発生する原因は未解決。
 - 初回 tempo record の処理、内部キューへの追加、イベントの読み出し、保留中 delta の処理、絶対 tick の更新を引き続き追跡する。tick 92 / 116 の固定値化や一律の時刻補正は行わない。
 - 静的逆解析に基づく調査であり、runtime trace / playback による確認は未実施。
-
-
-<!-- ChatGPT write/delete permission test: temporary marker; remove immediately -->
