@@ -1218,3 +1218,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - 制約: original executable の実行時トレースは未実施。間接書き込みや runtime-only state を完全に排除した主張ではない。option flag の静的 mapping が確認できても、全 v1 fixture への一般化や tempo tick の実行時因果関係を証明するものではない。
 
 **Sources:** private `SNG2S.EXE` initialized image; `sng2gs解析データ.txt` の `FUN_1000_184A` parser control flow; private `SNG2S.DOC`; F-096/F-100. Static binary inspection only.
+
+
+## F-114 — /F と /XD の下流分岐を tempo tick 調査から切り分け（2026-10-26）
+
+**状態:** SNG2S Ver. 3.3 の逆解析 export にある parser、初期化、scheduler、SMF byte writer の静的命令列を横断確認。runtime trace ではない。
+
+- `0x626`（`/F`）は、`FUN_1000_3DE2` でパート数（10/16）と `0x1556` にコピーする track-order table の選択に使われる。別の初期化経路にも出力 track / part 対応を選ぶ分岐がある。これは track ordering の制御であり、`FUN_1000_3406` の tempo record stream `0x21E0`、countdown `0x10AA`、value offset `0x10AC` を直接設定する処理は確認できなかった。
+- `0x622`（`/XD`）は `FUN_1000_08EC` の SMF writer で SysEx byte sequence とその直前 delta の出力を抑制する分岐に使われる。また初期化後に pending delta / absolute tick 関連の状態をゼロにする分岐がある。したがって、これは単純に「SysEx bytes だけを消す」フラグとは言い切れず、`/XD` を指定した場合の出力時刻への影響を一般に否定しない。
+- ただし、reference の生成コマンドはオプションなしと利用者確認済み（F-100）で、EXE initialized image の両 flag は 0。確認できた static path では、reference の tick 92 / 116 差を `/F` や `/XD` の指定で説明する根拠はない。これらの downstream effect だけで初回 coarse tempo tick の原因が解決したわけではない。
+- 次に追う対象は、`FUN_1000_0010` の初回 tempo setup と `FUN_1000_3406` の scheduler 呼び出し順から、queue insertion → `FUN_1000_08EC` dequeue → pending delta flush → absolute-tick update までのデータフロー。v2 の tick 128 も別途未解決。
+
+**Sources:** private `sng2gs解析データ.txt` の `FUN_1000_184A`, `FUN_1000_08EC`, `FUN_1000_3DE2`, `FUN_1000_3406`; F-096/F-100/F-113. Static analysis only; no runtime trace, MIDI regeneration, or playback.
