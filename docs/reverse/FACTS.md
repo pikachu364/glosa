@@ -1194,3 +1194,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - この順序は、record countdown と pending delta が独立した状態であり、最初の呼び出しが後続反復と同じではないことを直接示す。ただし、tempo bytes が queue に追加された時点と `FUN_1000_08EC` がそれらを SMF に書き出す時点は別である。従って、この関数単独から absolute tick 92 / 116 や後続 boundary-minus-one の全配置を導出することはできない。
 
 **Sources:** private `sng2gs解析データ.txt`、`FUN_1000_3406`、`FUN_1000_3DE2`、`FUN_1000_33D4`、`FUN_1000_08EC`。静的解析のみ。実行時トレース、MIDI再生成、再生は未実施。
+
+## F-112 — SNG2S の grid/scheduler stream と tempo-record stream の分離（2026-10-26）
+
+**状態:** SNG2S Ver. 3.3 の静的逆アセンブル／decompiler 出力の確認。runtime trace ではない。
+
+- `FUN_1000_3406` は grid/scheduler 側の record stream（状態領域 `0x21DC`）と、tempo-record 側の stream（`0x21E0`）を別々に参照する。両者を同一の record 列として扱わない。
+- grid/scheduler 側の record は、状態 `0x25DA` に応じて 10-byte または 12-byte 単位で進む。関連する状態／設定値として `0x10A4` と `0x10A6` がある。
+- tempo 側は 4-byte record を読み、先頭 word を `step`、次の word を `value` として扱う。関連する countdown／tempo 値の状態領域は `0x10AA` と `0x10AC`。
+- `FUN_1000_0010` には、grid/scheduler 側から得た値が初期 tempo-event delta の算出に関係する経路がある。ただし、この関係だけでは reference MIDI の初回 coarse tempo event（v3 `START__0.SNG` の tick 92、v4 `BOURREE0.SNG` の tick 116）を導出できない。
+- 次の解析対象は、初期 tempo record の処理から queue insertion、event dequeue、pending delta、absolute-tick accumulator 更新までのデータフローと呼び出し順である。tick 92 / 116 に合わせた固定補正や、全体に適用する補正値を推測で実装しない。
+
+**Sources:** private `sng2gs解析データ.txt`、`FUN_1000_3406`、`FUN_1000_0010`。静的解析のみ。runtime trace、MIDI 再生成、実再生は未実施。
