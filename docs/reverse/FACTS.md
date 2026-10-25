@@ -1127,3 +1127,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 ## F-105 — v2〜v4 raw tempo record と reference event の突合せ（2026-10-25）
 
 保存済み SNG と SNG2S reference MIDI を比較した。v3 value 89 は 166 BPM となり、reference の 361000 と 361445 µs/qn は整数 millisecond 丸め値と整数除算値に一致する。v4 value 123 は 230 BPM となり、reference の 260000 と 260869 µs/qn に同じ関係がある。後続 coarse event の複数例は累積 record boundary の1 tick前に出るが、初回 event は v3 tick 92 / v4 tick 116 で同じ規則に乗らない。v2 の先頭 value 64 は後続版の式では120 BPMだが、reference は tick 128 に 1000000 µs/qn を出すため別途解明が必要。結論として値の数値対応は確認できたが、scheduler tick rule は未解決。保存済みファイルの静的比較であり、runtime trace / playback / converter test は未実施。
+
+
+## F-106 — SNG2S の coarse tempo writer と exact tempo writer を静的命令列で分離（2026-10-25）
+
+**状態:** SNG2S Ver 3.3 の逆解析 export を静的に追跡。実行時トレースではない。
+
+- `FUN_1000_3406`（0x3406）内の tempo-stream consumer は、`0x21e0` の 4-byte record を `step`（+0）と `value`（+2）として読み、`step-1` を countdown `0x10aa` に設定する。値は `value * baseTempo(0x2962) / 0x40` で算出し、1〜480 BPM に clamp して `0x7ba` に保存する。
+- BPM が前回値から変わった場合、同じ関数は `0xea60 / BPM`（60000 の整数除算）を行い、商に 1000 を掛けた 3-byte 値を `FF 51 03` tempo meta-event として出力する。これは `floor(60000 / BPM) * 1000` µs/qn となり、v3 166 BPM → 361000、v4 230 BPM → 260000 という coarse 値を直接説明する。
+- 別の初期化 / tempo setup path（`FUN_1000_0010`）は `FUN_1000_618a(0x8700, 0x393, BPM, 0)` を使う。定数 `0x03938700 = 60,000,000` なので、これは `floor(60000000 / BPM)` の exact µs/qn 値を生成する。BPM 166 → 361445、230 → 260869 を説明する。従って coarse/exact の二つの算出経路は単なる値の類似ではなく、別々の静的命令列で確認できた。
+- countdown は record の `step-1` を設定して関数呼び出しごとに減算するが、これだけで reference event の tick 92 / 116 や後続 boundary-minus-one の全てを説明できるとはまだ確認できない。SMF writer の delta accumulator と tempo consumer 呼び出し順をさらに追跡する必要がある。
+- v2 は baseTempo / record value の解釈と 6/4 の時刻系が異なる可能性が残る。v3/v4 の BPM 値の算出を確認したことを、v2 の tempo-event tick/value 解決と混同しない。
+
+**Sources:** private `sng2gs解析データ.txt`, `FUN_1000_3406` (0x3406–0x3592), `FUN_1000_0010` (0x0010–0x0524), `FUN_1000_618a`. Static disassembly/decompiler output only; no runtime trace or playback.
