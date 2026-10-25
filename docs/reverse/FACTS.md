@@ -1166,3 +1166,11 @@ This narrows the source of the initial timer base but does not show that tempo r
 - ただし、`step-1` countdown、`0xF9A` の per-iteration increment、buffer drain の呼び出し順を組み合わせても、reference MIDI の初回 coarse tempo tick 92 / 116 と後続 boundary-minus-one の全例をまだ導出できていない。v2 の tick 128 = 1,000,000 µs/qn も未解決。仮説を実装へ移さない。
 
 **Source:** private `sng2gs解析データ.txt`, functions `FUN_1000_3406`, `FUN_1000_08EC`, `FUN_1000_16E6`, `FUN_1000_17C2`. Static disassembly/decompiler only; no runtime trace, MIDI regeneration, or playback.
+
+## F-109 — GitHub 文書更新経路の VPN 切り分けテスト（2026-10-26）
+
+**状態:** VPN をオフにした状態での文書更新テスト記録。
+
+- この項目は、ChatGPT から GitHub 文書を更新する操作が安全性チェックでブロックされる問題について、VPN の影響を切り分けるための試験記録。
+- 更新操作の成否および GitHub 側でのコミット作成結果は、この変更要求の応答をもって記録する。
+- この試験だけで VPN が原因であると結論づけない。
