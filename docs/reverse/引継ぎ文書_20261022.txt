@@ -1,0 +1,36 @@
+# 引継ぎ — Glosa Ballade SNG v1 文書監査（2026-10-23）
+
+## 目的
+対象ブランチ `fix/ballade-v1-layout-2026-10-22` の `docs/reverse/` 文書を、既存根拠・実装・テストに合わせて整理する。新しい調査を広げず、根拠のない事項は未解決のまま残す。
+
+## 現在の結論
+- v1 のレイアウトは後続版と異なる。サイズ +80、length fields +115/+117、13個の相対 seek 値、ノート開始 +145 を支持する静的根拠があり、TEST.SNG でも容量条件が一致する。
+- `SngConverter.cs` には `ReadLegacyV1Tempi()` がある。公開テスト `BalladeV1RunnerProducesReferenceTempoEvents()` は 500000 / 869000 / 869565 の参照 byte sequence を検査し、`BalladeV1KeepsDefaultTempoWhenTempoStreamIsUnchanged()` は変化しない tempo stream の既定値を検査する。
+- SNG2S の静的解析では、raw tempo 37 と base tempo 120 から 69 BPM、粗い整数経路で 869000 µs/qn、192-tick grid 経路で 869565 µs/qn が得られる。tick 8 の pending-delta / absolute-tick の完全な因果関係は未解決。
+- grid 構造の絶対 offset は記録間で不一致。0x00B5 (=181)、231、0x74+125 (=241) を同じ位置とみなさず、元データとの再照合までは未解決とする。
+- `0x6EE = 4` は仮説であり、事実・実装条件として扱わない。
+- MIMPIV4 の timer 初期化は確認済みだが、SNG tempo-record から playback timer への経路は未特定。`FUN_1000_341E` / `FUN_1000_3543` / `FUN_1000_2D27` に timer base 更新は見つからず、`FUN_1000_8888` の text-command 経路と binary SNG tempo record の接続も未確認。tempo record を無視する証明ではない。SNG2S の MIDI-export 式を流用しない。
+
+## 次に行う作業
+[NEXT_STEPS.md](NEXT_STEPS.md) を作業一覧の正本とする。
+1. **T-017:** tick 8 の pending-delta / absolute-tick、`0x6EE` の初期値、4件の setup SysEx payload と producer の対応、参照 MIDI の生成オプションを調査する。
+2. **T-014:** 3/4 固有の +1 BPM 丸め。参照 fixture がない場合は未解決のままにする。
+3. **T-015:** v2 tempo-stream audit。
+4. **T-016:** MIMPIV4 playback tempo-record consumer の特定。
+
+T-011〜T-013 は完了した静的解析の記録であり、残件は T-017 に集約する。既に説明できた整数計算や 192-tick grid を繰り返し調査しない。
+
+## 文書の役割
+- `FACTS.md`: 根拠付きの事実と一意な F-ID。
+- `HYPOTHESES.md`: 未確定の仮説。
+- `NEXT_STEPS.md`: 未完了作業と完了条件。
+- `LOG.md`: 時系列履歴。旧仮説と現在の結論を混同しない。
+- `README.md`: 概要、現在の結論、資料への案内。
+- `V1_TEMPO_INVESTIGATION.md`: tempo 経路の詳細。
+- `BALLADE_LAYOUT_COMPARISON_2026-10-21.md`: レイアウト比較と履歴。
+
+## 検証・運用上の注意
+- 静的解析、公開テスト、private fixture CI、実行時トレース、実再生は区別する。
+- private CI の結果は対象 commit とテスト範囲に限定する。Note-event signature / tempo byte sequence の一致を SMF 全体の byte-for-byte 一致とは言わない。
+- private fixture や解析 dump を公開 repository にコピーしない。
+- PR #9 は明示的な許可なしに merge しない。
