@@ -682,3 +682,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 現行 PR head `ab381d4b82865312d973377c860616d1bc4a7e6f` の CI run #1080 は成功完了を確認。
 - private fixture workflow の YAML を確認。workflow_dispatch の `glosa_ref` で branch/tag/commit を指定して再変換・テストできる設計だが、この環境から workflow dispatch を起動する GitHub action は利用できなかった。現行コードからの再生成比較は未実施。
 - converter/test code は変更していない。次は private fixture workflow を現行 PR head で実行し、再生成 MIDI の track layout / tempo event を比較する。
+
+
+## 2026-10-25 — v2〜v4 tempo record と reference MIDI の照合
+
+- private SNG の tempo sentinel / raw records / cumulative positions を読み、対応する SNG2S reference MIDI の conductor tempo events と比較した。
+- v3 value 89 → 166 BPM の値 361000 / 361445、v4 value 123 → 230 BPM の値 260000 / 260869 が、coarse whole-ms conversion と exact integer µs/qn conversion に一致することを確認。
+- 後続 coarse events の複数例は cumulative record boundary の1 tick前に出るが、初回 coarse event（v3 tick 92 / v4 tick 116）はこの則では説明できない。v2 の reference tick 128 = 1000000 µs/qn も後続版の slider formula からは説明できない。
+- FACTS F-105、NEXT_STEPS T-015、README の結論を更新。raw value mapping と scheduler tick rule の未解決部分を明確に分けた。
+- Converter / tests は変更していない。Private workflow / local tests は実行していない。静的な保存済みファイル比較であり、runtime trace / playback は未実施。
