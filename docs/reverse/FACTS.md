@@ -1140,3 +1140,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - v2 は baseTempo / record value の解釈と 6/4 の時刻系が異なる可能性が残る。v3/v4 の BPM 値の算出を確認したことを、v2 の tempo-event tick/value 解決と混同しない。
 
 **Sources:** private `sng2gs解析データ.txt`, `FUN_1000_3406` (0x3406–0x3592), `FUN_1000_0010` (0x0010–0x0524), `FUN_1000_618a`. Static disassembly/decompiler output only; no runtime trace or playback.
+
+
+## F-107 — PR #9 のマージと main CI 成功（2026-10-25）
+
+**状態:** GitHub pull request metadata と Actions run history で確認。
+
+- PR [#9](https://github.com/pikachu364/glosa/pull/9)「fix: add Ballade SNG v1 legacy layout parsing」は 2026-10-25 12:58:19 UTC に merge 済み。
+- merge commit: `5571b4d059620ba300971d7fd1444013532232a9`。
+- main の CI run [#1123](https://github.com/pikachu364/glosa/actions/runs/40195485991) は merge commit `5571b4d059620ba300971d7fd1444013532232a9` を対象に completed / success。
+- PR head の CI run [#1122](https://github.com/pikachu364/glosa/actions/runs/40194772275) も `dc695986ed6eed72af30391fe7a0b8123d49c7bc` で completed / success。ユーザーが PR の Checks 画面で macOS、Ubuntu、Windows の3 checks successful を確認した。
+- この事実は GitHub CI が通ったことを示す。実データ全版の変換一致、private fixture 全体の一致、MIDI 実再生まで証明するものではない。
+
+**Sources:** GitHub PR #9 metadata; Actions runs #1122 and #1123.
