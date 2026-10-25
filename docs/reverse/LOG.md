@@ -758,3 +758,9 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Updated NEXT_STEPS to focus the next pass on `FUN_1000_0010` startup tempo setup through scheduler calls, queue insertion/dequeue, pending-delta flush, and absolute-tick update.
 - CI run #1148 for commit `2f02960db1d9eef03aea2e118fd2269f7bb56ac1` completed successfully: https://github.com/pikachu364/glosa/actions/runs/40241526565
 - No converter or test code changed. No runtime trace, MIDI regeneration, playback, or new test run was performed.
+
+## 2026-10-26 — T-017 startup setup / main-loop boundary traced statically
+
+- Continued into `FUN_1000_0010` and `FUN_1000_33D4`. Confirmed the initial scheduler pass occurs before the main `FUN_1000_3406` → `FUN_1000_08EC` loop; the initial exact-tempo setup uses a remainder-based delta calculation, then decrements pending delta before entering the loop.
+- Added FACTS F-115 and refined NEXT_STEPS to focus on the accumulator and queue state at that remainder calculation. This is a verified static call order, not a derivation of coarse tempo ticks 92 / 116; the startup values and queue drain state at runtime remain unverified.
+- No converter or test code changed. No runtime trace, MIDI regeneration, playback, or new test run was performed.
