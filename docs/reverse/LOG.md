@@ -691,3 +691,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 後続 coarse events の複数例は cumulative record boundary の1 tick前に出るが、初回 coarse event（v3 tick 92 / v4 tick 116）はこの則では説明できない。v2 の reference tick 128 = 1000000 µs/qn も後続版の slider formula からは説明できない。
 - FACTS F-105、NEXT_STEPS T-015、README の結論を更新。raw value mapping と scheduler tick rule の未解決部分を明確に分けた。
 - Converter / tests は変更していない。Private workflow / local tests は実行していない。静的な保存済みファイル比較であり、runtime trace / playback は未実施。
+
+
+## 2026-10-25 — SNG2S の coarse / exact tempo writer を静的追跡
+
+- private sng2gs解析データ.txt の FUN_1000_3406 を追跡し、tempo record の step-1 countdown、value * baseTempo / 64 による BPM 算出、1〜480 BPM の clamp、BPM 変更時の FF 51 03 出力を確認。
+- 同関数の coarse writer は 60000 / BPM の整数除算後に 1000 を掛けるため、v3 166 BPM → 361000、v4 230 BPM → 260000 µs/qn を説明する。
+- 別の FUN_1000_0010 path は FUN_1000_618a(0x8700, 0x393, BPM, 0) を呼び、60,000,000 / BPM の整数除算を行うため exact 値 361445 / 260869 を説明する。F-106 に根拠と制約を記録し、T-015 は tick accumulator / call order の調査に絞った。
+- まだ初回 coarse event tick 92 / 116 と後続 boundary-minus-one を完全には説明できていない。converter / tests は変更せず、private workflow も実行していない。静的逆解析であり runtime trace / playback は未実施。
