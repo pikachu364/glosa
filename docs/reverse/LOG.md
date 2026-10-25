@@ -772,3 +772,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - This narrows the call order but does not derive first coarse tempo absolute ticks 92 / 116 because the fixture-specific raw tempo-record values and runtime state have not yet been established. NEXT_STEPS now prioritizes direct raw SNG/reference MIDI comparison.
 - CI #1154 for the preceding documentation commits completed successfully: https://github.com/pikachu364/glosa/actions/runs/40242244244
 - No converter/test code changes, runtime trace, MIDI regeneration, or playback.
+
+
+## 2026-10-26 — v2〜v4 reference tempo meta の直接再読
+
+- GitHub Actions CI #1157 completed successfully: https://github.com/pikachu364/glosa/actions/runs/40243996854
+- Private reference MIDI を base64 fetch 後、SMF header、track chunks、VLQ delta、tempo meta `FF 51 03` を直接パースした。v2 SHIZUME0: tick 0=500000 → tick 128=1000000; v3 START__0: tick 0=500000 → tick 92=361000 → tick 192=361445; v4 BOURREE0: tick 0=500000 → tick 116=260000 → tick 192=260869 µs/qn。全て Format 1 / PPQN 48。
+- FACTS F-117 と NEXT_STEPS の T-015 に結果を記録。MIDI側の絶対 tick は再確認できたが、SNG raw tempo-record step/countdown と scheduler / delta-drain 状態から初回 tick を導出できたわけではない。特に v2 は値・時刻とも別途未解決。
+- Converter、test code、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は行っていない。
