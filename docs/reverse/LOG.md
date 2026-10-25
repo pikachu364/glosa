@@ -709,3 +709,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Post-merge main CI run #1123 completed successfully on the merge commit.
 - Updated FACTS F-107, the reverse README, and NEXT_STEPS to remove stale claims that PR #9 remained open and to distinguish CI success from runtime playback or v2–v4 tempo equivalence.
 - No converter or test code was changed in this documentation pass.
+
+
+## 2026-10-25 — SNG2S tempo-event delta writer path separated
+
+- Re-read the private SNG2S export around `FUN_1000_3406`, `FUN_1000_08EC`, `FUN_1000_16E6`, and `FUN_1000_17C2`.
+- Confirmed that the tempo stream consumer queues tempo-event bytes, while `FUN_1000_08EC` flushes pending delta before writing an event and accumulates the absolute tick; `FUN_1000_16E6` encodes the delta as SMF VLQ and `FUN_1000_17C2` only appends a byte / increments buffer byte count.
+- Recorded the bounded static result as FACTS F-108 and narrowed T-015. The initial coarse tempo ticks 92 / 116 and later boundary-minus-one events are still not fully explained; v2 remains separate.
+- No converter or test code changed. No runtime trace, MIDI regeneration, or playback was performed.

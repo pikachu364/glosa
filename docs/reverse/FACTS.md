@@ -1153,3 +1153,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - この事実は GitHub CI が通ったことを示す。実データ全版の変換一致、private fixture 全体の一致、MIDI 実再生まで証明するものではない。
 
 **Sources:** GitHub PR #9 metadata; Actions runs #1122 and #1123.
+
+
+## F-108 — SNG2S の MIDI delta flush と tempo-event byte queue を分離（2026-10-25）
+
+**状態:** private SNG2S Ver. 3.3 Ghidra export の静的 call/dataflow 読解。runtime trace は未実施。
+
+- `FUN_1000_3406` は tempo stream の `(step,value)` record を読み、`0x10AA = step - 1` を設定する。BPM が変わると MIDI tempo meta-event の byte sequence を内部イベント buffer に追加する。
+- `FUN_1000_08EC` は内部イベント byte stream を読み出す。通常の channel event や meta-event を出力する前に、pending delta `0xF9A:0xF9C` を `FUN_1000_16E6` に渡して SMF variable-length quantity に符号化し、その delta を absolute-tick accumulator `0x6F2:0x6F4` に加算して pending delta をゼロにする。
+- `FUN_1000_16E6` は delta 値の VLQ encoding を行う。`FUN_1000_17C2` は byte を MIDI buffer に書き込み、buffer byte count `0x1C2A:0x1C2C` を増やすが、それ自体は tick/delta を進めない。
+- これにより tempo-event bytes の生成（`FUN_1000_3406`）、pending delta の SMF 出力（`FUN_1000_08EC`）、VLQ encoding（`FUN_1000_16E6`）、raw byte append（`FUN_1000_17C2`）は別段階であると確認できた。
+- ただし、`step-1` countdown、`0xF9A` の per-iteration increment、buffer drain の呼び出し順を組み合わせても、reference MIDI の初回 coarse tempo tick 92 / 116 と後続 boundary-minus-one の全例をまだ導出できていない。v2 の tick 128 = 1,000,000 µs/qn も未解決。仮説を実装へ移さない。
+
+**Source:** private `sng2gs解析データ.txt`, functions `FUN_1000_3406`, `FUN_1000_08EC`, `FUN_1000_16E6`, `FUN_1000_17C2`. Static disassembly/decompiler only; no runtime trace, MIDI regeneration, or playback.

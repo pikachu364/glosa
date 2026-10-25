@@ -304,12 +304,12 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Parse private v2 `SHIZUME0.SNG`, v3 `START__0.SNG`, and v4 `BOURREE0.SNG` raw tempo records and compare cumulative positions / values with reference MIDI (F-105).
 - [x] Confirm v3 value 89 → 166 BPM yields both 361000 (whole-ms conversion) and 361445 (integer µs/qn); v4 value 123 → 230 BPM similarly yields 260000 and 260869. Several later coarse events occur one tick before cumulative record boundaries, but first coarse events at v3 tick 92 / v4 tick 116 do not follow that rule (F-104/F-105).
 - [x] Trace both tempo-value writers in the static export (F-106): `FUN_1000_3406` emits `floor(60000 / BPM) * 1000` µs/qn from the tempo stream; `FUN_1000_0010` computes `floor(60000000 / BPM)` µs/qn. The two numeric paths are now confirmed, not just hypothesized.
-- [ ] Continue tracing the SMF delta accumulator and call order to explain first coarse event ticks 92 / 116 and the later boundary-minus-one events. `step-1` countdown is confirmed, but it does not yet explain all observed event ticks. Do not confuse SysEx tempo-slider state with MIDI tempo meta-event emission.
+- [ ] Continue tracing the SMF delta accumulator and call order to explain first coarse event ticks 92 / 116 and the later boundary-minus-one events. F-108 now separates tempo-event byte creation (`FUN_1000_3406`), pending-delta flush / absolute-tick accumulation (`FUN_1000_08EC`), VLQ encoding (`FUN_1000_16E6`), and raw byte append (`FUN_1000_17C2`). The exact relationship between the `step-1` countdown, per-iteration `0xF9A` increments, and buffer drain timing remains unproven. Do not confuse SysEx tempo-slider state with MIDI tempo meta-event emission.
 - [ ] Keep v2 separate: its first raw value 64 does not explain reference tick 128 = 1000000 µs/qn under the later-version slider formula.
 - [ ] Only after the tick-generation rule is evidenced, split raw record decoding from scheduler-to-SMF event emission and implement against event-by-event fixture assertions.
 - [ ] Re-run private fixture CI after any converter change; inspect the actual workflow result before reporting pass/fail.
 
-**Result:** raw record/value mapping is grounded, but the scheduler tick rule and v2 tempo semantics remain unresolved. Do not apply a global tick offset or guessed formula tweak. v1 remains a separate `last+10` path (F-074).
+**Result (updated 2026-10-25):** raw record/value mapping and the separate event-byte / delta-flush stages are grounded (FACTS F-105/F-106/F-108), but the scheduler tick rule and v2 tempo semantics remain unresolved. Do not apply a global tick offset or guessed formula tweak. v1 remains a separate `last+10` path (F-074).
 ## T-016 — MIMPIV4 legacy tempo records to playback timer
 
 **Priority:** high; required for the SNG2S/MIMPIV4 comparison.
