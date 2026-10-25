@@ -717,3 +717,13 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Confirmed that the tempo stream consumer queues tempo-event bytes, while `FUN_1000_08EC` flushes pending delta before writing an event and accumulates the absolute tick; `FUN_1000_16E6` encodes the delta as SMF VLQ and `FUN_1000_17C2` only appends a byte / increments buffer byte count.
 - Recorded the bounded static result as FACTS F-108 and narrowed T-015. The initial coarse tempo ticks 92 / 116 and later boundary-minus-one events are still not fully explained; v2 remains separate.
 - No converter or test code changed. No runtime trace, MIDI regeneration, or playback was performed.
+
+
+## 2026-10-26 — tempo scheduler initialization path follow-up
+
+- Continued the static call-order review around `FUN_1000_39C9`, `FUN_1000_33D4`, and `FUN_1000_0010` in the private SNG2S Ver. 3.3 analysis export.
+- `FUN_1000_39C9` appends one byte to the internal circular queue at `0x1152`, advances the write pointer, increments the queue count at `0x1150`, and wraps at `0x1556` to `0x1156`; it does not itself update MIDI tick or pending delta.
+- `FUN_1000_33D4` initializes scheduler state, calls `FUN_1000_3406` once before entering the repeated processing path, and then calls `FUN_1000_3B68`. In the inspected setup path, `FUN_1000_0010` later drains the internal event stream and computes the initial exact tempo value through `FUN_1000_618A` when the base tempo differs from 120 BPM.
+- The initial call and repeated calls do not follow identical pending-delta increment conditions: the initial nonzero `0xF96` state skips the normal increment path before the state is changed for subsequent processing.
+- These observations narrow the call order but do not yet derive the reference coarse tempo event ticks 92 (v3) and 116 (v4), the later boundary-minus-one cases, or v2 tick 128. Keep T-015 open; do not apply a fixed tick correction based on this static trace alone.
+- Static analysis only: no runtime trace, MIDI regeneration, playback, converter change, or test change was performed.
