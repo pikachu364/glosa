@@ -1242,3 +1242,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **未確定:** この call order は startup と main loop の境界を明確にするが、初回 coarse tempo tick 92 / 116 を単独で導出しない。remainder 算出時点の実行時 accumulator 値、tempo byte queue の実際の drain 状態、v2 の異なる tempo semantics は未検証。
 
 **Sources:** private `sng2gs解析データ.txt` の `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`, `FUN_1000_08EC`, `FUN_1000_61EC`; F-106/F-108/F-111/F-112. Static analysis only.
+
+
+## F-116 — 初回 scheduler 呼び出しが tempo countdown を開始する位置（2026-10-26）
+
+**状態:** SNG2S Ver. 3.3 の静的命令列と呼び出し順を確認。runtime trace ではない。
+
+- `FUN_1000_3DE2` は `0x10AA`（tempo countdown）と `0x10AC`（tempo record offset）をゼロ初期化し、`0xF96 = 0xFFFF` にする。`FUN_1000_33D4` は `FUN_1000_3406` を1回呼んだ後に `FUN_1000_3B68` を呼び、最後に `0xF96 = 0` にする。
+- `FUN_1000_3406` の初回呼び出しでは `0xF96 != 0` のため、通常呼び出し冒頭の pending delta `0xF9A:0xF9C` の increment を通らない。一方、tempo-stream consumer は同じ関数内で実行され、`0x10AA == 0` なら `0x21E0` の 4-byte records を読む。各 record の step が 0 の場合は次 record へ進み、非ゼロ step を見つけると `0x10AA = step - 1` を設定する。
+- `FUN_1000_33D4` 自体は `FUN_1000_08EC` を呼ばない。戻り先の `FUN_1000_0010` が初期 exact-tempo setup の前に `FUN_1000_08EC` を呼ぶため、initial scheduler の queue 生成と SMF への drain の間に呼び出し境界がある。
+- この静的順序は、tempo countdown の開始点が main loop の最初の通常呼び出しより前にあることを確定する。ただし、`0x21E0` の先頭 record 値とその時点の実行時状態を fixture ごとに読み取れていないため、tick 92 / 116 を導出したものではない。record step と MIDI absolute tick を同一視しない。
+
+**Sources:** private `sng2gs解析データ.txt` の `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`; F-108/F-111/F-115. Static analysis only.
