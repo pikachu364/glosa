@@ -1090,3 +1090,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - この結果から、後続版 `ReadTempi()` が reference の coarse tempo-change event、初期 default tempo、および grid-boundary の exact tempo event を正しく再現できていないことが確認できる。一方、個々の SNG tempo record と reference event tick の対応、版別 scheduler の時刻計算式は未確定。v2 note discrepancy も record-step の意味を特定するまで固定 tick 補正で修正しない。
 
 **制約:** これは private fixture を使った比較テストの結果であり、全 SNG ファイルへの一般化、byte-for-byte SMF 同等性、SysEx / track chunk の同等性、実再生は証明しない。修正後は同じ private workflow で再検証する。
+
+
+## F-103 — JMPlayer の公開 SNG 変換実装と現行 Glosa tempo path の比較（2026-10-25）
+
+**状態:** 公開 JMPlayer ソースとの静的比較。これは独立した SNG2S.EXE の実行結果ではなく、SNG2S の tempo 出力を完全再現する証拠ではない。
+
+- `jihodaya/jmplayer/sngmidi.cpp` の `bpmForTempoValue()` は `2 * v - ((v + 7) / 8)` を使い、現行 Glosa の後続版 `ReadTempi()` と同じ整数 BPM 曲線を使う。
+- 同ファイルは sentinel の最後の出現から +12 byte で `(step, value)` を読み、変化した microseconds-per-quarter のみを累積 tick に追加する。現行 Glosa の `ReadTempi()` も同じ構造。
+- 同ファイルは全パートと tempo point の出力 lead-in を `barLen` とする。これは現行 Glosa の v3/v4 の処理と一致するが、v2 `SHIZUME0.SNG` の SNG2S reference では先頭 Note が tick 128、barLength が 288 であり、同じ lead-in では一致しない。
+- private SNG2S reference の v2/v3/v4 tempo 比較で現行 Glosa が失敗する事実（F-102）は、JMPlayer と同じ単純化された tempo-stream path だけでは reference の coarse tempo event と exact grid event を説明できないことを示す。特に reference tempo event が出る tick と value の算出方法は未解決。
+- JMPlayer のコメント・実装は参考実装であり、SNG2S 3.3 の実挙動そのものとは扱わない。SNG2S reference と異なる点は、元 EXE の静的解析または fixture 比較で個別に検証する。
+
+**Source:** https://github.com/jihodaya/jmplayer/blob/main/sngmidi.cpp, functions `bpmForTempoValue()`, tempo-stream parser, and `lead = barLen`. Public source inspected; no converter code changed from this comparison.
