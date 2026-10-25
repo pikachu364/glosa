@@ -1184,7 +1184,7 @@ This narrows the source of the initial timer base but does not show that tempo r
 - VPN オン／オフの比較だけで VPN が原因と断定しない。ほかの条件が同一であることも完全には保証されない。
 
 
-## F-109 — tempo countdown と pending-delta の同一呼び出し内の順序（2026-10-26）
+## F-111 — tempo countdown と pending-delta の同一呼び出し内の順序（2026-10-26）
 
 **状態:** SNG2S Ver. 3.3 の静的逆アセンブル／decompiler 出力で確認。runtime trace ではない。
 
