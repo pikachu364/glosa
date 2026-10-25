@@ -735,6 +735,3 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Confirmed normal-call ordering: pending delta `0xF9A:0xF9C` increments before tempo countdown `0x10AA` is processed; when the countdown is already zero, the next 4-byte tempo record is consumed and any changed-tempo bytes are queued during that call.
 - Confirmed startup differs: `FUN_1000_3DE2` sets `0xF96=0xFFFF`; `FUN_1000_33D4` performs one scheduler call before setting `0xF96=0`. Added FACTS F-111 and updated the existing T-015 checklist.
 - This narrows the state transition but does not yet explain the absolute SMF positions tick 92 / 116 or all later boundary-minus-one cases, because queue production and SMF draining are separate stages. No converter/test code changed; no runtime trace, MIDI regeneration, build, test, or playback was performed.
-
-
-<!-- ChatGPT main-branch write/delete permission test: temporary marker; remove immediately -->
