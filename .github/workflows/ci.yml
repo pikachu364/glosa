@@ -2,11 +2,14 @@
 name: CI
 
 on:
+  # Push CI is reserved for main; PR branches are tested by pull_request below.
   push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
-# A newer push to the same branch makes the run for the older one pointless.
+# A newer run for the same ref makes the older run pointless.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
