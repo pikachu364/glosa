@@ -1206,3 +1206,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - 次の解析対象は、初期 tempo record の処理から queue insertion、event dequeue、pending delta、absolute-tick accumulator 更新までのデータフローと呼び出し順である。tick 92 / 116 に合わせた固定補正や、全体に適用する補正値を推測で実装しない。
 
 **Sources:** private `sng2gs解析データ.txt`、`FUN_1000_3406`、`FUN_1000_0010`。静的解析のみ。runtime trace、MIDI 再生成、実再生は未実施。
+
+## F-113 — SNG2S の /F option token と option flag の初期値を実行ファイルから確認（2026-10-26）
+
+**状態:** private `SNG2S.EXE` の initialized image と既存の parser 命令列を照合。runtime trace ではない。
+
+- 実行ファイル SHA-1 (Git blob SHA): `0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`。データ領域の file offset `0x7353` は `46 00`（ASCII `F\0`）で、parser は DS:`0x0EE3` の token を長さ 1 で比較し、一致時に `0x626 = 1` を設定する。従って `/F → 0x626 = 1` の token-to-flag mapping は確認済み。SNG2S.DOC の説明どおり、`/F` は SNG track を MIDI track number 昇順にする option。
+- `/XD` token は DS:`0x0F05` の `XD\0` で、parser が一致時に `0x622 = 1` を設定する（F-096）。
+- 元 EXE の initialized image では DS:`0x0622` と DS:`0x0626` の初期 word はいずれも 0（file offset `0x6A92` / `0x6A96`）。parser の確認できた直接書き込みは、それぞれ対応 option が指定された時の `1` 設定。
+- 利用者確認済みの reference 生成コマンドは `sng2gs.exe runner.sng` / `sng2gs.exe TEST.sng` で、どちらも option なし（F-100）。したがって静的な parser/dataflow では `/F` と `/XD` は指定されず、両 flag は初期値 0 のままと整合する。これは reference の documented default とも一致する。
+- 制約: original executable の実行時トレースは未実施。間接書き込みや runtime-only state を完全に排除した主張ではない。option flag の静的 mapping が確認できても、全 v1 fixture への一般化や tempo tick の実行時因果関係を証明するものではない。
+
+**Sources:** private `SNG2S.EXE` initialized image; `sng2gs解析データ.txt` の `FUN_1000_184A` parser control flow; private `SNG2S.DOC`; F-096/F-100. Static binary inspection only.
