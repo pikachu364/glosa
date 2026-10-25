@@ -1103,3 +1103,22 @@ This narrows the source of the initial timer base but does not show that tempo r
 - JMPlayer のコメント・実装は参考実装であり、SNG2S 3.3 の実挙動そのものとは扱わない。SNG2S reference と異なる点は、元 EXE の静的解析または fixture 比較で個別に検証する。
 
 **Source:** https://github.com/jihodaya/jmplayer/blob/main/sngmidi.cpp, functions `bpmForTempoValue()`, tempo-stream parser, and `lead = barLen`. Public source inspected; no converter code changed from this comparison.
+
+
+## F-104 — v2〜v4 tempo reference は粗い timer event と grid event の二段出力を示す（2026-10-25）
+
+**状態:** F-102 の private reference event signature から得られる比較上の特徴。tick 計算の内部実装は未確定で、下記の scheduler 説は仮説。
+
+| Fixture | coarse event (µs/qn) | 同じ tempo の grid event (µs/qn) | 差分 |
+|---|---|---|---|
+| v3 `START__0` | tick 92 = 361000 | tick 192 = 361445 | 166 BPM の整数 ms 丸め値と整数除算値に一致 |
+| v3 `START__0` | tick 383 = 895000 | tick 575 = 983000 | 値が異なるため、それぞれ別の tempo change とみなす必要がある |
+| v4 `BOURREE0` | tick 116 = 260000 | tick 192 = 260869 | 230 BPM の整数 ms 丸め値と整数除算値に一致 |
+| v4 `BOURREE0` | tick 407 = 258000 | tick 443 = 256000 | 連続する粗い timer event。reference にだけ存在 |
+
+- reference は tick 0 に 500000 µs/qn を置き、その後で coarse timer event を出力する。現行 Glosa は最初の SNG tempo value を tick 0 の tempo として出力してしまう。
+- 361000 / 361445 および 260000 / 260869 の組は、同一 BPM を `60000 / BPM * 1000` と `60000000 / BPM` で別々に整数計算した値に一致する。これは粗い timer 更新と exact tempo event の二経路がある仮説を支持するが、単独では元 EXE のコード経路を証明しない。
+- v3/v4 の exact grid event tick は Glosa の 192/384/576、192/408/444 と reference の 192/383/575、192/407/443 が一致しない。イベント間隔や lead-in の一律補正でまとめて直すのではなく、record step の加算タイミングと bar-boundary の出力処理を分けて検証する。
+- v2 `SHIZUME0` は tick 0 = 500000、tick 128 = 1000000。v2 は base-tempo semantics と 6/4 grid が異なるため、v3/v4 の仮説をそのまま適用しない。
+
+**結論:** 次の実装変更では `ReadTempi()` の既存 `TempoPoint` 列だけを使い回すのでは不十分な可能性が高い。SNG record stream を読み取る層と、SNG2S scheduler / MIDI tempo event を再現する層を分け、fixture で event-by-event に検証する。未確定の時刻則をコードに推測実装しない。
