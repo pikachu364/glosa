@@ -699,3 +699,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - 同関数の coarse writer は 60000 / BPM の整数除算後に 1000 を掛けるため、v3 166 BPM → 361000、v4 230 BPM → 260000 µs/qn を説明する。
 - 別の FUN_1000_0010 path は FUN_1000_618a(0x8700, 0x393, BPM, 0) を呼び、60,000,000 / BPM の整数除算を行うため exact 値 361445 / 260869 を説明する。F-106 に根拠と制約を記録し、T-015 は tick accumulator / call order の調査に絞った。
 - まだ初回 coarse event tick 92 / 116 と後続 boundary-minus-one を完全には説明できていない。converter / tests は変更せず、private workflow も実行していない。静的逆解析であり runtime trace / playback は未実施。
+
+
+## 2026-10-26 — grid/scheduler stream と初期 tempo event delta の追跡
+
+- 同一 ref の CI 実行がキャンセルされる問題への対応として、`.github/workflows/ci.yml` の `concurrency` 設定を削除した。対応コミットは `59210fbbd1fb6acb08be79bef0dd431fc8144949`。対応する GitHub Actions run #1140 は成功した。
+- `FUN_1000_3406` の静的解析を進め、`0x21DC` の grid / scheduler 用レコードストリームと、`0x21E0` の独立した tempo record ストリームを区別した。grid 側には状態 `0x25DA` に応じて進行幅が 10 bytes または 12 bytes となる経路があり、関連オフセットは `0x10A4` / `0x10A6`。tempo 側は 4-byte 単位の `(step, value)` レコードを処理し、関連オフセットは `0x10AA` / `0x10AC`。
+- `FUN_1000_0010` には、grid / scheduler 側から取得した値が初期 tempo event の delta 計算に関係する経路があることを確認した。ただし、reference MIDI の初期 tempo event が v3 `START__0.SNG` で tick 92、v4 `BOURREE0.SNG` で tick 116 に発生する原因は未解決。
+- 初回 tempo record の処理、内部キューへの追加、イベントの読み出し、保留中 delta の処理、絶対 tick の更新を引き続き追跡する。tick 92 / 116 の固定値化や一律の時刻補正は行わない。
+- 静的逆解析に基づく調査であり、runtime trace / playback による確認は未実施。
