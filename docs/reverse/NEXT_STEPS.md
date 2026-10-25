@@ -1,5 +1,13 @@
 # 逆解析の進捗サマリー（2026-10-25 更新）
 
+## GitHub 統合状況（2026-10-25）
+
+- PR #9 は merge commit `5571b4d059620ba300971d7fd1444013532232a9` で main にマージ済み。
+- PR head CI #1122 は成功。merge 後 main CI #1123 も成功（FACTS F-107）。
+- PR #9 のマージ待ち・競合解消・同 PR head の CI 再実行は現在の TODO ではない。
+- 次の作業は SNG2S / MIMPIV4 の未解決解析を優先し、converter の推測修正は行わず、現行 private fixture 比較と runtime/playback の証拠範囲を分けて扱う。
+
+
 ## 現在地
 
 > **作業境界:** T-017 の v1 SNG2S coarse tick-8 tempo と setup SysEx の静的対応付けは、保存済み reference MIDI に対する byte-level 比較まで進んだ。残るのは runtime state の確認と全 v1 ファイルへの一般化。別件の T-014（3/4 rounding）、T-015（v2 tempo audit）、T-016（MIMPIV4 playback tempo）は混同せず継続する。
@@ -349,7 +357,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - `FUN_1000_A3BB` is a UI/event-loop routine. When counter `0x43A` reaches threshold `0x3516`, it clears `0x43E` and `0x43A` and reschedules the base value at `0x440`. This looks like expiration/reset handling, not a tempo-record decode path.
 - `FUN_1FF5_0DE1` simply stores the requested count in `0x3390` (normalizing zero to one). The timer-divisor routine `FUN_1FF5_0DFA` uses its CX input to program the timer hardware; no conductor-record pointer or tempo-record field is present in these routines.
 - These traces narrow the known scheduling calls but still do not identify the binary conductor tempo-record consumer. The `FUN_1000_7E55` text-command path should not be conflated with the SNG binary parser without a proven caller/dataflow link.
-- CI recheck for head `1ff04bcb42700727f6963c464e8dc4d4deab730e`: both push run `39736654504` and PR run `39736659682` completed successfully. PR #9 remains open and unmerged.
+- Historical CI recheck for head `1ff04bcb42700727f6963c464e8dc4d4deab730e`: both push run `39736654504` and PR run `39736659682` completed successfully at that time. PR #9 was later merged on 2026-10-25; see FACTS F-107.
 
 ### Setup-template trace follow-up (2026-10-22)
 
@@ -363,7 +371,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - Read the archived SNG2S v3.3 manual (`testdata/ballade/sng2gs/SNG2S.DOC` in the private reference repository). It documents `/1` as the default (Format 1), `/X2` as the default SysEx placement (a dedicated track immediately after the conductor track), and `/XD` as disabling SysEx conversion. `/X1` instead puts SysEx into the conductor track; `/F` changes SNG-track ordering, and `/N` omits parts without notes.
 - This narrows the documented defaults for a normal SNG2S invocation, but the exact command line that produced `runner.MID` / `TEST.MID` is still not recorded. The manual does not include the binary template bytes at 0x3F82/0x3FA0, so it cannot close the payload mapping by itself.
 - The SNG2S manual also states output timebase is fixed at 48 ticks per quarter note. That is consistent with the reference MIDI's PPQN but does not explain the coarse tempo meta at tick 8 or the pending-delta value 0x6EE.
-- CI for commit 608e731 completed successfully on both push and PR workflows (runs 39738048630 and 39738058337). PR #9 remains open and unmerged.
+- Historical CI for commit `608e731` completed successfully on both push and PR workflows (runs `39738048630` and `39738058337`). PR #9 was later merged on 2026-10-25; see FACTS F-107.
 
 
 ### Latest continuation note (2026-10-22)
@@ -427,11 +435,11 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 ### Next actions (ordered)
 
 1. **Do not modify note conversion to address the resolved ordering mismatch.** The canonical-order test fix is sufficient for that issue.
-2. Obtain a non-cancelled public CI run for the current PR head; a cancelled run is neither pass nor failure evidence.
+2. [x] Obtain a non-cancelled public CI run for the final PR head: run #1122 completed successfully; after merge, main run #1123 also completed successfully (FACTS F-107).
 3. Correct the stale v1-unsupported status in the private metadata (`testdata/ballade/README.md`, `manifest.json`, `v1/sng2gs/README.md`) in the private repository, without copying fixture bytes or private analysis exports into public `glosa`.
 4. Continue only on genuine equivalence gaps: setup SysEx payload byte equality, physical SMF track/chunk order, controller/program/pitch-bend coverage, and later changing-tempo reference fixtures.
 5. Keep the SNG2S tick-8 pending-delta / `0x6EE` initialization question and MIMPIV4 runtime tempo-consumer question separate. `0x6EE = 4` remains unproven; no runtime trace or actual playback test has been performed.
-6. PR #9 remains open. Do not merge without explicit user authorization; before merging, review the two commits behind `main` and resolve any conflict deliberately.
+6. [x] PR #9 merged after user confirmation; merge commit and post-merge CI are recorded in FACTS F-107. No further action is needed on PR #9 itself.
 
 ## T-018 — v2 setup SysEx producer mapping
 
