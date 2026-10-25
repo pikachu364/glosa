@@ -1230,3 +1230,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - 次に追う対象は、`FUN_1000_0010` の初回 tempo setup と `FUN_1000_3406` の scheduler 呼び出し順から、queue insertion → `FUN_1000_08EC` dequeue → pending delta flush → absolute-tick update までのデータフロー。v2 の tick 128 も別途未解決。
 
 **Sources:** private `sng2gs解析データ.txt` の `FUN_1000_184A`, `FUN_1000_08EC`, `FUN_1000_3DE2`, `FUN_1000_3406`; F-096/F-100/F-113. Static analysis only; no runtime trace, MIDI regeneration, or playback.
+
+
+## F-115 — FUN_1000_0010 の初期 tempo setup と main scheduler loop の境界（2026-10-26）
+
+**状態:** SNG2S Ver. 3.3 の静的逆解析 export の命令順を確認。runtime trace ではない。
+
+- `FUN_1000_0010` は初期 SMF header/meta を出力し、setup 処理の後に `FUN_1000_33D4` を呼ぶ。`FUN_1000_33D4` は `FUN_1000_3DE2` で scheduler 状態を初期化し、`0x7BA` を base tempo `0x2962` に設定して、`FUN_1000_3406` を一度呼んでから `FUN_1000_3B68` を実行し、`0xF96` を 0 に戻す。
+- `FUN_1000_0010` はその後、`/XD` が指定されている場合に限り pending delta `0xF9A:0xF9C` と absolute-tick accumulator `0x1ED8:0x1EDA` をゼロにする。その後 `FUN_1000_08EC` で queue を drain し、`0x6F2:0x6F4` と最初の grid value `uVar11` を使って remainder を計算する。差分 `uVar11 - remainder`（差分がゼロなら `uVar11`）を pending delta に設定し、`0x7BA != 120` の場合は `60000000 / BPM` の exact tempo meta-event を出力する。
+- その exact-tempo setup の後、`0xF9A:0xF9C` を 1 減らしてから、`FUN_1000_3406` → `FUN_1000_08EC` の main loop に入る。従って初期 tempo setup と main scheduler loop は別フェーズであり、初回 coarse tempo event の placement を main loop の `step-1` countdown だけで説明しないこと。
+- **未確定:** この call order は startup と main loop の境界を明確にするが、初回 coarse tempo tick 92 / 116 を単独で導出しない。remainder 算出時点の実行時 accumulator 値、tempo byte queue の実際の drain 状態、v2 の異なる tempo semantics は未検証。
+
+**Sources:** private `sng2gs解析データ.txt` の `FUN_1000_0010`, `FUN_1000_33D4`, `FUN_1000_3DE2`, `FUN_1000_3406`, `FUN_1000_08EC`, `FUN_1000_61EC`; F-106/F-108/F-111/F-112. Static analysis only.
