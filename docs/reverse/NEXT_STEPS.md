@@ -15,7 +15,7 @@
 - **T-017 の進展:** 元 EXE initialized image から `DS:0x06EE = 4`、`DS:0x07DE = 0x004B`、`CS:0x3F82 = F0 41 10 16 12 FF` を確認。静的 call order と reference MIDI を照合し、tick 0/4 の 12-byte SysEx 2件、tick 8 の 10-byte SysEx 2件すべてを producer path / payload と対応付けた（FACTS F-094/F-095/F-097/F-101）。
 - **tempo event:** `runner.MID` の tempo は tick 0 = 500,000、tick 8 = 869,000、tick 192 = 869,565 µs/quarter。`TEST.MID` は tick 0 の 500,000 のみ。coarse tempo の tick 8 placement は、setup drains の後に pending delta 4 が残る startup path と整合する。tick 192 の exact tempo は別の 192-tick grid path（FACTS F-072/F-080/F-095）。
 - **v2〜v4 saved MIDI audit (2026-10-25):** reference と保存済み Glosa MIDI をバイナリ解析し、各版で Glosa 側が物理 track 1本少ないこと、reference track index 1 に独立 SysEx track があること、パート順が逆方向であること、tempo event に差があることを記録（比較文書 §20）。これは保存済み旧出力の比較であり、現行コードからの再生成結果ではない。次は private fixture workflow で現行 PR head を指定して再検証し、現行挙動と旧生成物の差を切り分ける。
-- **オプションフラグ:** parser の文字列と分岐から `/XD → 0x622 = 1` は直接確認済み（F-096）。reference MIDI の生成時に `/XD` が指定されたかは不明だが、ユーザー確認では生成コマンドにオプションなし。`/F` token-to-flag の直接対応は未確認。
+- **オプションフラグ:** `/XD → 0x622 = 1` は F-096、`/F → 0x626 = 1` は F-113 で token bytes と parser 分岐まで確認済み。EXE initialized image では両 flag の初期値が 0。reference の生成コマンドは利用者確認済みでオプションなし（F-100）なので、静的解析上は既定の `/X2`・default track order と整合する。runtime trace は未実施。
 - **残る制約:** 解析は original EXE initialized image、静的命令列、保存済み MIDI の照合であり、runtime trace / 実再生は未実施。indirect writes と inspected fixture 以外への一般化は未証明。converter と tempo regression tests は変更しない。
 - **現行 private CI の追加結果（2026-10-25）:** PR head の v2〜v4 参照イベント比較で 4 件失敗（v2 SHIZUME0 の Note event、v2 SHIZUME0 / v3 START__0 / v4 BOURREE0 の tempo event）。v2 Note event は reference の先頭 tick 128 に対し Glosa が 288。tempo は v2 reference tick 128=1,000,000 µs に対し Glosa は tick 288=500,000 µs、v3 reference は tick 0=500,000 → tick 92=361,000 → tick 192=361,445、Glosa は tick 0=361,445 → tick 192=361,445 → tick 384=895,522、v4 も reference の coarse tempo event（tick 116=260,000）を欠き、exact tempo の tick/value もずれる。これは旧保存 MIDI audit だけでなく、現在の converter を再実行した比較で確認された実装差。原因が確定するまで、オフセットだけの修正やテスト条件の緩和はしない。
 ## reverse 文書全体の監査（2026-10-22）
@@ -40,14 +40,14 @@
 
 ## 次に行うこと（順序）
 
-1. [x] 解析テキスト内の `0x6EE` 命令参照を全件確認。29参照はすべて直接読み出しで、直接 store は見つからず、複数出力経路で delta/間隔に使われることを記録（FACTS F-067 / H-016）。
-2. [ ] `0x6EE` の実値・初期化元を、実行ファイルの data segment／別名アドレス／間接書き込みまで含めて調べる。
-3. [ ] parser token `0xF05` の文字列実体とデータ segment 対応を確認し、`0x622 ↔ /XD` を直接検証する。`0x626 ↔ /F` も token bytes または runtime trace で確認する。
-4. [ ] reference MIDI を生成した SNG2S の実行条件が分かる資料を探し、`/XD` の有無（従って `0x622` の実際の値）を絞る。
-5. [ ] `FUN_1000_1CE4` の `0xF34` / `0xF3F` queue payload を参照 track 1 の SysEx 4件に対応付け、`0x6EE = 4` 仮説を検証する（FACTS F-068 / H-016）。
-6. [ ] preamble の各 queue drain 前後について `0xF9A:0xF9C` と `0x6F2:0x6F4` を対応表にし、tick 0 / 8 / 192 と照合する。
-7. [ ] 実行時トレースが可能なら静的推論と照合する。可能でなければ未確認と明記する。
-8. [ ] tempo 問題が解決するまで converter / regression tests を変更しない。
+1. [x] `0x6EE` の直接参照一覧を確認し、元 EXE initialized image の file offset `0x6B5E` から初期値 4 を確認（F-067/F-094）。直接 store が見つからないことと、静的 image 上の初期値は別の根拠として記録。
+2. [x] 元 EXE initialized image の `DS:0x06EE = 4` を確認。初期値の起源は EXE に埋め込まれた initialized data であり、実行時の変更有無は runtime trace 未確認（F-094/F-095）。
+3. [x] parser token bytes と control flow を確認：`XD\\0` at `DS:0x0F05` sets `0x622=1`（F-096）、`F\\0` at `DS:0x0EE3` sets `0x626=1`（F-113）。両 flag の initialized word は 0。
+4. [x] reference 生成コマンドは利用者確認済みで `sng2gs.exe runner.sng` / `sng2gs.exe TEST.sng`、いずれもオプションなし（F-100）。マニュアルの `/X2` default と `/F` の default track order に整合する。実行ファイル hash/version と runtime flag trace は未確認。
+5. [x] setup SysEx 4件の producer/payload 対応は tick 0/4（F-097）と tick 8/8（F-101）で byte-level 照合済み。
+6. [x] 静的 startup call order と pending-delta / absolute-tick 更新を参照 `runner.MID` の tick 0/4/8/192 と照合。`0x6EE=4` が setup drains 後の pending delta に使われ、`0x622==0` の経路で coarse tempo が tick 8 に出る説明を記録（F-095）。runtime state の直接観測ではない。
+7. [ ] 元 EXE の runtime trace / 実再生で静的推論を照合する。現在の作業環境では実行時観測を得ていないため、未確認のまま保持する。
+8. [x] tempo tick の原因が完全に確定するまでは converter / regression tests を変更しない。v2〜v4 の現行 private fixture failures は別途保持し、固定 offset や test relaxation で隠さない。
 ---
 
 # 次の調査タスク
