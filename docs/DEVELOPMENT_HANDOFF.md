@@ -7,24 +7,18 @@
 > **整理先:** 逆解析の現在の知識ベースは [docs/reverse/README.md](reverse/README.md) から参照してください。確認済み事実は [FACTS.md](reverse/FACTS.md)、仮説・未解決事項は [HYPOTHESES.md](reverse/HYPOTHESES.md)、優先タスクは [NEXT_STEPS.md](reverse/NEXT_STEPS.md)、短い日付順ログは [LOG.md](reverse/LOG.md) に分離しています。この文書は詳細な経緯を残すアーカイブとして維持します。
 
 
-## 0. 最重要サマリー
+## 0. 最重要サマリー（2026-10-25 現在）
 
-**現在の優先課題は、v1 のレイアウト判定エラーの原因究明と、tie の Note-off 延長・160 ticks の開始時刻差の検証。** ノートオン数の差（3,657対2,713）は tie フラグ処理の不一致で説明できた。v1 は3候補すべてが最初のパート長検証で失敗し、v2〜v4 はそれぞれ少なくとも1候補が通る。詳細は §10。
+**現在の状態:** PR #9「fix: add Ballade SNG v1 legacy layout parsing」は main にマージ済み。merge commit は `5571b4d059620ba300971d7fd1444013532232a9`。PR CI #1122 と main の post-merge CI #1123 は成功している（詳細は [docs/reverse/FACTS.md](reverse/FACTS.md) の F-107）。
 
-実行したコマンド:
+この文書の後続セクションには、2026-10-19 時点の「v1 変換失敗」「PR 未作成」など、後の作業で解決・更新された履歴が残っている。**それらは歴史的記録であり、現在の状態を示すものではない。** 現在の調査結論・未解決事項・優先順位は必ず [docs/reverse/README.md](reverse/README.md)、[FACTS.md](reverse/FACTS.md)、[HYPOTHESES.md](reverse/HYPOTHESES.md)、[NEXT_STEPS.md](reverse/NEXT_STEPS.md) を正本として確認すること。
 
-    dotnet run --project src/Glosa.Cli -- convert-sng testdata/ballade/v1/runner.SNG testdata/ballade/v1/runner.mid
+### 現在も区別して扱う検証範囲
 
-結果:
-
-    error: Invalid or unsupported Ballade SNG layout.
-
-- 原因は未特定。
-- 修正はまだ行っていない／修正成功は確認していない。
-- テストスイートが通ることと、実際の SNG 変換が成功することは別。変換成功を主張しないこと。
-- 次は元実装と Glosa のレイアウト判定を比較し、候補ごとの失敗条件を確認する。
-- ユーザーは Windows CMD を使用している。PowerShell 専用コマンドは `powershell -NoProfile -Command "..."` の形で提示する。
-- 一度に大量の手順を提示せず、1ステップずつ案内する。
+- CI 成功は、その run が対象とした commit・job の build/test が通ったことを示す。実再生、SMF 全体の byte-for-byte 一致、private fixture の全件一致を意味しない。
+- v2〜v4 の Note / tempo event の現行 converter 差分は未解決。固定 tick 補正や根拠のない scheduler 仮説を実装しない。
+- SNG2S の coarse/exact tempo writer と scheduler tick placement の調査、v2 tempo path、MIMPIV4 playback timer の解析は別の未完了課題として管理する。
+- private fixture と逆解析 dump は private repository 内に保持し、公開 repository に追加しない。
 
 ## 1. リポジトリ・作業環境
 
