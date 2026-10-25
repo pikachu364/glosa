@@ -764,3 +764,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Continued into `FUN_1000_0010` and `FUN_1000_33D4`. Confirmed the initial scheduler pass occurs before the main `FUN_1000_3406` → `FUN_1000_08EC` loop; the initial exact-tempo setup uses a remainder-based delta calculation, then decrements pending delta before entering the loop.
 - Added FACTS F-115 and refined NEXT_STEPS to focus on the accumulator and queue state at that remainder calculation. This is a verified static call order, not a derivation of coarse tempo ticks 92 / 116; the startup values and queue drain state at runtime remain unverified.
 - No converter or test code changed. No runtime trace, MIDI regeneration, playback, or new test run was performed.
+
+## 2026-10-26 — T-017 initial scheduler sentinel and tempo-record start
+
+- Confirmed statically that `FUN_1000_3DE2` zeroes tempo countdown/offset and sets `0xF96=0xFFFF`; the first `FUN_1000_3406` call consumes the tempo stream without the normal pending-delta increment, then `FUN_1000_33D4` resets `0xF96` to zero.
+- The initial scheduler call can read nonzero tempo records and set `0x10AA=step-1`; `FUN_1000_0010` drains the generated queue only after `FUN_1000_33D4` returns. Added FACTS F-116 to capture this call boundary.
+- This narrows the call order but does not derive first coarse tempo absolute ticks 92 / 116 because the fixture-specific raw tempo-record values and runtime state have not yet been established. NEXT_STEPS now prioritizes direct raw SNG/reference MIDI comparison.
+- CI #1154 for the preceding documentation commits completed successfully: https://github.com/pikachu364/glosa/actions/runs/40242244244
+- No converter/test code changes, runtime trace, MIDI regeneration, or playback.
