@@ -287,20 +287,20 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 **完了条件:** slider-to-timer curve と SNG2S MIDI-export rounding を別の処理として説明し、3/4 の補正は参照 fixture で確認できるまで実装しない。
 
 
-## T-015 — versioned tempo-stream start offsets
-**Priority:** completed for v1; keep later-version base-tempo semantics as a separate audit.
+## T-015 — versioned tempo-stream decoding and scheduler emission
+**Priority:** high; v1 stream offset is resolved, but v2–v4 reference tempo behavior is not reproduced.
 
-- [x] Verify v1 tempo stream starts at sentinel +10: `runner.SNG` yields (step=48,value=37), (144,37), (192,37); SNG2S consumes the second word in its base-tempo scaling calculation, so 37 at baseTempo120 yields 69 BPM. Whether this word is semantically the same as the UI slider remains unproven (FACTS F-089).
-- [x] Verify v3/v4 use sentinel +12: value 89 gives 166 BPM in `START__0.SNG`, and value 123 gives 230 BPM in `BOURREE0.SNG`. This confirms the numeric BPM mapping only; it does not confirm tempo-event timing, coarse millisecond-rounded events, initial default tempo, or exact grid-aligned events.
-- [x] Confirm Glosa already has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` implementations.
-- [ ] Separate audit: v2 `SHIZUME0.SNG` has a different base-tempo setting and a 6/4 grid. Verify its full tempo-stream-to-MIDI tick scaling before changing shared later-version code; do not infer it from the v1 rule.
-- [x] Compare public `jihodaya/jmplayer/sngmidi.cpp` with Glosa `ReadTempi()`: same slider-to-BPM integer curve, sentinel +12 tempo stream, accumulated step ticks, and `barLen` lead-in. This establishes the inherited implementation pattern only, not SNG2S 3.3 equivalence; the private reference's coarse tempo events and v2 128-tick part lead-in remain separate discrepancies (FACTS F-102/F-103).
-- [ ] Investigate current private-CI failures in all v2–v4 tempo event signatures (FACTS F-102/F-104). The v3/v4 reference supports a two-path hypothesis: coarse timer updates use whole-millisecond tempo values while grid-aligned events use exact integer microseconds-per-quarter. The initial 500000 default and differing event ticks are observed; the record-step scheduling rule remains unproven. Keep v2 separate because its base-tempo semantics and 6/4 grid differ.
-- [ ] Before changing `ReadTempi()`, document each fixture's raw tempo records as `(step, value)`, cumulative record position, expected coarse event tick/value, and expected grid event tick/value. Then implement separate stream parsing and scheduler-to-SMF event emission, rather than applying a global tick offset or tempo formula tweak.
+- [x] Verify v1 tempo stream starts at sentinel +10 and v3/v4 at sentinel +12. Numeric BPM mapping is known; event timing is a separate behavior.
+- [x] Confirm Glosa has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` paths.
+- [x] Compare public `jihodaya/jmplayer/sngmidi.cpp` with Glosa: shared slider-to-BPM integer curve, sentinel +12 parsing, accumulated step ticks, and `barLen` lead-in. This is a reference implementation comparison, not proof of SNG2S 3.3 equivalence (F-103).
+- [x] Parse private v2 `SHIZUME0.SNG`, v3 `START__0.SNG`, and v4 `BOURREE0.SNG` raw tempo records and compare cumulative positions / values with reference MIDI (F-105).
+- [x] Confirm v3 value 89 → 166 BPM yields both 361000 (whole-ms conversion) and 361445 (integer µs/qn); v4 value 123 → 230 BPM similarly yields 260000 and 260869. Several later coarse events occur one tick before cumulative record boundaries, but first coarse events at v3 tick 92 / v4 tick 116 do not follow that rule (F-104/F-105).
+- [ ] Trace the original EXE path that emits tempo meta-events and its tick accumulator. Existing evidence does not yet connect the raw record boundaries to the first coarse event or explain the one-tick discrepancy. Do not confuse SysEx tempo-slider state with MIDI tempo meta-event emission.
+- [ ] Keep v2 separate: its first raw value 64 does not explain reference tick 128 = 1000000 µs/qn under the later-version slider formula.
+- [ ] Only after the tick-generation rule is evidenced, split raw record decoding from scheduler-to-SMF event emission and implement against event-by-event fixture assertions.
+- [ ] Re-run private fixture CI after any converter change; inspect the actual workflow result before reporting pass/fail.
 
-**Result:** jmplayer's shared `last+12` tempo parser would misread the v1 stream even after its part-block layout is fixed. This is a separate v1 compatibility fix, documented in FACTS F-074.
-
-
+**Result:** raw record/value mapping is grounded, but the scheduler tick rule and v2 tempo semantics remain unresolved. Do not apply a global tick offset or guessed formula tweak. v1 remains a separate `last+10` path (F-074).
 ## T-016 — MIMPIV4 legacy tempo records to playback timer
 
 **Priority:** high; required for the SNG2S/MIMPIV4 comparison.
