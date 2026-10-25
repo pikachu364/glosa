@@ -12,7 +12,7 @@ Ballade SNG の版別レイアウトと Glosa の変換結果を、参照 MIDI�
 - **grid offset:** 192-tick grid と 4/4 は解析対象だが、絶対 offset は記録間で不一致（0x00B5=181、231、0x74+125=241）。未解決として扱い、根拠なく統一しない。
 - **MIMPIV4:** timer 初期化経路は確認済みだが、SNG tempo-record の値が再生中の timer / event interval に入る経路は未特定。SNG2S の MIDI export 式を流用しない。
 - **v2 setup SysEx:** 静的解析と参照 MIDI の照合で、tick 4/8 の `FUN_1000_23C0(4)` 経路と tick 100/104 の `FUN_1000_1CE4` 経路を別々に説明できる（F-093 / H-019 / T-018）。`0x7BC` の実行時状態や間接書き込みの完全排除、runtime trace は未確認。
-- **v2–v4 tempo:** raw SNG tempo values were compared with SNG2S reference MIDI (F-105). v3/v4 coarse values match whole-millisecond conversion while exact values match integer µs/qn conversion, but the first coarse event and later one-tick-early events are not explained by one proven scheduler rule. v2 remains a separate unresolved path. Do not treat the hypothesis as implemented behavior.
+- **v2–v4 tempo:** raw SNG tempo values were compared with SNG2S reference MIDI (F-105). v3/v4 coarse values match whole-millisecond conversion while exact values match integer µs/qn conversion. Static tracing now separates tempo-event byte creation, pending-delta flush / absolute-tick accumulation, VLQ encoding, and raw byte append (F-108); however, the first coarse event and later one-tick-early events are not explained by one proven scheduler rule. v2 remains a separate unresolved path. Do not treat the hypothesis as implemented behavior.
 
 ## 次の作業
 未完了作業の正本は [NEXT_STEPS.md](NEXT_STEPS.md) の T-018（v2 setup parameter override flags / SysEx payload mapping）、T-017（v1 tick-8 の runtime state / fixture generalization、setup SysEx mapping、参照 MIDI の生成オプション）、T-014（3/4 固有丸め）、T-015（v2 tempo audit）、T-016（MIMPIV4 再生 tempo）とする。T-011〜T-013 は完了した静的解析の記録として扱い、同じ作業を重複させない。
