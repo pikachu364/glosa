@@ -1182,3 +1182,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - これは VPN オフで成功した F-109 に続く比較テスト。
 - この項目はテスト依頼・実行条件の記録であり、更新結果は GitHub の更新 API の応答と作成コミットで別途確認する。
 - VPN オン／オフの比較だけで VPN が原因と断定しない。ほかの条件が同一であることも完全には保証されない。
+
+
+## F-109 — tempo countdown と pending-delta の同一呼び出し内の順序（2026-10-26）
+
+**状態:** SNG2S Ver. 3.3 の静的逆アセンブル／decompiler 出力で確認。runtime trace ではない。
+
+- `FUN_1000_3406` は通常呼び出しで、冒頭の `0xF96 == 0` 条件が成立すると pending delta `0xF9A:0xF9C` を 1 増やしてから、後段で tempo countdown `0x10AA` を処理する。
+- `0x10AA != 0` の場合、その呼び出しでは countdown を 1 減らして終了する。呼び出し開始時に `0x10AA == 0` の場合は次の 4-byte tempo record を読み、`step - 1` を `0x10AA` に設定し、同じ呼び出し内で値から BPM を計算する。BPM が前回値と異なれば tempo-event bytes を内部 queue に追加する。
+- 初期化関数 `FUN_1000_3DE2` は `0xF96 = 0xFFFF` にし、`FUN_1000_33D4` は `FUN_1000_3406` を1回呼んで `FUN_1000_3B68` を呼んだ後に `0xF96 = 0` にする。したがって最初の scheduler 呼び出しは pending-delta を増やす通常経路と異なる。
+- この順序は、record countdown と pending delta が独立した状態であり、最初の呼び出しが後続反復と同じではないことを直接示す。ただし、tempo bytes が queue に追加された時点と `FUN_1000_08EC` がそれらを SMF に書き出す時点は別である。従って、この関数単独から absolute tick 92 / 116 や後続 boundary-minus-one の全配置を導出することはできない。
+
+**Sources:** private `sng2gs解析データ.txt`、`FUN_1000_3406`、`FUN_1000_3DE2`、`FUN_1000_33D4`、`FUN_1000_08EC`。静的解析のみ。実行時トレース、MIDI再生成、再生は未実施。
