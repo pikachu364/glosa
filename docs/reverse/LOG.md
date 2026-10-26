@@ -845,3 +845,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - After PR #14 was merged and main CI #1178 passed, refined the existing T-015 task rather than adding another task.
 - The next required evidence is the dataflow that populates per-part status bytes around 0x923 and the branch flags 0x6F8, 0x6FC, 0x620, and 0x62E, followed by a fixture-by-fixture branch table for every FUN_1000_2144 iteration and a count of actual FUN_1000_08EC drains.
 - Updated the reverse-analysis README to describe F-124's 24/30 counts strictly as a numerical candidate. The first coarse tempo ticks 92/116 and v2 tick 128 remain unresolved; no converter, tests, or private fixtures were changed.
+
+
+## 2026-10-26 — correct SNG2S export used for startup branch trace
+
+- Corrected the source path used for the startup-branch investigation: the relevant private export is `testdata/ballade/sng2gs/sng2gs_mimpiv4解析java使用.txt`, not the similarly named `sng2gs解析データ.txt`.
+- Read `FUN_1000_2144` and the helper routines. v3 loops indices 1–10; v4 loops indices 1–16. Each status byte at `0x923 + index`, combined with flags `0x6F8`, `0x6FC`, `0x620`, `0x62E`, changes which helper routines and drain/reset paths run.
+- `FUN_1000_184A` parses option tokens before SNG parsing and sets several of those global flags. `FUN_1000_272A` writes the separate byte array at `0x924 + index`; a direct writer for `0x923 + index` was not found in the inspected listing. This is an unresolved dataflow, not proof that no indirect writer exists.
+- Added FACTS F-125 and refined T-015 with the exact next evidence required: trace status-byte population, then compute fixture-specific branch/drain tables. F-124's 24/30 counts remain a numerical candidate only; tick 92/116 and v2 tick 128 remain unresolved.
+- Documentation only. No converter, tests, or private fixtures changed; no runtime trace, MIDI regeneration, or playback.
