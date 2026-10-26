@@ -1307,3 +1307,39 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **未解決:** raw tempo block の位置と先頭 record は確定したが、v2 reference MIDI の tick 128 / 1000000 µs、v3 tick 92 / 361000 µs、v4 tick 116 / 260000 µs が scheduler / queue-drain を通じて出力される規則は未解決。特に raw record の `step` を MIDI absolute tick と同一視しない。converter、tests、private fixture は変更していない。
 
 **Sources:** private `sng2s解析データ.txt` の `FUN_1000_272A` と `FUN_1000_40C8`; private raw SNG fixtures listed above; F-105/F-117/F-118/F-119. Static parser/data-byte comparison only; no runtime trace, MIDI regeneration, or playback.
+
+## F-121 — v2〜v4 raw grid/scheduler の先頭レコードと tempo stream の先頭値を照合（2026-10-26）
+
+**状態:** private SNG の直接 byte inspection と、SNG2S Ver. 3.3 の `FUN_1000_3406` 静的解析を照合。runtime trace ではない。
+
+- F-120 で確定した grid/scheduler block の開始位置は v2 = 193、v3 = 285、v4 = 309。
+- 各 block の先頭 bytes は、v2 `20 01 06 04 01 00 00 00 00 00`、v3 `C0 00 04 04 01 00 00 00 00 00 00 00`、v4 `C0 00 04 04 01 00 00 00 00 00 00 00`。先頭 word は little-endian で v2 = 0x0120 (288)、v3/v4 = 0x00C0 (192)。
+- `FUN_1000_3406` の grid/scheduler path は、`0x21DC` の先頭 record の word を読み、`0x10A4 = step - 1` として countdown を開始する。grid record の stride は v2 で 10 bytes、v3/v4 で 12 bytes。
+- 同じ関数の tempo path は別 pointer `0x21E0` を読む。対応する tempo stream の先頭 records は v2 `(0,64),(192,64)`、v3 `(192,89)`、v4 `(24,123)`。tempo countdown は `0x10AA = nonzero step - 1` で、grid countdown `0x10A4` とは別状態。
+- この直接比較により、grid interval と tempo step は別 stream / 別 countdown であり、raw step を MIDI absolute tick と同一視できないことを fixture bytes から再確認した。v3/v4 の grid 先頭 interval 192 は exact-tempo event の tick 192 と整合する一方、coarse tempo event は v3 tick 92 / v4 tick 116。v2 の grid interval 288 と reference coarse tempo tick 128 も一致しない。
+- **未解決:** この差だけでは、initial scheduler が生成した queue と初回 `FUN_1000_08EC` drain 前後の pending delta / absolute tick を算出できない。v2 の tempo semantics も後続版の slider formula から説明しない。固定 tick 補正や converter 変更の根拠にはしない。
+
+**Sources:** private `testdata/ballade/v2/SHIZUME0.SNG`, `v3/START__0.SNG`, `v4/BOURREE0.SNG`; private `sng2gs解析データ.txt` functions `FUN_1000_272A`, `FUN_1000_3406`; F-112/F-120. Static byte comparison and disassembly only; no runtime trace, MIDI regeneration, or playback.
+
+## F-122 — v2〜v4 では FUN_1000_0010 の text-preamble loop は初回 tempo tick の原因ではない（2026-10-26）
+
+**状態:** parser の read length / stack-local alias、private SNG の直接 byte inspection、`FUN_1000_0010` の静的 control flow を照合。runtime trace ではない。
+
+- `FUN_1000_272A` は 25-byte header の後に 35-byte read を行い、その read buffer の末尾に対応する `local_12` を `0x2983` に格納する。3 fixture すべてで file offset 59（25 + 34）の byte は `00`。
+- したがって、調査対象の v2 `SHIZUME0.SNG`、v3 `START__0.SNG`、v4 `BOURREE0.SNG` では `0x2983 = 0` となり、`FUN_1000_0010` 内の `local_48 < *(byte *)0x2983` text-preamble loop は実行されない。
+- 同 loop は各 text entry の処理後に `0x6EE` を pending delta に設定するため、初回 coarse tempo tick 92 / 116 を text-entry 数 × 4 ticks として説明する候補を検討したが、fixture の count byte がゼロなのでこの説明は成立しない。v2 tick 128 も同様にこの loop からは説明できない。
+- **次の焦点:** `FUN_1000_0010` の `FUN_1000_26A6` / `FUN_1000_2144` / `FUN_1000_1C70` setup 呼び出しから `FUN_1000_33D4` までに、pending delta `0xF9A:0xF9C` または absolute tick `0x6F2:0x6F4` を変更する経路があるかを追跡する。text-preamble 仮説を根拠なく再利用しない。
+
+**Sources:** private `testdata/ballade/v2/SHIZUME0.SNG`, `v3/START__0.SNG`, `v4/BOURREE0.SNG`; private `sng2s解析データ.txt` functions `FUN_1000_272A`, `FUN_1000_0010`; F-115/F-121. Static read/control-flow analysis only; no runtime trace, MIDI regeneration, or playback.
+
+## F-123 — 初回 coarse tempo 前の setup routines は pending delta を 0x6EE に戻す（2026-10-26）
+
+**状態:** SNG2S Ver. 3.3 の静的 call order と decompiler/instruction listing を確認。fixture-specific runtime trace ではない。
+
+- `FUN_1000_0010` は scheduler 初期化 `FUN_1000_33D4` より前に、版条件に応じて `FUN_1000_26A6`、`FUN_1000_2144`、`FUN_1000_1C70` を呼ぶ。v2 internal state 1 は `FUN_1000_1CE4`、v3/v4 internal states 2/3 は `FUN_1000_1E6C` を通る。
+- `FUN_1000_26A6` と `FUN_1000_265C` は setup bytes を `FUN_1000_08EC` で drain した後、`0xF9A:0xF9C` を `0x6EE` に設定する。initialized EXE image の `0x6EE` は 4（F-094）。
+- `FUN_1000_1CE4` には同じ drain → pending delta = `0x6EE` の経路が3か所、`FUN_1000_1E6C` には12か所ある。さらに `FUN_1000_2144` の per-part branch は `FUN_1000_22A4` / `FUN_1000_23C0` / `FUN_1000_2554` / `FUN_1000_25B0` を介し、branch 条件に応じて drain と delta reset を行う。
+- これらは coarse tempo record の処理より前に pending delta を繰り返し 4 に設定し得る具体的な setup 経路であり、初回イベント位置を調べる対象を text-preamble loop（F-122）から setup-generated event/drain sequence へ移す根拠になる。
+- **未確定:** setup branches の fixture-specific event/queue sequence を全件数え上げていないため、v3 tick 92 / v4 tick 116 の原因をこの事実単独で確定しない。v2 tick 128 も未説明。後続 boundary-minus-one placement も別途未解決。converter 修正や固定 tick 補正の根拠にはしない。
+
+**Sources:** private `sng2s解析データ.txt` functions `FUN_1000_0010`, `FUN_1000_26A6`, `FUN_1000_2144`, `FUN_1000_265C`, `FUN_1000_1CE4`, `FUN_1000_1E6C`, `FUN_1000_08EC`; F-094/F-108/F-115/F-122. Static analysis only; no runtime trace, MIDI regeneration, or playback.
