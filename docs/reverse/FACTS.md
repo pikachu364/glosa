@@ -1267,3 +1267,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - これは MIDI 側の観測を再確認した結果であり、raw SNG tempo record の step/countdown からこれらの absolute tick が生成される規則を導出したものではない。v2 の tick 128 = 1000000 µs/qn も未解決。converter / tests は変更していない。
 
 **Sources:** private `testdata/ballade/v2/sng2gs/SHIZUME0.MID`, `v3/sng2gs/START__0.MID`, `v4/sng2gs/BOURREE0.MID`; direct SMF binary parse. No runtime trace, playback, or MIDI regeneration.
+
+
+## F-118 — SNG2S parser allocates and fills tempo/grid buffers before scheduler initialization (2026-10-26)
+
+**状態:** `FUN_1000_272A` の静的 decompiler / assembly export を追跡。runtime trace ではない。
+
+- `FUN_1000_272A` は SNG header/version に応じて内部 format state `0x25DA` を選び、version 別の metadata 値から複数の buffer size / source-block parameters を取得する。
+- tempo stream 用の値 `local_6c` は `FUN_1000_5B53(local_6c)` に渡され、返された buffer pointer が `0x1F0C:0x1F0E` に保存される。別の grid/scheduler stream は `local_3a` から別に確保され、pointer が `0x1F10:0x1F12` に保存される。
+- parser はその後、tempo buffer pointer を `0x21E0:0x21E2)、grid/scheduler buffer pointer を `0x21DC:0x21DE` に設定する。従って `FUN_1000_3406` が読む `0x21E0` は、raw SNG file の絶対 offset そのものではなく、parser が確保した tempo buffer を指す。
+- この call/data-flow は、raw SNG のどの byte range が各 version の tempo buffer にコピーされるかを特定するには、version 別 metadata table と `FUN_1000_40C8` の I/O 引数をさらに解く必要があることを示す。raw file 内で単純に `step,value` pattern を検索しただけでは tempo stream の内容を確定できない。
+- この調査では `FUN_1000_40C8` の全引数の意味や、各 fixture の実行時 buffer bytes を確定していない。tick 92 / 116 / 128 の生成規則も未解決。converter / tests は変更していない。
+
+**Sources:** private `sng2gs解析データ.txt`, `FUN_1000_272A` (1000:272A–314C), `FUN_1000_3406`. Static data-flow only.
