@@ -258,3 +258,14 @@ Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute t
 - No supported evidence currently identifies which individual setup drains contribute to the absolute tick at that point. Do not treat the 31 / 45 call totals, or the 88 / 112 conditional values, as an implementation rule.
 
 **Next evidence:** produce a fixture-specific event ledger for v3 and v4: queue bytes before each relevant drain, events emitted, whether pending delta is consumed, and the resulting `0x6F2:0x6F4` absolute tick. Keep v2 tick 128 as a separate unresolved case.
+
+### H-021 — default-path contents of the 0x766 part-state table (2026-10-27)
+
+**Status:** Open. Direct stores are localized in the available export, but the table's default contents are not established.
+
+- The available SNG2S export shows direct writes to 0x766 + 2*i only in FUN_1000_1668, which is gated by 0x628 != 0 and therefore by /N (F-129/F-130).
+- On the no-switch reference path, the scan is expected to be skipped, while FUN_1000_08EC still reads the table to gate part-associated output. The table's effective state must therefore come from the executable/data-segment initialization state or from a write mechanism not captured by the direct-reference search.
+- Do not assume that skipped scan means every part is active, inactive, or zero. Do not use this state to explain tempo tick 92/116 until the initial values and relevant writes are demonstrated.
+- Next evidence: inspect the original EXE's DOS MZ load layout and data-segment initialization for offsets covering 0x766; if that cannot be established from the binary/export, mark runtime state as unresolved rather than inferring it from the observed MIDI.
+
+No runtime trace, playback, converter changes, tests, or fixture changes were performed.
