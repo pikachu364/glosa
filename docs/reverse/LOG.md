@@ -789,3 +789,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - FACTS F-118 と NEXT_STEPS の T-015 に追記。重要な境界は、`0x21E0` は raw SNG の絶対 file offset ではなく、parser が確保した buffer pointer という点。
 - Raw file bytes を単純な `step,value` パターン検索するだけでは stream の実内容を確定できない。version 別 metadata table と `FUN_1000_40C8` の I/O 引数をさらに解析する必要がある。tick 92 / 116 / 128 の生成則は未解決。
 - Converter、test code、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は行っていない。
+
+
+## 2026-10-26 — SNG2S parser の file-I/O と block 順序を追跡
+
+- CI run #1161、#1162、#1163 は completed / success。
+- private static export の parser `FUN_1000_272A` と file-I/O wrapper `FUN_1000_40C8` を確認し、grid/scheduler block の読み込み後に tempo block を読み、相対 seek と別 block の読み込みを挟んで optional block を処理する順序を記録した。
+- この調査で、tempo buffer が raw SNG の絶対 offset そのものではなく、ファイル読み込みで埋められる buffer であることを確認。FACTS F-119 と NEXT_STEPS T-015 に反映。
+- Version metadata の fixture-specific values は未解決。tempo block の raw absolute offset と初回 coarse tempo tick 92 / 116、v2 tick 128 の生成規則は未確定。
+- converter、test code、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は行っていない。
