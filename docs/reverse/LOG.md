@@ -854,3 +854,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Evaluated every v3/v4 `FUN_1000_2144` loop branch against the inspected fixture data and default flags. The per-part helper drain counts are 17 for v3 and 31 for v4, followed by the separate final drain in `FUN_1000_265C`.
 - This rejects F-124's simplified one-drain-per-iteration model as an exact count. It does not explain reference tempo ticks 92/116: the conditional `FUN_1000_1E6C` paths and final pending-delta / absolute-tick boundary remain open. v2 tick 128 remains separate.
 - Documentation only. No converter, tests, or private fixtures changed; no runtime trace, MIDI regeneration, or playback was performed.
+
+
+## 2026-10-26 — fixed v3/v4 setup drains and tick-boundary discrepancy
+
+- Confirmed that `FUN_1000_1E6C` contains twelve sequential drain/reset sequences, not twelve conditional alternatives. `FUN_1000_1C70`'s additional eight-call `FUN_1000_2094` loop is guarded by `0x554 == 1`; the original EXE initializes `0x554` to zero and the available export contains no direct store, so the loop is skipped on the inspected default path, subject to the indirect-write caveat.
+- Combining `FUN_1000_26A6` (one drain), the fixture-specific `FUN_1000_2144` loop (17 v3 / 31 v4 drains), `FUN_1000_265C` (one drain), and `FUN_1000_1E6C` (12 drains) yields static setup totals of 31 for v3 and 45 for v4 on the no-switch path.
+- Those counts multiplied by four give 124 / 180, whereas the reference first coarse-tempo ticks are 92 / 116. The 32 / 64 tick difference is not yet explained and must not be interpreted as proof that particular drains are ignored. T-015 now targets the pending-delta / absolute-tick / grid-boundary flush accounting.
+- Documentation only; no converter, tests, or private fixtures changed. No runtime trace or playback was performed.
