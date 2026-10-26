@@ -1414,3 +1414,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - This narrows the next question: find how `0x766` is initialized or populated on the default path, then determine whether it gates the first eligible tempo event. It does not yet explain the observed v3/v4 first-tempo ticks.
 
 **Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_184A`, caller at `1000:0222–0229`, and help text at `1627:0125–01A3`. Static analysis only; no runtime trace or playback.
+
+## F-130 — visible writes to the per-part state table are confined to the /N scan (2026-10-27)
+
+**Status:** Static search across the available SNG2S Ghidra export. This establishes visible direct-write locations, not the runtime contents of the table.
+
+- The complete available export contains two direct store instructions to the per-part state table rooted at 0x766: 1000:1687 stores 1 at [BX + 0x766], and 1000:16D4 stores 0 at [BX + 0x766]. Both are inside FUN_1000_1668.
+- FUN_1000_1668 is called from the main setup path only when 0x628 != 0 (1000:0222–0229); F-129 identifies that option as /N. The inspected reference commands omit switches, so the scan is expected to be skipped for those invocations.
+- The same export shows multiple reads of 0x766 in FUN_1000_08EC and a read in the main setup path's “none note data part” reporting loop. Those reads remain reachable even when the /N scan is skipped.
+- No other direct store to 0x766 appears in the available export. This does not establish whether the data-segment slot starts as zero, receives an initialization from code not represented in the export, or is affected through an indirect/aliased write. The original executable's initialized/uninitialized data layout and the exact runtime default remain unverified.
+- Consequently, the default-path values of 0x766 cannot yet be inferred from the /N scan logic alone, and this finding does not explain the v3/v4 first-tempo ticks 92/116.
+
+**Sources:** private testdata/ballade/sng2gs/sng2gs解析データ.txt, all direct textual matches for 0x766, FUN_1000_1668, FUN_1000_08EC, and the caller at 1000:0222–0229. Static analysis only; no runtime trace or playback.

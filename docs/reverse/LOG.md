@@ -891,3 +891,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Traced the `0x628` write in `FUN_1000_184A` to the third one-byte switch comparison in the option parser. The option-help sequence (`/0`, `/1`, then `/N`) identifies it as the no-note-part skip switch.
 - The caller invokes `FUN_1000_1668` only when `0x628 != 0`, so the per-part active-state scan from F-128 is guarded by `/N` rather than being unconditional. No-switch reference commands predict this branch is not taken.
 - Remaining caveat: verify default initialization and all writes to `0x628`, then trace `0x766` on the default path. The first v3/v4 tempo ticks remain unexplained; static analysis only, no runtime trace/playback.
+
+## 2026-10-27 — default-path writes to 0x766 narrowed
+
+- Searched every textual occurrence of 0x766 in the available private SNG2S Ghidra export. The only direct stores are at 1000:1687 and 1000:16D4, both inside FUN_1000_1668; reads remain in FUN_1000_08EC and the main setup/reporting path.
+- Combined this with F-129: the scan is called only when 0x628 != 0 (/N), so the no-switch reference path is expected to skip the only visible direct initializer for the table.
+- This narrows the problem but does not reveal the table's initial value. The available export does not by itself prove the original EXE's data-segment load/zero-initialization behavior, and indirect/aliased writes are not excluded. Added F-130 and H-021; updated T-015 to inspect the EXE's MZ/data-segment layout before attempting the event ledger.
+- No converter, tests, or private fixtures changed. Static analysis only; no runtime trace or playback.
