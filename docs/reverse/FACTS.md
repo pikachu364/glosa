@@ -1331,3 +1331,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **次の焦点:** `FUN_1000_0010` の `FUN_1000_26A6` / `FUN_1000_2144` / `FUN_1000_1C70` setup 呼び出しから `FUN_1000_33D4` までに、pending delta `0xF9A:0xF9C` または absolute tick `0x6F2:0x6F4` を変更する経路があるかを追跡する。text-preamble 仮説を根拠なく再利用しない。
 
 **Sources:** private `testdata/ballade/v2/SHIZUME0.SNG`, `v3/START__0.SNG`, `v4/BOURREE0.SNG`; private `sng2s解析データ.txt` functions `FUN_1000_272A`, `FUN_1000_0010`; F-115/F-121. Static read/control-flow analysis only; no runtime trace, MIDI regeneration, or playback.
+
+## F-123 — 初回 coarse tempo 前の setup routines は pending delta を 0x6EE に戻す（2026-10-26）
+
+**状態:** SNG2S Ver. 3.3 の静的 call order と decompiler/instruction listing を確認。fixture-specific runtime trace ではない。
+
+- `FUN_1000_0010` は scheduler 初期化 `FUN_1000_33D4` より前に、版条件に応じて `FUN_1000_26A6`、`FUN_1000_2144`、`FUN_1000_1C70` を呼ぶ。v2 internal state 1 は `FUN_1000_1CE4`、v3/v4 internal states 2/3 は `FUN_1000_1E6C` を通る。
+- `FUN_1000_26A6` と `FUN_1000_265C` は setup bytes を `FUN_1000_08EC` で drain した後、`0xF9A:0xF9C` を `0x6EE` に設定する。initialized EXE image の `0x6EE` は 4（F-094）。
+- `FUN_1000_1CE4` には同じ drain → pending delta = `0x6EE` の経路が3か所、`FUN_1000_1E6C` には12か所ある。さらに `FUN_1000_2144` の per-part branch は `FUN_1000_22A4` / `FUN_1000_23C0` / `FUN_1000_2554` / `FUN_1000_25B0` を介し、branch 条件に応じて drain と delta reset を行う。
+- これらは coarse tempo record の処理より前に pending delta を繰り返し 4 に設定し得る具体的な setup 経路であり、初回イベント位置を調べる対象を text-preamble loop（F-122）から setup-generated event/drain sequence へ移す根拠になる。
+- **未確定:** setup branches の fixture-specific event/queue sequence を全件数え上げていないため、v3 tick 92 / v4 tick 116 の原因をこの事実単独で確定しない。v2 tick 128 も未説明。後続 boundary-minus-one placement も別途未解決。converter 修正や固定 tick 補正の根拠にはしない。
+
+**Sources:** private `sng2s解析データ.txt` functions `FUN_1000_0010`, `FUN_1000_26A6`, `FUN_1000_2144`, `FUN_1000_265C`, `FUN_1000_1CE4`, `FUN_1000_1E6C`, `FUN_1000_08EC`; F-094/F-108/F-115/F-122. Static analysis only; no runtime trace, MIDI regeneration, or playback.
