@@ -798,3 +798,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - この調査で、tempo buffer が raw SNG の絶対 offset そのものではなく、ファイル読み込みで埋められる buffer であることを確認。FACTS F-119 と NEXT_STEPS T-015 に反映。
 - Version metadata の fixture-specific values は未解決。tempo block の raw absolute offset と初回 coarse tempo tick 92 / 116、v2 tick 128 の生成規則は未確定。
 - converter、test code、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は行っていない。
+
+
+## 2026-10-26 — v2-v4 SNG tempo block raw offsets confirmed
+
+- Combined the static parser read order in FUN_1000_272A with version-specific metadata lengths and direct byte inspection of the private v2/v3/v4 SNG fixtures.
+- Confirmed raw tempo-block starts: v2 SHIZUME0.SNG offset 1285, v3 START__0.SNG offset 1893, and v4 BOURREE0.SNG offset 1137. The first records are (step=0, value=64), (step=192, value=89), and (step=24, value=123), respectively.
+- Recorded the fixture-specific offsets and leading records in FACTS F-120 and marked the corresponding T-015 metadata/offset checklist item complete. This is static parser analysis plus direct file-byte comparison only.
+- Reference MIDI first coarse-tempo ticks (v2 128, v3 92, v4 116) remain unexplained. Raw step values are not treated as MIDI absolute ticks; no converter, test, or fixture files were changed.

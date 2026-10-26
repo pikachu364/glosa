@@ -1292,3 +1292,18 @@ This narrows the source of the initial timer base but does not show that tempo r
 - ただし version metadata table の値を fixture ごとに解決し、header read の累積位置と照合する作業は未完了。raw SNG の tempo bytes の絶対 file offset や、tick 92 / 116 / 128 の生成則はまだ断定しない。
 
 **Sources:** private `sng2gs解析データ.txt`, parser `FUN_1000_272A` and file-I/O wrapper `FUN_1000_40C8`. Static analysis only; no runtime trace, MIDI regeneration, or playback.
+
+## F-120 — v2〜v4 SNG の tempo block raw file offset を metadata と実バイトで確定（2026-10-26）
+
+**状態:** private SNG2S Ver. 3.3 の parser 静的解析と private fixture の生バイト列を照合。EXE の runtime trace や再生観測ではない。
+
+- `FUN_1000_272A` はファイル先頭から、25-byte header、35-byte header/name read、10-byte read、version-dependent block（v2/v3: 44 bytes、v4: 68 bytes）、1-byte read、version metadata block の順で読む。従って version metadata block の raw file start は v2/v3 が offset 115、v4 が offset 139（offset は file start を 0 とする）。
+- metadata block length は version byte と parser branch から v2 = 0x4E (78)、v3/v4 = 0xAA (170)。metadata 内の `local_3a` (+40) が grid/scheduler block length、`local_6c` (+52) が tempo block length。parser は metadata block の後に grid block、続けて tempo block を読み込む。
+- 生ファイルの metadata values と block length を適用した結果：
+  - v2 `SHIZUME0.SNG` (SHA `16fe4438f40d99f437a65ce3aec6bb51a211667b`): metadata start 115, metadata length 78, grid length 1092, tempo length 2120。tempo block start = 115 + 78 + 1092 = **1285**。先頭 4 bytes `00 00 40 00` は little-endian `step=0, value=64`。
+  - v3 `START__0.SNG` (SHA `3b1305423585080c101fa7590816cca7b3bf9fd3`): metadata start 115, metadata length 170, grid length 1608, tempo length 1088。tempo block start = 115 + 170 + 1608 = **1893**。先頭 4 bytes `C0 00 59 00` は `step=192, value=89`。
+  - v4 `BOURREE0.SNG` (SHA `29f673740e454626070baf0e224d98b23d06ab05`): metadata start 139, metadata length 170, grid length 828, tempo length 420。tempo block start = 139 + 170 + 828 = **1137**。先頭 4 bytes `18 00 7B 00` は `step=24, value=123`。
+- Metadata block 内の後続値も parser の seek/read 長と整合する：v2 `local_4=530`, `local_6=424`, `local_a=412`, `local_c=20`, `local_10=16`, `local_38=688`, `local_44=0`; v3 は `20,16,540,20,16,92,176`; v4 は `70,56,572,30,24,276,0`（同じ順序）。これらは後続 block の読み込み・相対 seek を算出する値で、tempo event tick を直接表す値ではない。
+- **未解決:** raw tempo block の位置と先頭 record は確定したが、v2 reference MIDI の tick 128 / 1000000 µs、v3 tick 92 / 361000 µs、v4 tick 116 / 260000 µs が scheduler / queue-drain を通じて出力される規則は未解決。特に raw record の `step` を MIDI absolute tick と同一視しない。converter、tests、private fixture は変更していない。
+
+**Sources:** private `sng2s解析データ.txt` の `FUN_1000_272A` と `FUN_1000_40C8`; private raw SNG fixtures listed above; F-105/F-117/F-118/F-119. Static parser/data-byte comparison only; no runtime trace, MIDI regeneration, or playback.
