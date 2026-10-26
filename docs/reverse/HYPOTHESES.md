@@ -269,3 +269,11 @@ Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute t
 - Next evidence: inspect the original EXE's DOS MZ load layout and data-segment initialization for offsets covering 0x766; if that cannot be established from the binary/export, mark runtime state as unresolved rather than inferring it from the observed MIDI.
 
 No runtime trace, playback, converter changes, tests, or fixture changes were performed.
+
+### H-022 — text-only retrieval cannot establish SNG2S initialized data at DS:0x766 (2026-10-27)
+
+**Status:** Open; evidence acquisition blocked, not a runtime-state conclusion.
+
+- The original executable's file metadata and hash are known, but the available GitHub connector rejects its binary bytes as non-UTF-8. The MZ header and load image have therefore not been inspected in this pass.
+- This does not support any assumption about the initial contents of the part-state table. Keep H-021 unresolved and do not infer zero, all-active, or all-inactive state.
+- Required next input: byte-preserving access to the private executable, or a verified local dump of the MZ header and initialized image covering the data-segment mapping and DS offsets around 0x766. Only then determine whether the initial bytes are present in the file image or supplied by another initialization path.

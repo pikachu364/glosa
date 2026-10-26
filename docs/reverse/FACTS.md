@@ -1426,3 +1426,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - Consequently, the default-path values of 0x766 cannot yet be inferred from the /N scan logic alone, and this finding does not explain the v3/v4 first-tempo ticks 92/116.
 
 **Sources:** private testdata/ballade/sng2gs/sng2gs解析データ.txt, all direct textual matches for 0x766, FUN_1000_1668, FUN_1000_08EC, and the caller at 1000:0222–0229. Static analysis only; no runtime trace or playback.
+
+## F-131 — EXE binary layout remains unverified through text-only retrieval (2026-10-27)
+
+**Status:** Investigation limitation confirmed; no new conclusion about runtime memory contents.
+
+- The private repository identifies the original `SNG2S.EXE` as a 32,383-byte file with SHA-1 `0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`. Its GitHub contents metadata is available, but the connected GitHub retrieval interface rejects the non-UTF-8 executable bytes rather than returning a byte-preserving payload.
+- Therefore this pass could not parse the DOS MZ header, calculate the load-image/data-segment mapping, or inspect the initialized bytes at DS offsets around `0x766`. No claim is made that those bytes are zero or nonzero.
+- The text Ghidra export remains insufficient to establish the original image's initial value at `0x766`. H-021 remains open; the v3/v4 first tempo ticks 92/116 remain unexplained.
+- Next evidence must be a byte-preserving source for the private executable or a verified local hex/header dump. Keep the executable and any private fixture contents out of the public repository.
+
+**Sources:** private `testdata/ballade/sng2gs/SNG2S.EXE` repository metadata and the available private Ghidra export. Retrieval limitation only; no binary-byte analysis, runtime trace, or playback was performed.
