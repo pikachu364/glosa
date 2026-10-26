@@ -1343,3 +1343,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **未確定:** setup branches の fixture-specific event/queue sequence を全件数え上げていないため、v3 tick 92 / v4 tick 116 の原因をこの事実単独で確定しない。v2 tick 128 も未説明。後続 boundary-minus-one placement も別途未解決。converter 修正や固定 tick 補正の根拠にはしない。
 
 **Sources:** private `sng2s解析データ.txt` functions `FUN_1000_0010`, `FUN_1000_26A6`, `FUN_1000_2144`, `FUN_1000_265C`, `FUN_1000_1CE4`, `FUN_1000_1E6C`, `FUN_1000_08EC`; F-094/F-108/F-115/F-122. Static analysis only; no runtime trace, MIDI regeneration, or playback.
+
+## F-124 — v3/v4 startup setup-drain arithmetic is a candidate, not a derived tick rule (2026-10-26)
+
+**Status:** Static call-order and loop-bound analysis only. This entry records a numerical candidate for follow-up; it does not establish the fixture-specific runtime drain count or explain the reference MIDI event positions.
+
+- In the inspected FUN_1000_0010 startup path, v3 and v4 call FUN_1000_26A6, FUN_1000_2144, and FUN_1000_1C70 before FUN_1000_33D4. The v3/v4 FUN_1000_1C70 path reaches FUN_1000_1E6C.
+- The static paths identified so far contain one drain in FUN_1000_26A6, one in FUN_1000_265C, and twelve drain/reset paths in FUN_1000_1E6C. The FUN_1000_2144 per-part loop spans 10 iterations for internal v3 state 2 and 16 for internal v4 state 3. Per-part helper branches can add or change actual drain counts depending on fixture-relevant status/flag values.
+- A deliberately simplified arithmetic model that assumes exactly one relevant drain per per-part iteration yields totals of 24 for v3 and 30 for v4 (1 + 10 + 1 + 12; 1 + 16 + 1 + 12). Since each pending-delta reset sets the value to 0x6EE = 4, these totals are numerically one 4-tick advance above reference first coarse-tempo ticks 92 (= 4 × 23) and 116 (= 4 × 29).
+- **This is only a numerical coincidence/candidate, not proof.** The loop may take multiple branch-dependent drain paths, and the exact pending-delta flush boundary has not been established. The model must be rejected if the fixture-specific branch values and actual FUN_1000_08EC calls do not reproduce the reference MIDI. v2 tick 128 remains a separate unresolved case.
+- No converter, test, or private fixture was changed. No runtime trace, MIDI regeneration, or playback was performed. Do not apply a fixed tick offset or change implementation based on this candidate alone.
+
+**Sources:** private SNG2S Ver. 3.3 static analysis export for FUN_1000_0010, FUN_1000_2144, FUN_1000_26A6, FUN_1000_265C, FUN_1000_1C70, FUN_1000_1E6C, and FUN_1000_08EC; F-108/F-115/F-123. Static analysis only.
