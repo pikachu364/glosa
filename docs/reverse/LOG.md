@@ -845,3 +845,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - After PR #14 was merged and main CI #1178 passed, refined the existing T-015 task rather than adding another task.
 - The next required evidence is the dataflow that populates per-part status bytes around 0x923 and the branch flags 0x6F8, 0x6FC, 0x620, and 0x62E, followed by a fixture-by-fixture branch table for every FUN_1000_2144 iteration and a count of actual FUN_1000_08EC drains.
 - Updated the reverse-analysis README to describe F-124's 24/30 counts strictly as a numerical candidate. The first coarse tempo ticks 92/116 and v2 tick 128 remain unresolved; no converter, tests, or private fixtures were changed.
+
+
+## 2026-10-26 — v3/v4 startup part-status branch evaluation
+
+- Located the private static-analysis export at `testdata/ballade/sng2gs/sng2gs解析データ.txt` and traced `FUN_1000_272A`'s per-part status-table population plus `FUN_1000_184A`'s command-line option flags.
+- The original EXE initializes the status table with a zero sentinel followed by 0xFF entries. For v3/v4, per-part state comes from byte 0x11 of the 0x50-byte part-information buffer; values 0/1/2 are remapped to 2/0/1, while other values are retained. The relevant flags correspond to /MT, /GS, /LA, /SC2, and /SC; the confirmed reference commands use no switches.
+- Evaluated every v3/v4 `FUN_1000_2144` loop branch against the inspected fixture data and default flags. The per-part helper drain counts are 17 for v3 and 31 for v4, followed by the separate final drain in `FUN_1000_265C`.
+- This rejects F-124's simplified one-drain-per-iteration model as an exact count. It does not explain reference tempo ticks 92/116: the conditional `FUN_1000_1E6C` paths and final pending-delta / absolute-tick boundary remain open. v2 tick 128 remains separate.
+- Documentation only. No converter, tests, or private fixtures changed; no runtime trace, MIDI regeneration, or playback was performed.
