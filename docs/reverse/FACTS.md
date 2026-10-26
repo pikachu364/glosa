@@ -1280,3 +1280,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - この調査では `FUN_1000_40C8` の全引数の意味や、各 fixture の実行時 buffer bytes を確定していない。tick 92 / 116 / 128 の生成規則も未解決。converter / tests は変更していない。
 
 **Sources:** private `sng2gs解析データ.txt`, `FUN_1000_272A` (1000:272A–314C), `FUN_1000_3406`. Static data-flow only.
+
+
+## F-119 — SNG2S parser のファイル読み込み順を追跡（2026-10-26）
+
+**状態:** private SNG2S Ver. 3.3 の parser / file-I/O wrapper の静的命令列を確認。runtime trace ではない。
+
+- file-I/O wrapper は DOS のファイル読み込み機能と、現在位置を基準にした相対 seek 機能を呼び出す。
+- parser は header / metadata の読み込み後、grid/scheduler 用 block を読み、その後 tempo 用 block を読み込む。続いて metadata から計算した長さだけ相対 seek し、別 block を読み、さらに相対 seek して optional block を処理する。
+- これにより、tempo buffer は raw SNG の同じ数値 offset を直接指すものではなく、ファイルストリームから読み込まれた内容を保持する buffer だと確認できる。
+- ただし version metadata table の値を fixture ごとに解決し、header read の累積位置と照合する作業は未完了。raw SNG の tempo bytes の絶対 file offset や、tick 92 / 116 / 128 の生成則はまだ断定しない。
+
+**Sources:** private `sng2gs解析データ.txt`, parser `FUN_1000_272A` and file-I/O wrapper `FUN_1000_40C8`. Static analysis only; no runtime trace, MIDI regeneration, or playback.
