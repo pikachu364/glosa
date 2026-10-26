@@ -830,3 +830,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - The v2 path `FUN_1000_1CE4` has three such paths; the v3/v4 path `FUN_1000_1E6C` has twelve. `FUN_1000_26A6`, `FUN_1000_265C`, and per-part helpers also use this pattern (FACTS F-123).
 - T-015 now focuses on counting fixture-specific setup queue events/drains and checking the 4-tick advances against v3 tick 92 / v4 tick 116. Exact counts and v2 tick 128 remain unresolved.
 - Documentation only; no converter, test, or fixture changes. No runtime trace or playback.
+
+
+## 2026-10-26 — startup setup-drain arithmetic candidate bounded
+
+- Compared the statically identified setup drains with the version-specific per-part loop bounds: 10 iterations for internal v3 state 2 and 16 for internal v4 state 3.
+- Under a deliberately simplified assumption of one relevant drain per iteration, the counts are 24 (v3) and 30 (v4) after adding the fixed paths in FUN_1000_26A6, FUN_1000_265C, and FUN_1000_1E6C. These are numerically one 4-tick advance above reference coarse-tempo ticks 92 and 116.
+- Recorded this as FACTS F-124 explicitly as a candidate only. Fixture-specific status/option values, branch-dependent actual FUN_1000_08EC drain counts, and the final pending-delta flush boundary still need proof. v2 tick 128 remains separate.
+- NEXT_STEPS T-015 now calls for checking the exact branch values and rejecting the simplified model if it fails. No converter, tests, or private fixtures were changed; no runtime trace, MIDI regeneration, or playback was performed.
