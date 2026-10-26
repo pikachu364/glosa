@@ -898,3 +898,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Combined this with F-129: the scan is called only when 0x628 != 0 (/N), so the no-switch reference path is expected to skip the only visible direct initializer for the table.
 - This narrows the problem but does not reveal the table's initial value. The available export does not by itself prove the original EXE's data-segment load/zero-initialization behavior, and indirect/aliased writes are not excluded. Added F-130 and H-021; updated T-015 to inspect the EXE's MZ/data-segment layout before attempting the event ledger.
 - No converter, tests, or private fixtures changed. Static analysis only; no runtime trace or playback.
+
+## 2026-10-27 — executable-byte access limitation recorded
+
+- Confirmed the private repository metadata for SNG2S.EXE (32,383 bytes; SHA-1 0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0) is accessible, but the GitHub retrieval connector rejects the binary payload as non-UTF-8.
+- Consequently, the DOS MZ header and initialized data image were not inspected in this pass. No initial value for DS:0x766 is inferred.
+- Added FACTS F-131 and HYPOTHESES H-022; changed T-015 to request a byte-preserving source or verified local dump before resuming the default-path state analysis.
+- No converter, tests, or private fixtures changed. No runtime trace or playback was performed.
