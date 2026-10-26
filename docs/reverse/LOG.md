@@ -862,3 +862,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Combining `FUN_1000_26A6` (one drain), the fixture-specific `FUN_1000_2144` loop (17 v3 / 31 v4 drains), `FUN_1000_265C` (one drain), and `FUN_1000_1E6C` (12 drains) yields static setup totals of 31 for v3 and 45 for v4 on the no-switch path.
 - Those counts multiplied by four give 124 / 180, whereas the reference first coarse-tempo ticks are 92 / 116. The 32 / 64 tick difference is not yet explained and must not be interpreted as proof that particular drains are ignored. T-015 now targets the pending-delta / absolute-tick / grid-boundary flush accounting.
 - Documentation only; no converter, tests, or private fixtures changed. No runtime trace or playback was performed.
+
+## 2026-10-26 — distinguish queue-drain calls from effective tick advances
+
+- Re-read `FUN_1000_0010` and `FUN_1000_08EC` around the first scheduler flush. The first queued scheduler/tempo bytes are flushed after `FUN_1000_33D4`; only afterward does `FUN_1000_61EC` compute the next grid-boundary delta. The latter cannot directly place the already-flushed first coarse-tempo event.
+- `FUN_1000_08EC` can process multiple events in one invocation and consumes the pending delta only when emitting an eligible event. Therefore the 31/45 setup call counts are not equivalent to 31/45 tick advances.
+- If the first eligible event in the post-scheduler flush consumes pending delta 4, reference ticks 92/116 constrain the pre-flush absolute tick to 88/112. This is an inference from call order and reference event positions, not a runtime trace. T-015 now asks for a per-call queue-output / delta-consumption table.
+- No converter, tests, or private fixtures changed; no runtime trace or playback performed.
