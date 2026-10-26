@@ -780,3 +780,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Private reference MIDI を base64 fetch 後、SMF header、track chunks、VLQ delta、tempo meta `FF 51 03` を直接パースした。v2 SHIZUME0: tick 0=500000 → tick 128=1000000; v3 START__0: tick 0=500000 → tick 92=361000 → tick 192=361445; v4 BOURREE0: tick 0=500000 → tick 116=260000 → tick 192=260869 µs/qn。全て Format 1 / PPQN 48。
 - FACTS F-117 と NEXT_STEPS の T-015 に結果を記録。MIDI側の絶対 tick は再確認できたが、SNG raw tempo-record step/countdown と scheduler / delta-drain 状態から初回 tick を導出できたわけではない。特に v2 は値・時刻とも別途未解決。
 - Converter、test code、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は行っていない。
+
+
+## 2026-10-26 — CI #1160 成功後の parser buffer 経路追跡
+
+- GitHub Actions #1158、#1159、#1160 は completed / success を確認。
+- `FUN_1000_272A` の static export を再読し、tempo buffer は `local_6c` を使って確保し、grid/scheduler buffer は `local_3a` から別に確保されることを記録した。各 pointer はそれぞれ `0x21E0` と `0x21DC` に設定される。
+- FACTS F-118 と NEXT_STEPS の T-015 に追記。重要な境界は、`0x21E0` は raw SNG の絶対 file offset ではなく、parser が確保した buffer pointer という点。
+- Raw file bytes を単純な `step,value` パターン検索するだけでは stream の実内容を確定できない。version 別 metadata table と `FUN_1000_40C8` の I/O 引数をさらに解析する必要がある。tick 92 / 116 / 128 の生成則は未解決。
+- Converter、test code、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は行っていない。
