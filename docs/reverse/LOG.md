@@ -822,3 +822,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - The parser's count byte is zero at file offset 59 in all three v2/v3/v4 fixtures, so that loop is skipped for these files.
 - Recorded this exclusion in FACTS F-122. The startup setup-call path remains the next target; tempo ticks 92 / 116 and v2 tick 128 are still unresolved.
 - Documentation only; no converter, tests, or fixture files changed.
+
+
+## 2026-10-26 — setup delta reset paths identified
+
+- Static call-order tracing found versioned setup routines before `FUN_1000_33D4` that drain queued bytes and reset pending delta to `0x6EE = 4`.
+- The v2 path `FUN_1000_1CE4` has three such paths; the v3/v4 path `FUN_1000_1E6C` has twelve. `FUN_1000_26A6`, `FUN_1000_265C`, and per-part helpers also use this pattern (FACTS F-123).
+- T-015 now focuses on counting fixture-specific setup queue events/drains and checking the 4-tick advances against v3 tick 92 / v4 tick 116. Exact counts and v2 tick 128 remain unresolved.
+- Documentation only; no converter, test, or fixture changes. No runtime trace or playback.
