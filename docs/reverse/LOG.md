@@ -838,3 +838,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Under a deliberately simplified assumption of one relevant drain per iteration, the counts are 24 (v3) and 30 (v4) after adding the fixed paths in FUN_1000_26A6, FUN_1000_265C, and FUN_1000_1E6C. These are numerically one 4-tick advance above reference coarse-tempo ticks 92 and 116.
 - Recorded this as FACTS F-124 explicitly as a candidate only. Fixture-specific status/option values, branch-dependent actual FUN_1000_08EC drain counts, and the final pending-delta flush boundary still need proof. v2 tick 128 remains separate.
 - NEXT_STEPS T-015 now calls for checking the exact branch values and rejecting the simplified model if it fails. No converter, tests, or private fixtures were changed; no runtime trace, MIDI regeneration, or playback was performed.
+
+
+## 2026-10-26 — startup branch-state trace narrowed
+
+- After PR #14 was merged and main CI #1178 passed, refined the existing T-015 task rather than adding another task.
+- The next required evidence is the dataflow that populates per-part status bytes around 0x923 and the branch flags 0x6F8, 0x6FC, 0x620, and 0x62E, followed by a fixture-by-fixture branch table for every FUN_1000_2144 iteration and a count of actual FUN_1000_08EC drains.
+- Updated the reverse-analysis README to describe F-124's 24/30 counts strictly as a numerical candidate. The first coarse tempo ticks 92/116 and v2 tick 128 remain unresolved; no converter, tests, or private fixtures were changed.
