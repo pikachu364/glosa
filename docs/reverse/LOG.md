@@ -884,3 +884,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Inspected `FUN_1000_1668` and its visible call site. It scans each part's records in 8-byte increments, treats byte 0 = `0xFC` as that part's terminator, and sets the active-part state at `0x766` when byte +4 is nonzero (FACTS F-128).
 - The call site is guarded by `0x628 != 0`; the exact default/reference-run state of this flag and the fixture-specific record values still need confirmation. No claim is made that this alone explains first tempo tick 92 / 116.
 - Updated T-015's next action to include active-part eligibility before the per-call queue/delta ledger. No converter code, tests, or private fixtures changed; static analysis only.
+
+
+## 2026-10-26 — /N flag tied to active-state scan guard
+
+- Traced the `0x628` write in `FUN_1000_184A` to the third one-byte switch comparison in the option parser. The option-help sequence (`/0`, `/1`, then `/N`) identifies it as the no-note-part skip switch.
+- The caller invokes `FUN_1000_1668` only when `0x628 != 0`, so the per-part active-state scan from F-128 is guarded by `/N` rather than being unconditional. No-switch reference commands predict this branch is not taken.
+- Remaining caveat: verify default initialization and all writes to `0x628`, then trace `0x766` on the default path. The first v3/v4 tempo ticks remain unexplained; static analysis only, no runtime trace/playback.

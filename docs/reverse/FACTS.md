@@ -1404,3 +1404,13 @@ This narrows the source of the initial timer base but does not show that tempo r
 - `FUN_1000_08EC` reads `0x766` when deciding whether to process part-associated events, so this table is a concrete dependency for event eligibility. It does not by itself identify which queue-drain calls consume pending delta or explain the observed first tempo ticks.
 
 **Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, functions `FUN_1000_1668`, `FUN_1000_08EC`, and caller at `1000:0222–0229`. Static analysis only; no runtime trace or playback.
+
+
+## F-129 — /N option gates the per-part active-state scan (2026-10-26)
+
+- In `FUN_1000_184A`, the command-line parser compares option tokens against a sequence of short option strings and sets `0x628 = 1` when the third one-byte option comparison succeeds (comparison operand `0xEE1`, instruction at `1000:1A5A–1A6F`). In the help text, `/N` is the option described as “Skip none note data part”; the preceding two one-byte switches are `/0` and `/1`, so the parser sequence and help listing identify this flag as `/N`.
+- The main setup path calls `FUN_1000_1668` only when `0x628 != 0` (`1000:0222–0229`). Therefore the scan in F-128 is the `/N`-enabled path, not an unconditional initialization step.
+- Reference files were generated with commands such as `sng2s.exe runner.sng` and `sng2s.exe TEST.sng`, without switches. This strongly predicts that `0x628` remains zero for those reference runs and that `FUN_1000_1668` is skipped, assuming no other code writes the flag. The export currently shows the option-parser write and guarded read, but no other direct write to `0x628`; confirm initialization/default state before treating this as fully proven.
+- This narrows the next question: find how `0x766` is initialized or populated on the default path, then determine whether it gates the first eligible tempo event. It does not yet explain the observed v3/v4 first-tempo ticks.
+
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_184A`, caller at `1000:0222–0229`, and help text at `1627:0125–01A3`. Static analysis only; no runtime trace or playback.
