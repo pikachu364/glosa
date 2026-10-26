@@ -1307,3 +1307,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **未解決:** raw tempo block の位置と先頭 record は確定したが、v2 reference MIDI の tick 128 / 1000000 µs、v3 tick 92 / 361000 µs、v4 tick 116 / 260000 µs が scheduler / queue-drain を通じて出力される規則は未解決。特に raw record の `step` を MIDI absolute tick と同一視しない。converter、tests、private fixture は変更していない。
 
 **Sources:** private `sng2s解析データ.txt` の `FUN_1000_272A` と `FUN_1000_40C8`; private raw SNG fixtures listed above; F-105/F-117/F-118/F-119. Static parser/data-byte comparison only; no runtime trace, MIDI regeneration, or playback.
+
+## F-121 — v2〜v4 raw grid/scheduler の先頭レコードと tempo stream の先頭値を照合（2026-10-26）
+
+**状態:** private SNG の直接 byte inspection と、SNG2S Ver. 3.3 の `FUN_1000_3406` 静的解析を照合。runtime trace ではない。
+
+- F-120 で確定した grid/scheduler block の開始位置は v2 = 193、v3 = 285、v4 = 309。
+- 各 block の先頭 bytes は、v2 `20 01 06 04 01 00 00 00 00 00`、v3 `C0 00 04 04 01 00 00 00 00 00 00 00`、v4 `C0 00 04 04 01 00 00 00 00 00 00 00`。先頭 word は little-endian で v2 = 0x0120 (288)、v3/v4 = 0x00C0 (192)。
+- `FUN_1000_3406` の grid/scheduler path は、`0x21DC` の先頭 record の word を読み、`0x10A4 = step - 1` として countdown を開始する。grid record の stride は v2 で 10 bytes、v3/v4 で 12 bytes。
+- 同じ関数の tempo path は別 pointer `0x21E0` を読む。対応する tempo stream の先頭 records は v2 `(0,64),(192,64)`、v3 `(192,89)`、v4 `(24,123)`。tempo countdown は `0x10AA = nonzero step - 1` で、grid countdown `0x10A4` とは別状態。
+- この直接比較により、grid interval と tempo step は別 stream / 別 countdown であり、raw step を MIDI absolute tick と同一視できないことを fixture bytes から再確認した。v3/v4 の grid 先頭 interval 192 は exact-tempo event の tick 192 と整合する一方、coarse tempo event は v3 tick 92 / v4 tick 116。v2 の grid interval 288 と reference coarse tempo tick 128 も一致しない。
+- **未解決:** この差だけでは、initial scheduler が生成した queue と初回 `FUN_1000_08EC` drain 前後の pending delta / absolute tick を算出できない。v2 の tempo semantics も後続版の slider formula から説明しない。固定 tick 補正や converter 変更の根拠にはしない。
+
+**Sources:** private `testdata/ballade/v2/SHIZUME0.SNG`, `v3/START__0.SNG`, `v4/BOURREE0.SNG`; private `sng2gs解析データ.txt` functions `FUN_1000_272A`, `FUN_1000_3406`; F-112/F-120. Static byte comparison and disassembly only; no runtime trace, MIDI regeneration, or playback.
