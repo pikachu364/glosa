@@ -877,3 +877,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Recorded that producer/helper calls do not imply a queue flush or a tick advance. `FUN_1000_08EC` can emit multiple queued events in one call and consumes pending delta only for eligible emitted events (FACTS F-127).
 - Added H-020 to keep the 31/45 setup-call counts separate from the observed tempo ticks. The 88/112 pre-flush values remain conditional constraints only, assuming the first eligible event consumes pending delta 4.
 - T-015 remains open: the next meaningful result is a fixture-specific queue/event/delta ledger, not another call-count estimate. No converter, tests, or private fixtures were changed; no runtime trace or playback was performed.
+
+
+## 2026-10-26 — per-part active-state scan traced
+
+- Inspected `FUN_1000_1668` and its visible call site. It scans each part's records in 8-byte increments, treats byte 0 = `0xFC` as that part's terminator, and sets the active-part state at `0x766` when byte +4 is nonzero (FACTS F-128).
+- The call site is guarded by `0x628 != 0`; the exact default/reference-run state of this flag and the fixture-specific record values still need confirmation. No claim is made that this alone explains first tempo tick 92 / 116.
+- Updated T-015's next action to include active-part eligibility before the per-call queue/delta ledger. No converter code, tests, or private fixtures changed; static analysis only.
