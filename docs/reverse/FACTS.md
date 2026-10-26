@@ -1394,3 +1394,13 @@ This narrows the source of the initial timer base but does not show that tempo r
 **Next evidence:** enumerate the queue contents immediately before each relevant `FUN_1000_08EC` call and record each emitted event, pending-delta consumption, and resulting absolute tick. Keep the v2 tick-128 case separate from v3/v4 ticks 92/116.
 
 **Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, functions `FUN_1000_39C9`, `FUN_1000_408D`, `FUN_1000_4098`, `FUN_1000_3F02`, `FUN_1000_3F1C`, `FUN_1000_3F4D`, `FUN_1000_3F54`, `FUN_1000_3EED`, `FUN_1000_4071`, `FUN_1000_08EC`; F-123/F-125/F-126. Static analysis only.
+
+
+## F-128 — per-part active-state scan reads the parsed grid records (2026-10-26)
+
+- `FUN_1000_1668` initializes the active-part count at `0x786` to 1, then scans `0x2166` part entries. For part index (i), the record base is obtained from the pointer pair at `0x21E8 + 8*i`; records are examined in 8-byte increments.
+- Within a part's records, byte 0 equal to `0xFC` terminates the scan for that part and sets its state at `0x766 + 2*i` to 0. Otherwise, a nonzero byte at offset +4 sets that part state to 1, increments `0x786`, and ends the scan for that part. A zero byte at +4 advances to the next 8-byte record.
+- The only direct call site visible in this export is at `1000:0229), immediately after a conditional check of `0x628` at `1000:0222`. Therefore the active-state scan is conditional on that flag in this path; whether the flag is set for the exact reference invocation must be established from option parsing/default initialization rather than assumed.
+- `FUN_1000_08EC` reads `0x766` when deciding whether to process part-associated events, so this table is a concrete dependency for event eligibility. It does not by itself identify which queue-drain calls consume pending delta or explain the observed first tempo ticks.
+
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, functions `FUN_1000_1668`, `FUN_1000_08EC`, and caller at `1000:0222–0229`. Static analysis only; no runtime trace or playback.
