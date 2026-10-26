@@ -1379,3 +1379,18 @@ This narrows the source of the initial timer base but does not show that tempo r
 - No converter, tests, or private fixtures were changed. Do not implement a fixed offset from this inference.
 
 **Sources:** private `sng2gs解析データ.txt`, functions `FUN_1000_0010`, `FUN_1000_08EC`, `FUN_1000_16E6`, `FUN_1000_17C2`, `FUN_1000_33D4`, `FUN_1000_61EC`; F-108/F-111/F-123/F-125. Static analysis only.
+
+
+## F-127 — setup queue producer helpers distinguished from queue drains (2026-10-26)
+
+**Status:** Static disassembly of the private SNG2S Ver. 3.3 analysis export. No runtime trace, regenerated MIDI, or playback was performed.
+
+- `FUN_1000_4098` and `FUN_1000_408D` delegate to `FUN_1000_39C9`, which appends bytes to the output queue. These wrappers are queue producers; they do not by themselves prove that a complete MIDI event was emitted or that absolute tick advanced.
+- `FUN_1000_3F02` constructs a three-byte Control Change message with status `0xB0 | (param_1 - 1)`, controller `param_2`, and value zero.
+- `FUN_1000_3F1C` and `FUN_1000_3F4D` use separate templates at `0x3F82` and `0x3FA0`, respectively, append four supplied data bytes, calculate the checksum, and append the `0xF7` terminator. `FUN_1000_3F54` calculates a 7-bit checksum over template/data bytes, treating `0xFE` as zero for checksum accumulation; `FUN_1000_3EED` appends the checksum complement and `0xF7`. `FUN_1000_4071` copies template bytes until `0xFF` and does not itself flush the queue.
+- In the setup paths examined, the producer sequence is followed by `FUN_1000_08EC`, then the setup accumulator at `0x6EE` is increased and the pending-delta state at `0xF9A:0xF9C` is reset. This identifies a producer/drain/reset boundary in the static call sequence; it does not establish that each call consumes one four-tick delta.
+- `FUN_1000_08EC` parses queued output and may emit multiple events in one invocation. Pending delta is consumed only when an eligible event is emitted; some calls can return without consuming it. Consequently, static helper-call totals cannot be converted directly into absolute-tick totals.
+
+**Next evidence:** enumerate the queue contents immediately before each relevant `FUN_1000_08EC` call and record each emitted event, pending-delta consumption, and resulting absolute tick. Keep the v2 tick-128 case separate from v3/v4 ticks 92/116.
+
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, functions `FUN_1000_39C9`, `FUN_1000_408D`, `FUN_1000_4098`, `FUN_1000_3F02`, `FUN_1000_3F1C`, `FUN_1000_3F4D`, `FUN_1000_3F54`, `FUN_1000_3EED`, `FUN_1000_4071`, `FUN_1000_08EC`; F-123/F-125/F-126. Static analysis only.

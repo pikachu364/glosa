@@ -869,3 +869,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - `FUN_1000_08EC` can process multiple events in one invocation and consumes the pending delta only when emitting an eligible event. Therefore the 31/45 setup call counts are not equivalent to 31/45 tick advances.
 - If the first eligible event in the post-scheduler flush consumes pending delta 4, reference ticks 92/116 constrain the pre-flush absolute tick to 88/112. This is an inference from call order and reference event positions, not a runtime trace. T-015 now asks for a per-call queue-output / delta-consumption table.
 - No converter, tests, or private fixtures changed; no runtime trace or playback performed.
+
+
+## 2026-10-26 — setup queue producer helpers classified
+
+- Traced the helper layer beneath the v3/v4 setup routines: byte-append wrappers, Control Change construction, two template-based SysEx construction paths, checksum/terminator helpers, and the template-copy helper.
+- Recorded that producer/helper calls do not imply a queue flush or a tick advance. `FUN_1000_08EC` can emit multiple queued events in one call and consumes pending delta only for eligible emitted events (FACTS F-127).
+- Added H-020 to keep the 31/45 setup-call counts separate from the observed tempo ticks. The 88/112 pre-flush values remain conditional constraints only, assuming the first eligible event consumes pending delta 4.
+- T-015 remains open: the next meaningful result is a fixture-specific queue/event/delta ledger, not another call-count estimate. No converter, tests, or private fixtures were changed; no runtime trace or playback was performed.

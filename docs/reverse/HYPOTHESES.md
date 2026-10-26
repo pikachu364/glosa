@@ -246,3 +246,15 @@ Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute t
 - Do not change Glosa setup values or add hard-coded SysEx based on this static mapping alone. No converter change, runtime trace, or playback was performed.
 
 **Remaining boundary:** confirm whether runtime code can alter `0x7BC` or the related globals through indirect/aliased writes, and perform a runtime trace if available. The static producer mapping for the four inspected events is complete; runtime behavior is not.
+
+
+### H-020 — setup queue-drain counts do not directly determine first tempo absolute tick (2026-10-26)
+
+**Status:** Constrained by static call order and queue-parser behavior; exact event-by-event tick ledger remains unverified.
+
+- The v3/v4 default-path setup totals of 31 / 45 calls to `FUN_1000_08EC` are confirmed static call counts (F-125), not effective tick advances. Queue producers can append templates or messages without flushing; one queue-parser invocation can emit multiple events, and pending delta is consumed only by an eligible emitted event (F-126/F-127).
+- The first scheduler/tempo queue is flushed after `FUN_1000_33D4` and before the next grid-boundary delta is calculated. Therefore that later boundary calculation cannot itself explain the already-flushed first coarse-tempo event.
+- If the first eligible event in that flush consumes the pending delta of 4, the observed first coarse-tempo ticks constrain the absolute tick before that flush to 88 for v3 and 112 for v4. This is a conditional arithmetic constraint, not an observed runtime state.
+- No supported evidence currently identifies which individual setup drains contribute to the absolute tick at that point. Do not treat the 31 / 45 call totals, or the 88 / 112 conditional values, as an implementation rule.
+
+**Next evidence:** produce a fixture-specific event ledger for v3 and v4: queue bytes before each relevant drain, events emitted, whether pending delta is consumed, and the resulting `0x6F2:0x6F4` absolute tick. Keep v2 tick 128 as a separate unresolved case.
