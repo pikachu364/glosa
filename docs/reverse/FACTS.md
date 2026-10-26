@@ -1355,3 +1355,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - No converter, test, or private fixture was changed. No runtime trace, MIDI regeneration, or playback was performed. Do not apply a fixed tick offset or change implementation based on this candidate alone.
 
 **Sources:** private SNG2S Ver. 3.3 static analysis export for FUN_1000_0010, FUN_1000_2144, FUN_1000_26A6, FUN_1000_265C, FUN_1000_1C70, FUN_1000_1E6C, and FUN_1000_08EC; F-108/F-115/F-123. Static analysis only.
+
+
+## F-125 — 初回 tempo 分岐の status byte と option flags は別々に追跡する必要がある（2026-10-26）
+
+**Status:** SNG2S Ver. 3.3 の正しい private Ghidra export `testdata/ballade/sng2gs/sng2gs_mimpiv4解析java使用.txt` を確認。静的解析のみで、runtime trace ではない。
+
+- `FUN_1000_2144` は v3 internal state 2 で index 1〜10、v4 internal state 3 で index 1〜16 を走査し、各 index の `0x923 + index` byte と flags `0x6F8`, `0x6FC`, `0x620`, `0x62E` に応じて `FUN_1000_22A4`, `FUN_1000_23C0`, `FUN_1000_2554`, `FUN_1000_25B0` を呼ぶ。これらの helper は branch によって `FUN_1000_08EC` drain と pending-delta reset を異なる回数実行するため、loop iteration 数だけから drain 数は決まらない。
+- `FUN_1000_184A` は SNG parsing 前に呼ばれ、オプション文字列の token 検査を通じて `0x62E`, `0x6FC`, `0x620`, `0x6F8` などを設定する。したがって、これらの flags を SNG の各パート状態そのものと同一視しない。
+- 同じ export の `FUN_1000_272A` は `acStack_5c` から `0x924 + index` の byte 群を設定するが、確認した decompilation / instruction listing 内では `0x923 + index` の status byte を直接書く箇所を特定できていない。これは間接 alias / 未追跡の書き込みが存在しないという証明ではない。
+- **未解決:** private fixture ごとの `0x923 + index` 実値、flags の最終値、各 iteration の実際の helper 呼び出しと `FUN_1000_08EC` drain 数は未確定。よって F-124 の v3=24 / v4=30 は数値候補のままであり、tick 92 / 116 の説明として確定していない。v2 tick 128 も別件として未解決。
+- converter、tests、private fixtures は変更していない。runtime trace、MIDI 再生成、実再生は未実施。
+
+**Sources:** private `sng2gs_mimpiv4解析java使用.txt` functions `FUN_1000_0010`, `FUN_1000_184A`, `FUN_1000_2144`, `FUN_1000_22A4`, `FUN_1000_23C0`, `FUN_1000_2554`, `FUN_1000_25B0`, `FUN_1000_272A`; F-123/F-124. Static analysis only.
