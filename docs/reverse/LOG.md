@@ -815,3 +815,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - `FUN_1000_3406` の静的解析と照合し、grid countdown `0x10A4` と tempo countdown `0x10AA` は別 stream から独立して設定されること、いずれの raw step も MIDI absolute tick と直接一致しないことを記録（FACTS F-121）。
 - この比較では v3/v4 の grid interval 192 と exact-tempo tick 192 は整合するが、coarse tempo event tick 92/116 は説明できない。v2 grid interval 288 と coarse event tick 128 も不一致。次は initial scheduler が queue に入れた bytes と最初の `FUN_1000_08EC` drain 時の pending delta / absolute tick に調査を絞る。
 - Converter、tests、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は未実施。
+
+## 2026-10-26 — text preamble check
+
+- Checked the early text-entry loop as a possible explanation for the first coarse tempo positions.
+- The parser's count byte is zero at file offset 59 in all three v2/v3/v4 fixtures, so that loop is skipped for these files.
+- Recorded this exclusion in FACTS F-122. The startup setup-call path remains the next target; tempo ticks 92 / 116 and v2 tick 128 are still unresolved.
+- Documentation only; no converter, tests, or fixture files changed.
