@@ -806,3 +806,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Confirmed raw tempo-block starts: v2 SHIZUME0.SNG offset 1285, v3 START__0.SNG offset 1893, and v4 BOURREE0.SNG offset 1137. The first records are (step=0, value=64), (step=192, value=89), and (step=24, value=123), respectively.
 - Recorded the fixture-specific offsets and leading records in FACTS F-120 and marked the corresponding T-015 metadata/offset checklist item complete. This is static parser analysis plus direct file-byte comparison only.
 - Reference MIDI first coarse-tempo ticks (v2 128, v3 92, v4 116) remain unexplained. Raw step values are not treated as MIDI absolute ticks; no converter, test, or fixture files were changed.
+
+
+## 2026-10-26 — v2〜v4 grid/scheduler 先頭レコードと tempo countdown を直接照合
+
+- CI #1168 成功後、private v2/v3/v4 SNG fixture を base64 で取得し、F-120 の raw tempo-block offsets に加えて grid/scheduler block の先頭 bytes を直接確認した。
+- Grid block starts: v2 offset 193, v3 offset 285, v4 offset 309。先頭 word は v2 = 288、v3/v4 = 192。対応する tempo stream の先頭非ゼロ step は v2 = 192（先頭の step 0 record を読み飛ばした次 record）、v3 = 192、v4 = 24。
+- `FUN_1000_3406` の静的解析と照合し、grid countdown `0x10A4` と tempo countdown `0x10AA` は別 stream から独立して設定されること、いずれの raw step も MIDI absolute tick と直接一致しないことを記録（FACTS F-121）。
+- この比較では v3/v4 の grid interval 192 と exact-tempo tick 192 は整合するが、coarse tempo event tick 92/116 は説明できない。v2 grid interval 288 と coarse event tick 128 も不一致。次は initial scheduler が queue に入れた bytes と最初の `FUN_1000_08EC` drain 時の pending delta / absolute tick に調査を絞る。
+- Converter、tests、private fixture は変更していない。runtime trace、MIDI 再生成、実再生は未実施。
