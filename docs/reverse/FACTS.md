@@ -1355,3 +1355,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - No converter, test, or private fixture was changed. No runtime trace, MIDI regeneration, or playback was performed. Do not apply a fixed tick offset or change implementation based on this candidate alone.
 
 **Sources:** private SNG2S Ver. 3.3 static analysis export for FUN_1000_0010, FUN_1000_2144, FUN_1000_26A6, FUN_1000_265C, FUN_1000_1C70, FUN_1000_1E6C, and FUN_1000_08EC; F-108/F-115/F-123. Static analysis only.
+
+## F-125 — v3/v4 per-part startup status source and branch-dependent drains traced (2026-10-26)
+
+**Status:** Static disassembly of SNG2S Ver. 3.3, original EXE initialized-data inspection, direct private-fixture byte inspection, and branch evaluation under the documented no-switch reference command. No runtime trace or playback was performed.
+
+- The initialized EXE image has a sentinel byte `DS:0x0923 = 0x00` and `DS:0x0924..0x0933 = 0xFF`. `FUN_1000_272A` fills the per-part state table beginning at `0x0924` from the per-part 0x50-byte information buffer: for v3/v4 the source byte is buffer offset `0x11`. Values 0, 1, and 2 are remapped to 2, 0, and 1 respectively; other values are retained. Entries whose initialized state is above `0x7F` are replaced by the derived value. The extra v4 entries for parts 11–16 are defaulted to state 1 when still sentinel-valued.
+- The branch flags are command-line-option state, not fields from the tempo record: `FUN_1000_184A` sets `0x6FC` for `/MT`, `0x62E` for `/MT` or `/GS`, `0x620` for `/LA`, and `0x6F8` for `/SC2` or `/SC`. The confirmed reference commands use no switches, and the inspected initialized image starts these four words at zero. This is static/default-path reasoning, not runtime observation.
+- Evaluating `FUN_1000_2144` against the v3/v4 part states decoded from `START__0.SNG` and `BOURREE0.SNG`, with those default flag values, yields branch-dependent `FUN_1000_08EC` drains inside the per-part loop of **17 for v3** (10 iterations) and **31 for v4** (16 iterations). These are not one drain per iteration. `FUN_1000_265C` then performs a separate final drain/reset after the loop.
+- Therefore the simplified one-drain-per-iteration arithmetic in F-124 (24 / 30 including the previously identified fixed paths) is **rejected as an exact drain-count model**. The earlier 24 / 30 arithmetic remains only a record of the numerical coincidence that prompted the trace. It does not explain reference ticks 92 / 116. The conditional paths in `FUN_1000_1E6C`, the full pending-delta/absolute-tick adjustment, and the final tempo-event flush boundary still require tracing. v2 tick 128 remains separate.
+- No converter, test, or private fixture was changed. Do not apply a fixed tick correction based on this result.
+
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt` functions `FUN_1000_272A`, `FUN_1000_184A`, `FUN_1000_2144`, `FUN_1000_25B0`, `FUN_1000_2554`, `FUN_1000_265C`; original `SNG2S.EXE` initialized image; private v3 `START__0.SNG` and v4 `BOURREE0.SNG`; F-094/F-100/F-123/F-124. Static analysis only.
