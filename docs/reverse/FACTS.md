@@ -1320,3 +1320,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **未解決:** この差だけでは、initial scheduler が生成した queue と初回 `FUN_1000_08EC` drain 前後の pending delta / absolute tick を算出できない。v2 の tempo semantics も後続版の slider formula から説明しない。固定 tick 補正や converter 変更の根拠にはしない。
 
 **Sources:** private `testdata/ballade/v2/SHIZUME0.SNG`, `v3/START__0.SNG`, `v4/BOURREE0.SNG`; private `sng2gs解析データ.txt` functions `FUN_1000_272A`, `FUN_1000_3406`; F-112/F-120. Static byte comparison and disassembly only; no runtime trace, MIDI regeneration, or playback.
+
+## F-122 — v2〜v4 では FUN_1000_0010 の text-preamble loop は初回 tempo tick の原因ではない（2026-10-26）
+
+**状態:** parser の read length / stack-local alias、private SNG の直接 byte inspection、`FUN_1000_0010` の静的 control flow を照合。runtime trace ではない。
+
+- `FUN_1000_272A` は 25-byte header の後に 35-byte read を行い、その read buffer の末尾に対応する `local_12` を `0x2983` に格納する。3 fixture すべてで file offset 59（25 + 34）の byte は `00`。
+- したがって、調査対象の v2 `SHIZUME0.SNG`、v3 `START__0.SNG`、v4 `BOURREE0.SNG` では `0x2983 = 0` となり、`FUN_1000_0010` 内の `local_48 < *(byte *)0x2983` text-preamble loop は実行されない。
+- 同 loop は各 text entry の処理後に `0x6EE` を pending delta に設定するため、初回 coarse tempo tick 92 / 116 を text-entry 数 × 4 ticks として説明する候補を検討したが、fixture の count byte がゼロなのでこの説明は成立しない。v2 tick 128 も同様にこの loop からは説明できない。
+- **次の焦点:** `FUN_1000_0010` の `FUN_1000_26A6` / `FUN_1000_2144` / `FUN_1000_1C70` setup 呼び出しから `FUN_1000_33D4` までに、pending delta `0xF9A:0xF9C` または absolute tick `0x6F2:0x6F4` を変更する経路があるかを追跡する。text-preamble 仮説を根拠なく再利用しない。
+
+**Sources:** private `testdata/ballade/v2/SHIZUME0.SNG`, `v3/START__0.SNG`, `v4/BOURREE0.SNG`; private `sng2s解析データ.txt` functions `FUN_1000_272A`, `FUN_1000_0010`; F-115/F-121. Static read/control-flow analysis only; no runtime trace, MIDI regeneration, or playback.
