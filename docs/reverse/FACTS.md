@@ -1450,3 +1450,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - This resolves the binary-retrieval and on-disk-initial-value question from F-131/H-022. It does **not** explain the first coarse-tempo ticks 92/116, prove that every initialized entry is consulted for each version, or substitute for runtime tracing. Continue with the fixture-specific queue/event/delta ledger; keep v2 tick 128 separate.
 
 **Sources:** private `testdata/ballade/sng2gs/SNG2S.EXE` Base64 payload (SHA-1 above), the established `DS:0x07BC → file offset 0x6C2C` mapping, and F-125/F-128/F-129/F-130/F-131. Binary initialized-data inspection only; no runtime trace, MIDI regeneration, or playback.
+
+
+## F-133 — visible absolute-tick accumulator writes are confined to initialization and event flush (2026-10-27)
+
+**Status:** Complete-text-export search and control-flow inspection. No runtime trace or playback was performed.
+
+- In the main startup path `FUN_1000_0010`, the 32-bit absolute-tick accumulator `0x6F4:0x6F2` is initialized to zero before the initial header events are flushed (export lines 154–160; instructions at `1000:0333–0336`).
+- A search across the complete available 18,795-line SNG2S Ghidra export finds the visible accumulator update sites in `FUN_1000_08EC`: it adds pending delta `0xF9C:0xF9A` to `0x6F4:0x6F2` for an eligible channel event or an allowed system event, then clears the pending delta. The export contains no other visible direct reset/store to `0x6F2` / `0x6F4` after startup initialization.
+- The channel-event path is gated by the channel-state entry at `0x766 + 2*channelIndex`; the system-event path is gated by `0x622` except for status `0xFF` (F-128/F-132). The original EXE image has sixteen initial channel-state words of `0x0001`, and `0x622` is initialized to zero, but indirect/aliased runtime writes are not ruled out.
+- Therefore the first coarse-tempo tick must be explained by the actual queue bytes, event eligibility, and pending delta consumed by each drain—not by equating the static 31/45 setup-call totals with tick advances. Reference ticks 92/116 imply a pre-flush tick of 88/112 only under the stated pending-delta-4 condition; these values are constraints, not observations. v2 tick 128 remains separate.
+
+**Sources:** private `sng2gs解析データ.txt`, `FUN_1000_0010` and `FUN_1000_08EC` decompilation/instructions; F-126/F-128/F-132. Static export analysis only.
