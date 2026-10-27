@@ -1487,3 +1487,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - The complete text export shows reads of the per-part state bytes at `0x923 + part` in `FUN_1000_2144` and related routines, but no direct immediate-address store to `0x923` in the exported references. This is not proof that the table is never written; aliased/pointer-based writes and omitted runtime behavior remain possible.
 
 **Sources:** private `sng2gs解析データ.txt`, `FUN_1000_2144` (`1000:2144–22A3`), `FUN_1000_25B0` (`1000:25B0–2614`), `FUN_1000_2554` (`1000:2554–25AF`), and `FUN_1000_08EC` (`1000:08EC–0B8C`). Static analysis only; no runtime trace or playback.
+
+
+## F-136 — early reference SysEx ticks identify the per-part 0x25B0 sequence (2026-10-27)
+
+**Status:** Reference-byte match to a static producer template; call-by-call runtime execution is not observed.
+
+- `FUN_1000_25B0(part)` emits template `0x10` with address byte `part + 0x0B` for parts 2–10, and template `0x52` with address byte `part - 1` for parts above 10. Part 1 emits neither template but still invokes `FUN_1000_08EC` (F-135).
+- The v3 reference SysEx events at ticks 4, 8, …, 36 match the template-`0x10` sequence for parts 2–10, in order. This is nine events for the ten-iteration v3 part range, with part 1 as the empty-producer candidate.
+- The v4 events at ticks 4, 8, …, 36 match parts 2–10, and ticks 40, 44, …, 60 match template-`0x52` for parts 11–16. This is fifteen events for the sixteen-iteration v4 part range, again leaving part 1 as the empty-producer candidate.
+- These byte matches explain the observed nine / fifteen per-part tick advances and support the `FUN_1000_25B0(1)` no-output interpretation. They do not prove the runtime queue was empty at part 1 or account for every other conditional call site in `FUN_1000_2144`.
+
+**Sources:** private reference MIDI files `START__0.MID` and `BOURREE0.MID`, and `FUN_1000_25B0` at `1000:25B0–2614`. Static template comparison only.
