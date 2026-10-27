@@ -1527,3 +1527,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - The total setup drain calls before the scheduler/tempo flush are 24 / 30 (one `FUN_1000_26A6`, 10 / 16 per-part calls, one `FUN_1000_265C`, and twelve `FUN_1000_1E6C` calls). These are not themselves tick counts: the first drain's events are at the starting tick and the part-1 drain emits no event. The separate v2 first-tempo tick 128 remains unresolved.
 
 **Sources:** private v3 `START__0.SNG`, v4 `BOURREE0.SNG`, parser function `FUN_1000_272A`, setup functions `FUN_1000_0010`, `FUN_1000_2144`, `FUN_1000_25B0`, `FUN_1000_26A6`, `FUN_1000_265C`, `FUN_1000_1E6C`, `FUN_1000_33D4`, and reference MIDI observations in F-134/F-136. No converter/test/private fixture changes; no runtime trace/playback.
+
+
+## F-139 — v2 tick-128 tempo placement matches the 32-tick scheduler boundary (2026-10-27)
+
+**Status:** Static control-flow and arithmetic comparison with raw SNG bytes and saved reference MIDI. No runtime trace or playback.
+
+- The v2 grid/scheduler block begins at raw SNG offset 193 and starts with bytes `20 01 06 04 01 00 00 00 00 00` (F-121). At startup, `FUN_1000_0010` loads the **first byte** of the grid buffer into `uVar11`; it does not pass the full little-endian first word `0x0120`. Thus the boundary interval passed to `FUN_1000_61EC` on this path is `0x20 = 32` ticks, not 288.
+- `FUN_1000_61EC(currentTick, interval, 0)` computes the current tick modulo that interval. The caller then sets pending delta to `interval - remainder` (and uses a full interval when the remainder is zero), i.e. the next boundary.
+- The v2 setup path is version-specific: `FUN_1000_0010` skips `FUN_1000_26A6` because internal version state is 1, calls `FUN_1000_2144`, then `FUN_1000_1C70` → `FUN_1000_1CE4` (F-123/T-018). The legacy helper emits its two default-path `0xF34` / `0xF3F` setup messages with drain-and-reset sequences; its optional third message is gated by `0x6F8`, which is zero for the no-switch reference command. The known v2 setup MIDI events include SysEx at ticks 4, 8, 100, and 104 (F-117/T-018).
+- At the boundary calculation, the fixture-specific setup accounting places the current tick at 104. Therefore `104 mod 32 = 8`, and the next-boundary delta is `32 - 8 = 24`; adding 24 reaches tick **128**, matching the saved `SHIZUME0.MID` first changed-tempo event (1000000 µs/qn) recorded in F-117. This explains the tick position without applying the later-version slider-to-BPM formula to v2's value 64.
+- This is a static derivation from the caller, interval byte, and reference event positions. It is not runtime observation; exact v2 tempo-value semantics and behavior on other v2 fixtures remain separate questions. No converter/test/private fixture changes were made.
+
+**Sources:** private v2 `SHIZUME0.SNG` and `SHIZUME0.MID`; `FUN_1000_0010`, `FUN_1000_1C70`, `FUN_1000_1CE4`, `FUN_1000_61EC); FACTS F-117/F-121/F-123 and T-018. Static evidence only.
