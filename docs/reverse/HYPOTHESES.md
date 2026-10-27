@@ -277,3 +277,15 @@ No runtime trace, playback, converter changes, tests, or fixture changes were pe
 - The earlier text-only retrieval did reject binary data, but the same private executable was subsequently retrieved as Base64 and decoded without text corruption.
 - F-132 establishes the on-disk initial words at `DS:0x0766` through `DS:0x0785`. H-022 is closed as a retrieval blocker; this does not close H-021's runtime-write caveat or resolve the tempo-tick discrepancy.
 
+
+
+### H-023 — exact pre-tempo absolute-tick accounting remains unresolved (2026-10-27)
+
+**Status:** Open. The visible accumulator write sites are known, but the fixture-specific event/delta ledger is incomplete (F-133).
+
+- The visible `0x6F2:0x6F4` accumulator is initialized at startup and advanced by `FUN_1000_08EC` when it emits an eligible event; the complete available export shows no later direct reset.
+- The default on-disk `0x766` channel-state table contains sixteen `0x0001` words (F-132), and `0x622` is initialized to zero. This narrows the static default-path conditions but does not prove runtime values or identify which queue drains actually contain complete eligible events.
+- The static 31/45 setup-call counts cannot be converted into tick counts. The conditional pre-flush values 88/112 must be verified by enumerating each queue producer, each drain's emitted event(s), pending-delta consumption, and resulting accumulator.
+- Do not infer a fixed offset or change converter/tests until the ledger accounts for v3 tick 92 and v4 tick 116. Keep v2 tick 128 separate.
+
+No converter, test, or private fixture was changed; no runtime trace or playback was performed.
