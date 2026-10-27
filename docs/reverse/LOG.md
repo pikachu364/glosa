@@ -913,3 +913,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Confirmed the file size (32,383 bytes), SHA-1 (`0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`), DOS `MZ` signature, and data-image mapping anchored by the previously verified `DS:0x07BC → file offset 0x6C2C` location.
 - The 32 bytes at file offset `0x6BD6`, corresponding to `DS:0x0766..0x0785`, decode as sixteen little-endian words all equal to `0x0001`. Recorded as FACTS F-132; updated H-021 and marked H-022 superseded.
 - This is an initialized-image observation, not a runtime trace. The first coarse tempo ticks 92/116 and the separate v2 tick 128 remain unresolved. No converter, test, or private fixture was changed; next work is the fixture-specific queue/event/delta ledger.
+
+
+## 2026-10-27 — absolute-tick accumulator write sites narrowed
+
+- Searched the complete available SNG2S analysis export for `0x6F2` / `0x6F4`. Visible writes are the startup zero-initialization and the delta-add/carry operations inside `FUN_1000_08EC`; no later direct reset/store appears in the export.
+- `FUN_1000_08EC` consumes pending delta only on eligible channel/system-event paths and clears it after adding to the absolute accumulator. This confirms that static helper-call totals are not themselves tick totals.
+- Added FACTS F-133 and HYPOTHESES H-023. The per-call queue/event/delta ledger remains necessary to explain v3 tick 92 and v4 tick 116; v2 tick 128 remains separate. No converter, test, or private fixture changed.
