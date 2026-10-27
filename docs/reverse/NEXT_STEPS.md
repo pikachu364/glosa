@@ -296,7 +296,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 
 ## T-015 — versioned tempo-stream decoding and scheduler emission
-**Priority:** high; v3/v4 first coarse-tempo tick positions are now statically accounted for the inspected fixtures; v2 reference tempo behavior remains unresolved.
+**Priority:** high; v3/v4 first coarse-tempo tick positions are now statically accounted for the inspected fixtures; v2 first changed-tempo placement is accounted for statically; exact v2 tempo-value semantics and runtime behavior remain unverified.
 
 - [x] Verify v1 tempo stream starts at sentinel +10 and v3/v4 at sentinel +12. Numeric BPM mapping is known; event timing is a separate behavior.
 - [x] Confirm Glosa has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` paths.
@@ -323,11 +323,11 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Search the complete available SNG2S export for direct references to 0x628 and 0x766: 0x628 has one visible write in the /N parser; direct stores to 0x766 occur only in FUN_1000_1668, gated by /N (FACTS F-129/F-130). This is a static-export result, not proof against indirect/aliased writes.
 - [x] Retrieve the private `SNG2S.EXE` as Base64, decode it byte-preservingly, and inspect the initialized data mapping. `DS:0x0766..0x0785` contains sixteen words `0x0001` on disk (file offset `0x6BD6`; FACTS F-132). This is not a runtime trace; indirect/aliased writes remain unverified.
 - [x] Build the fixture-specific queue/event/delta ledger for v3/v4 using the decoded per-part state bytes and branch conditions (FACTS F-138). The inspected v3/v4 first coarse-tempo ticks are accounted for statically; runtime trace/playback remains unperformed.
-- [ ] Keep v2 separate: its first raw value 64 does not explain reference tick 128 = 1000000 µs/qn under the later-version slider formula.
+- [x] Explain v2 first changed-tempo placement separately from the later-version slider formula. The v2 grid buffer begins `20 01`; `FUN_1000_0010` passes its first byte `0x20` (32) as the interval to `FUN_1000_61EC`, not the full word `0x0120` (288). Setup reaches tick 104; the next 32-tick boundary is `104 + (32 - 104 mod 32) = 128`, matching the reference tempo event (FACTS F-139). Static only; v2 tempo-value semantics and runtime behavior remain unverified.
 - [ ] Only after the tick-generation rule is evidenced, split raw record decoding from scheduler-to-SMF event emission and implement against event-by-event fixture assertions.
 - [ ] Re-run private fixture CI after any converter change; inspect the actual workflow result before reporting pass/fail.
 
-**Result (updated 2026-10-27):** raw record/value mapping, separate grid/scheduler versus tempo-record streams, parser file-I/O and block order, event-byte / delta-flush stages, fixture-specific first grid records, the on-disk default part-state table, and the v3/v4 part-state/tick ledger are grounded (FACTS F-105/F-106/F-108/F-111/F-112/F-118/F-119/F-120/F-121/F-122/F-123/F-124/F-132/F-137/F-138). The inspected v3/v4 first coarse-tempo ticks 92 / 116 are now accounted for statically; runtime trace/playback and generalization remain unverified. v2 tick 128 remains separate. Do not apply a global tick offset or guessed formula tweak. v1 remains a separate `last+10` path (F-074).
+**Result (updated 2026-10-27):** raw record/value mapping, separate grid/scheduler versus tempo-record streams, parser file-I/O and block order, event-byte / delta-flush stages, fixture-specific first grid records, the on-disk default part-state table, and the v3/v4 part-state/tick ledger are grounded (FACTS F-105/F-106/F-108/F-111/F-112/F-118/F-119/F-120/F-121/F-122/F-123/F-124/F-132/F-137/F-138). The inspected v3/v4 first coarse-tempo ticks 92 / 116 and v2 first changed-tempo tick 128 are now accounted for statically (F-138/F-139); runtime trace/playback and generalization remain unverified. Do not apply a global tick offset or guessed formula tweak. v1 remains a separate `last+10` path (F-074).
 ## T-016 — MIMPIV4 legacy tempo records to playback timer
 
 **Priority:** high; required for the SNG2S/MIMPIV4 comparison.
