@@ -927,3 +927,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Parsed the private reference MIDIs directly. v3 track 1 has setup SysEx ticks 4–92 in four-tick steps; v4 has ticks 4–116. The first coarse tempo meta events are at tick 92 / 116 in track 0.
 - Matched all twelve sequential `FUN_1000_1E6C` producer/drain pairs to the reference SysEx payloads byte-for-byte: ticks 44–88 for v3 and 68–112 for v4. Matched `FUN_1000_265C`'s `52 00 10 4B` message to tick 40 / 64.
 - Added FACTS F-134 and refined H-023/T-015. The remaining task is to identify which per-part-loop drain calls do not consume a delta; static counts are 17 / 31, while the observed tick progression requires nine / fifteen per-part advances. No converter, test, or private fixture changed; no runtime trace or playback was performed.
+
+
+## 2026-10-27 — first structurally empty per-part drain candidate identified
+
+- Audited `FUN_1000_2144`, `FUN_1000_25B0`, `FUN_1000_2554`, and `FUN_1000_23C0` control flow. `FUN_1000_25B0(1)` reaches `FUN_1000_08EC` without executing either of its own SysEx producer branches; it is therefore a no-tick candidate if the queue is empty on entry.
+- Recorded F-135 and H-024 and narrowed T-015 to verify fixture reachability/queue state and enumerate the remaining branch-gated drains. This does not yet reconcile all 17 / 31 loop calls with nine / fifteen per-part tick advances.
+- The exported text has reads of state bytes at `0x923 + part`, but no direct immediate-address store to `0x923` was found in the searched export. Do not interpret that as proof that no indirect/aliased write exists. No converter, tests, or private fixtures changed; no runtime trace or playback was performed.
