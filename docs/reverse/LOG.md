@@ -934,3 +934,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Audited `FUN_1000_2144`, `FUN_1000_25B0`, `FUN_1000_2554`, and `FUN_1000_23C0` control flow. `FUN_1000_25B0(1)` reaches `FUN_1000_08EC` without executing either of its own SysEx producer branches; it is therefore a no-tick candidate if the queue is empty on entry.
 - Recorded F-135 and H-024 and narrowed T-015 to verify fixture reachability/queue state and enumerate the remaining branch-gated drains. This does not yet reconcile all 17 / 31 loop calls with nine / fifteen per-part tick advances.
 - The exported text has reads of state bytes at `0x923 + part`, but no direct immediate-address store to `0x923` was found in the searched export. Do not interpret that as proof that no indirect/aliased write exists. No converter, tests, or private fixtures changed; no runtime trace or playback was performed.
+
+
+## 2026-10-27 — reference part-loop messages mapped to FUN_1000_25B0
+
+- Compared the first setup SysEx events against the static producer templates in `FUN_1000_25B0`. v3 ticks 4–36 match part arguments 2–10 using template `0x10`; v4 ticks 4–36 match parts 2–10 and ticks 40–60 match parts 11–16 using template `0x52`.
+- Both sequences imply a leading part-1 helper call that emits no setup record, consistent with a no-tick drain if the queue is empty. This is a static/template match, not runtime confirmation.
+- Added F-136/H-025 and refined T-015 to separate static call-site counts from actual tick advances. Remaining conditional paths and queue-entry state are still unresolved. No converter, tests, or private fixtures changed.
