@@ -299,3 +299,15 @@ No converter, test, or private fixture was changed; no runtime trace or playback
 - `FUN_1000_25B0(1)` calls the queue drain without producing a setup record. If the queue is empty at entry, this call should not advance `0x6F2:0x6F4`; the reference-specific reachability and entry queue state still need proof.
 - Other calls can also skip their producer/drain path because of branch gates, including `FUN_1000_2554` when argument 2 is even or `0x6FC != 0`, and `FUN_1000_23C0` when `0x6F8 != 0`. These are conditional path skips, not yet counted as reference MIDI tick advances.
 - Do not subtract a guessed fixed number from the 17 / 31 static per-part-loop drain-call counts. Build the fixture-specific ledger from state-byte values, branch conditions, queued bytes, and the delta consumed by each actual drain. v3/v4 reference tick constraints and v2 tick 128 remain separate.
+
+
+### H-025 — leading part-1 no-output drain is statically confirmed, remaining drains open (2026-10-27)
+
+**Status:** The specific part-1 path is supported by raw fixture bytes and static control flow (F-137); the full v3/v4 per-call ledger remains unresolved.
+
+- Both inspected v3/v4 first part-information buffers contain `0x04` at offset `+0x11). `FUN_1000_272A` retains this value in the part-state table.
+- Under the no-switch defaults, `FUN_1000_2144` consequently calls `FUN_1000_25B0(1)`. The helper does not run either SysEx producer branch for part 1, but does call `FUN_1000_08EC` and restores pending delta to 4.
+- The prior `FUN_1000_26A6` call drains the queue, and no queue producer intervenes before the part-1 helper. This supports the interpretation that the part-1 drain is empty and does not advance the absolute tick.
+- This closes the uncertainty about whether the leading helper is reached on the inspected v3/v4 default path. It does not account for all other non-advancing drains or prove the behavior for uninspected fixtures. Continue enumerating state-dependent branch paths and queued events; do not apply a fixed tick offset.
+
+No converter, tests, or private fixtures were changed; no runtime trace or playback was performed.
