@@ -957,3 +957,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Re-evaluated `FUN_1000_2144` using those actual state bytes and no-switch flags. Each iteration reaches one `FUN_1000_25B0(part)` call, so the per-part drain counts are 10 / 16, not the earlier 17 / 31 recorded in F-125. The `FUN_1000_2554` and `FUN_1000_22A4` alternatives are not reached for these fixture states/default flags.
 - The corrected ledger accounts for reference timing: part 1 calls the helper but emits no SysEx and does not advance tick; parts 2–10 / 2–16 advance to 36 / 60; `FUN_1000_265C` advances to 40 / 64; twelve `FUN_1000_1E6C` messages advance to 88 / 112; the first eligible event in the initial scheduler/tempo flush consumes pending delta 4 and reaches 92 / 116.
 - Updated F-124/F-125, added F-138, revised H-023/H-024 and T-015. This supersedes the prior 17 / 31 and 31 / 45 call-count estimate. No converter, tests, or private fixtures changed; no runtime trace or playback performed.
+
+
+## 2026-10-27 — v2 first changed-tempo tick explained by scheduler boundary
+
+- Rechecked the v2 grid/scheduler bytes at raw offset 193: leading bytes are `20 01 06 04...`. Although the first word is little-endian `0x0120` (288), `FUN_1000_0010` passes the first byte `0x20` as `uVar11` to `FUN_1000_61EC`; the interval for this boundary calculation is therefore 32 ticks.
+- The caller computes the next-boundary delta as interval minus current tick modulo interval (or one full interval when already aligned). With the inspected v2 setup tick at 104, `104 mod 32 = 8`; delta 24 reaches tick 128, matching the saved reference MIDI's first changed-tempo event.
+- Confirmed the versioned setup call chain: v2 skips `FUN_1000_26A6`, executes `FUN_1000_2144`, then `FUN_1000_1C70` → `FUN_1000_1CE4`; v3/v4 use the distinct `FUN_1000_1E6C` path. Added F-139, refined H-023 and T-015. Static evidence only; no runtime trace/playback, converter changes, tests, or private fixture changes.
