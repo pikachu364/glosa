@@ -1499,3 +1499,17 @@ This narrows the source of the initial timer base but does not show that tempo r
 - These byte matches explain the observed nine / fifteen per-part tick advances and support the `FUN_1000_25B0(1)` no-output interpretation. They do not prove the runtime queue was empty at part 1 or account for every other conditional call site in `FUN_1000_2144`.
 
 **Sources:** private reference MIDI files `START__0.MID` and `BOURREE0.MID`, and `FUN_1000_25B0` at `1000:25B0–2614`. Static template comparison only.
+
+
+## F-137 — v3/v4 part-1 state confirms the leading empty-producer drain path (2026-10-27)
+
+**Status:** Static loader/control-flow analysis plus direct raw-SNG byte inspection. No runtime trace or playback was performed.
+
+- In `FUN_1000_272A`, the per-part state byte is derived from offset `0x11` of each loaded 0x50-byte part-information buffer and copied into the state table at `0x924 + partIndex` when the initialized `0xFF` sentinel is present (F-125).
+- The first part-information buffer starts at raw file offset **3861** in v3 `START__0.SNG` and **2585** in v4 `BOURREE0.SNG`, as derived from F-120's block lengths and the parser's relative seeks/read order. At buffer offset `+0x11`, both files contain `0x04`: v3 file offset **3878 (0x0F26)** and v4 file offset **2602 (0x0A2A)**. Since value 4 is not remapped by the loader, part 1's state is 4 on the inspected default path.
+- In `FUN_1000_2144`, state 4 becomes `uVar1 == 5` and reaches the branch at `1000:2218–2235). With the no-switch defaults `0x6F8 == 0` and `0x6FC == 0`, this calls `FUN_1000_25B0(1)`.
+- `FUN_1000_25B0(1)` skips both of its SysEx producer conditions (`part > 1 && part < 11`, and `part > 10`) but still calls `FUN_1000_08EC` and then resets pending delta to `0x6EE = 4`.
+- The main startup path calls `FUN_1000_26A6` before `FUN_1000_2144`; `FUN_1000_26A6` finishes with a queue drain, and `FUN_1000_08EC` loops until the queue read returns an empty/invalid status. There is no intervening producer between those calls in the inspected path. This statically supports an empty queue on entry to the part-1 helper, so this call emits no event and does not advance the absolute tick, while restoring the pending delta to 4.
+- This confirms the leading no-output helper call; it does **not** reconcile the remaining 17 / 31 per-part-loop drain-call counts with the nine / fifteen observed per-part tick advances. Other state-dependent calls and queue contents still need a per-call ledger.
+
+**Sources:** private `SNG2S.EXE` analysis export functions `FUN_1000_0010`, `FUN_1000_08EC`, `FUN_1000_2144`, `FUN_1000_25B0`, `FUN_1000_26A6`, `FUN_1000_272A`; private raw SNG fixtures `START__0.SNG` and `BOURREE0.SNG`; F-120/F-125/F-133/F-135/F-136. Static and raw-byte evidence only.
