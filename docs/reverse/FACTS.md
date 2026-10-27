@@ -1542,13 +1542,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 **Sources:** private v2 `SHIZUME0.SNG` and `SHIZUME0.MID`; `FUN_1000_0010`, `FUN_1000_1C70`, `FUN_1000_1CE4`, `FUN_1000_61EC); FACTS F-117/F-121/F-123 and T-018. Static evidence only.
 
 
-## F-140 — v2 base-tempo source narrowed to SNG header byte at offset 0x79 (2026-10-27)
+## F-140 — v2 base-tempo source confirmed at SNG offset 0x79 (2026-10-27)
 
-**Status:** Static parser/dataflow analysis only. The raw byte value at offset 0x79 has not yet been verified in this pass; no runtime trace or playback.
+**Status:** The raw fixture byte and the static parser/dataflow mapping are confirmed. No runtime trace or playback was performed.
 
 - In `FUN_1000_272A`, the v2 path uses nonzero format state `0x25DA` and selects byte `0x1AE8` as the base tempo, then stores it in `0x2962`. The v1/format-state-zero branch selects `0x1AFE` instead.
 - The v2 metadata read is `0x4E` bytes into buffer `0x1AE2`, sourced from raw SNG offset `0x73` (F-120/T-018). Therefore buffer byte `0x1AE8` is at metadata offset +6, corresponding to raw file offset `0x79`.
-- `FUN_1000_3406` computes coarse-tempo BPM as `floor(value * baseTempo / 64)`, clamped to 1–480, then emits `floor(60000 / BPM) * 1000` µs/qn when the BPM changes (F-106). The v2 first tempo record is `(step=0, value=64)`; if the base-tempo byte is 60, that formula would produce 60 BPM and 1,000,000 µs/qn, matching the reference at tick 128. This is a conditional calculation, **not confirmation that the byte is 60**.
-- Next evidence needed: inspect raw `SHIZUME0.SNG[0x79]` directly and confirm whether the parser's buffer mapping is consistent with the byte. Keep the tempo-value mapping unresolved until that byte is verified. No converter, tests, or private fixtures were changed.
+- Read the private fixture `testdata/ballade/v2/SHIZUME0.SNG` as Base64 and decoded it byte-preservingly. The file is 75,597 bytes; raw offset `0x79` is `0x3C` (decimal 60). Neighboring bytes at `0x78` and `0x7A` are both `0x00`.
+- `FUN_1000_3406` computes coarse-tempo BPM as `floor(value * baseTempo / 64)`, clamped to 1–480, then emits `floor(60000 / BPM) * 1000` µs/qn when the BPM changes (F-106). The v2 first tempo record is `(step=0, value=64)`; with the verified base-tempo byte 60, this gives 60 BPM and 1,000,000 µs/qn, matching the saved reference MIDI tempo at tick 128. The tempo-value calculation is now confirmed by the fixture bytes plus static code analysis.
+- This confirms the base-tempo source and the expected value for this fixture only. It does not establish runtime behavior or generalize the same value to every v2 file. The tick-128 placement remains a separate scheduler-boundary finding (F-139). No converter or tests were changed.
 
-**Sources:** private `sng2s解析データ.txt`, `FUN_1000_272A` (base-tempo selection), `FUN_1000_3406` (tempo formula), F-106/F-120/F-121/F-139. Static analysis only.
+**Sources:** private `testdata/ballade/v2/SHIZUME0.SNG` (raw byte inspection), private `sng2s解析データ.txt`, `FUN_1000_272A` (base-tempo selection), `FUN_1000_3406` (tempo formula), F-106/F-120/F-121/F-139. Static analysis and byte inspection only.
