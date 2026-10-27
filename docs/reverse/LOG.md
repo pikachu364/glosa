@@ -941,3 +941,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Compared the first setup SysEx events against the static producer templates in `FUN_1000_25B0`. v3 ticks 4–36 match part arguments 2–10 using template `0x10`; v4 ticks 4–36 match parts 2–10 and ticks 40–60 match parts 11–16 using template `0x52`.
 - Both sequences imply a leading part-1 helper call that emits no setup record, consistent with a no-tick drain if the queue is empty. This is a static/template match, not runtime confirmation.
 - Added F-136/H-025 and refined T-015 to separate static call-site counts from actual tick advances. Remaining conditional paths and queue-entry state are still unresolved. No converter, tests, or private fixtures changed.
+
+
+## 2026-10-27 — part-1 no-output drain confirmed from fixture state byte
+
+- Re-read `FUN_1000_272A`, `FUN_1000_2144`, `FUN_1000_25B0`, `FUN_1000_26A6`, and `FUN_1000_08EC` in the private SNG2S analysis export.
+- Derived the first part-information buffer offsets from the documented block lengths and parser seek/read sequence: v3 offset 3861 and v4 offset 2585. Both buffer byte `+0x11` values are `0x04` (raw offsets 3878 / 2602), so the loader retains part-1 state 4.
+- With no-switch flags, that state routes the part-1 iteration through `FUN_1000_25B0(1)`. The helper skips both SysEx producer conditions but still calls the queue drain and resets pending delta to 4. The immediately preceding `FUN_1000_26A6` drains the queue, and no producer intervenes before the part loop; the empty-queue interpretation is therefore statically supported.
+- Added FACTS F-137 and HYPOTHESES H-025; refined H-024 and T-015. The remaining v3/v4 per-call queue/event/delta ledger is still open. No converter, tests, or private fixtures changed; no runtime trace or playback performed.
