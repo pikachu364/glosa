@@ -279,13 +279,14 @@ No runtime trace, playback, converter changes, tests, or fixture changes were pe
 
 
 
-### H-023 — exact pre-tempo absolute-tick accounting remains unresolved (2026-10-27)
+### H-023 — exact pre-tempo absolute-tick accounting remains partially unresolved (2026-10-27)
 
-**Status:** Open. The visible accumulator write sites are known, but the fixture-specific event/delta ledger is incomplete (F-133).
+**Status:** Fixed setup sequence mapped against reference bytes; exact per-part no-advance calls remain open (F-133/F-134).
 
-- The visible `0x6F2:0x6F4` accumulator is initialized at startup and advanced by `FUN_1000_08EC` when it emits an eligible event; the complete available export shows no later direct reset.
-- The default on-disk `0x766` channel-state table contains sixteen `0x0001` words (F-132), and `0x622` is initialized to zero. This narrows the static default-path conditions but does not prove runtime values or identify which queue drains actually contain complete eligible events.
-- The static 31/45 setup-call counts cannot be converted into tick counts. The conditional pre-flush values 88/112 must be verified by enumerating each queue producer, each drain's emitted event(s), pending-delta consumption, and resulting accumulator.
-- Do not infer a fixed offset or change converter/tests until the ledger accounts for v3 tick 92 and v4 tick 116. Keep v2 tick 128 separate.
+- The visible `0x6F2:0x6F4` accumulator is initialized at startup and advanced by `FUN_1000_08EC` when it emits an eligible event; the complete available export shows no later direct reset (F-133).
+- The reference SysEx track confirms a four-tick sequence through tick 88 (v3) / 112 (v4). The twelve `FUN_1000_1E6C` producer/drain pairs map byte-for-byte to ticks 44–88 / 68–112, and `FUN_1000_265C` maps to tick 40 / 64. The first coarse tempo flush is at tick 92 / 116 (F-134).
+- The remaining gap is which of the 17 v3 / 31 v4 per-part-loop drain calls do not consume a pending delta. The observed track requires nine per-part tick advances in v3 and fifteen in v4; call-by-call queue contents and event eligibility must identify the remaining calls.
+- The default on-disk `0x766` channel-state table contains sixteen `0x0001` words (F-132), and `0x622` is initialized to zero, but runtime values and indirect writes remain unverified.
+- Do not infer a fixed offset or change converter/tests until the per-call ledger is complete. Keep v2 tick 128 separate.
 
 No converter, test, or private fixture was changed; no runtime trace or playback was performed.
