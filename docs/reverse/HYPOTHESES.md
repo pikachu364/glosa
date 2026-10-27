@@ -290,3 +290,12 @@ No runtime trace, playback, converter changes, tests, or fixture changes were pe
 - Do not infer a fixed offset or change converter/tests until the per-call ledger is complete. Keep v2 tick 128 separate.
 
 No converter, test, or private fixture was changed; no runtime trace or playback was performed.
+
+
+### H-024 — empty helper drains account for some, but not all, missing tick advances (2026-10-27)
+
+**Status:** Open; one structurally empty producer case is identified (F-135).
+
+- `FUN_1000_25B0(1)` calls the queue drain without producing a setup record. If the queue is empty at entry, this call should not advance `0x6F2:0x6F4`; the reference-specific reachability and entry queue state still need proof.
+- Other calls can also skip their producer/drain path because of branch gates, including `FUN_1000_2554` when argument 2 is even or `0x6FC != 0`, and `FUN_1000_23C0` when `0x6F8 != 0`. These are conditional path skips, not yet counted as reference MIDI tick advances.
+- Do not subtract a guessed fixed number from the 17 / 31 static per-part-loop drain-call counts. Build the fixture-specific ledger from state-byte values, branch conditions, queued bytes, and the delta consumed by each actual drain. v3/v4 reference tick constraints and v2 tick 128 remain separate.

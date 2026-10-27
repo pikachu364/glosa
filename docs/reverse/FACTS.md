@@ -1475,3 +1475,27 @@ This narrows the source of the initial timer base but does not show that tempo r
 - The static per-part-loop counts remain 17 drains for v3 and 31 for v4 (F-125), so the exact calls that do not consume a delta are still to be identified. The tick sequence constrains the answer but does not identify every call's queue contents. Do not generalize this accounting to v2 tick 128.
 
 **Sources:** private reference `testdata/ballade/v3/sng2gs/START__0.MID` (raw-file SHA-1 `ca66f59b236abb31e274e0baf95a281e7c6c9460`; Git blob SHA `86d12ef849f2f808a1742ef56fc8e10fc11c4b84`), v4 `BOURREE0.MID` (raw-file SHA-1 `7d895565396e4a5f0aaa3b95fbcd9a9b2c7bb53d`; Git blob SHA `8bd4814a57d0b4585388be18175b99d97969d5d5`), SNG2S `FUN_1000_1E6C`, `FUN_1000_265C`, `FUN_1000_33D4`, `FUN_1000_3B68`, and F-101/F-125/F-126/F-127/F-133. Static code and reference-byte comparison only.
+
+
+## F-135 — part-loop helper calls can drain an empty queue (2026-10-27)
+
+**Status:** Static control-flow finding; not a complete fixture-specific call ledger.
+
+- `FUN_1000_25B0(part)` emits setup bytes only when `1 < part < 11` (template `0x10`) or `part > 10` (template `0x52`). For `part == 1`, neither producer branch runs, but the function still calls `FUN_1000_08EC` and then sets the pending delta from `0x6EE`. Thus `FUN_1000_25B0(1)` is a structurally confirmed candidate for a drain that does not advance the absolute tick when the queue is empty on entry.
+- In `FUN_1000_2144`, the `uVar1 == 1` / state-byte `0x00` branch can call `FUN_1000_25B0(part)`, and may then separately call `FUN_1000_2554(part, 1)`. The latter has its own gate: it produces/drains only when argument 2 is odd and `0x6FC == 0`; it emits a program-change-like record through `FUN_1000_3F4D(0x40, part+0x10, 2, 0x10)`.
+- `FUN_1000_25B0`'s empty-producer case does not by itself prove the reference fixture reaches `part == 1`, nor that the queue is empty at that exact call. This finding narrows the ledger but does not identify all no-advance calls.
+- The complete text export shows reads of the per-part state bytes at `0x923 + part` in `FUN_1000_2144` and related routines, but no direct immediate-address store to `0x923` in the exported references. This is not proof that the table is never written; aliased/pointer-based writes and omitted runtime behavior remain possible.
+
+**Sources:** private `sng2gs解析データ.txt`, `FUN_1000_2144` (`1000:2144–22A3`), `FUN_1000_25B0` (`1000:25B0–2614`), `FUN_1000_2554` (`1000:2554–25AF`), and `FUN_1000_08EC` (`1000:08EC–0B8C`). Static analysis only; no runtime trace or playback.
+
+
+## F-136 — early reference SysEx ticks identify the per-part 0x25B0 sequence (2026-10-27)
+
+**Status:** Reference-byte match to a static producer template; call-by-call runtime execution is not observed.
+
+- `FUN_1000_25B0(part)` emits template `0x10` with address byte `part + 0x0B` for parts 2–10, and template `0x52` with address byte `part - 1` for parts above 10. Part 1 emits neither template but still invokes `FUN_1000_08EC` (F-135).
+- The v3 reference SysEx events at ticks 4, 8, …, 36 match the template-`0x10` sequence for parts 2–10, in order. This is nine events for the ten-iteration v3 part range, with part 1 as the empty-producer candidate.
+- The v4 events at ticks 4, 8, …, 36 match parts 2–10, and ticks 40, 44, …, 60 match template-`0x52` for parts 11–16. This is fifteen events for the sixteen-iteration v4 part range, again leaving part 1 as the empty-producer candidate.
+- These byte matches explain the observed nine / fifteen per-part tick advances and support the `FUN_1000_25B0(1)` no-output interpretation. They do not prove the runtime queue was empty at part 1 or account for every other conditional call site in `FUN_1000_2144`.
+
+**Sources:** private reference MIDI files `START__0.MID` and `BOURREE0.MID`, and `FUN_1000_25B0` at `1000:25B0–2614`. Static template comparison only.
