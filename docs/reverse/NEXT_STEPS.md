@@ -296,7 +296,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 
 
 ## T-015 — versioned tempo-stream decoding and scheduler emission
-**Priority:** high; v3/v4 first coarse-tempo tick positions are now statically accounted for the inspected fixtures; v2 first changed-tempo placement is accounted for statically; exact v2 tempo-value semantics and runtime behavior remain unverified.
+**Priority:** high; first coarse-tempo tick positions are statically accounted for the inspected fixtures (v2 tick 128, v3 tick 92, v4 tick 116); v2 base-tempo byte and tempo-value calculation are confirmed for SHIZUME0.SNG by raw-byte inspection plus static analysis. Runtime behavior and generalization remain unverified.
 
 - [x] Verify v1 tempo stream starts at sentinel +10 and v3/v4 at sentinel +12. Numeric BPM mapping is known; event timing is a separate behavior.
 - [x] Confirm Glosa has separate `ReadLegacyV1Tempi(last+10)` and later-version `ReadTempi(last+12)` paths.
@@ -324,7 +324,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Retrieve the private `SNG2S.EXE` as Base64, decode it byte-preservingly, and inspect the initialized data mapping. `DS:0x0766..0x0785` contains sixteen words `0x0001` on disk (file offset `0x6BD6`; FACTS F-132). This is not a runtime trace; indirect/aliased writes remain unverified.
 - [x] Build the fixture-specific queue/event/delta ledger for v3/v4 using the decoded per-part state bytes and branch conditions (FACTS F-138). The inspected v3/v4 first coarse-tempo ticks are accounted for statically; runtime trace/playback remains unperformed.
 - [x] Trace the v2 base-tempo source in `FUN_1000_272A`: format state `0x25DA != 0` selects `0x1AE8` for `0x2962`; the metadata buffer starts at raw file offset `0x73`, so `0x1AE8` maps to raw `SHIZUME0.SNG` offset `0x79` (F-140). The byte value itself is not yet verified.
-- [ ] Read raw `SHIZUME0.SNG[0x79]` and verify the v2 base-tempo byte. Only then confirm or reject the conditional result: base tempo 60 × value 64 / 64 = 60 BPM, which yields 1,000,000 µs/qn via the coarse writer. Keep this separate from tick-128 scheduler placement.
+- [x] Read raw private `SHIZUME0.SNG[0x79]`: byte is `0x3C` (60); neighboring bytes `0x78` and `0x7A` are `0x00`. With first tempo record value 64, `floor(64 × 60 / 64) = 60` BPM, then `floor(60000 / 60) × 1000 = 1,000,000` µs/qn. This matches the saved reference MIDI at tick 128. Raw-byte plus static-analysis evidence only; keep value calculation separate from scheduler placement (F-140/F-139).
 - [x] Explain v2 first changed-tempo placement separately from the later-version slider formula. The v2 grid buffer begins `20 01`; `FUN_1000_0010` passes its first byte `0x20` (32) as the interval to `FUN_1000_61EC`, not the full word `0x0120` (288). Setup reaches tick 104; the next 32-tick boundary is `104 + (32 - 104 mod 32) = 128`, matching the reference tempo event (FACTS F-139). Static only; v2 tempo-value semantics and runtime behavior remain unverified.
 - [ ] Only after the tick-generation rule is evidenced, split raw record decoding from scheduler-to-SMF event emission and implement against event-by-event fixture assertions.
 - [ ] Re-run private fixture CI after any converter change; inspect the actual workflow result before reporting pass/fail.
