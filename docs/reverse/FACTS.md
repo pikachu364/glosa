@@ -1462,3 +1462,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - Therefore the first coarse-tempo tick must be explained by the actual queue bytes, event eligibility, and pending delta consumed by each drain—not by equating the static 31/45 setup-call totals with tick advances. Reference ticks 92/116 imply a pre-flush tick of 88/112 only under the stated pending-delta-4 condition; these values are constraints, not observations. v2 tick 128 remains separate.
 
 **Sources:** private `sng2gs解析データ.txt`, `FUN_1000_0010` and `FUN_1000_08EC` decompilation/instructions; F-126/F-128/F-132. Static export analysis only.
+
+
+## F-134 — reference SysEx tick sequence maps the fixed v3/v4 setup producers (2026-10-27)
+
+**Status:** Byte-level parsing of the private reference MIDIs plus static producer-call/template comparison. No runtime trace or playback was performed.
+
+- Parsed reference MIDI track 1 directly from `START__0.MID` and `BOURREE0.MID`. Before the first coarse-tempo event, the v3 SysEx track has distinct event ticks every four ticks from 4 through 88; v4 has the same four-tick progression from 4 through 112. Track 0 places the first coarse-tempo meta event at tick 92 for v3 and tick 116 for v4.
+- The twelve sequential producer/drain pairs in `FUN_1000_1E6C` match the reference SysEx payloads byte-for-byte and in order: six template-`0x40` messages, three template-`0x10` messages, and three template-`0x52` messages. They occupy ticks **44–88** in v3 and **68–112** in v4 (12 messages, one four-tick step each). This maps the fixed sequence to reference output rather than treating its twelve calls as an unexplained count.
+- The `FUN_1000_265C` message `F0 41 10 16 12 52 00 10 4B ... F7` matches the reference event at tick **40** in v3 and tick **64** in v4. The first coarse-tempo flush then places the tempo event at tick 92 / 116 alongside the known setup SysEx messages at that same tick (F-101/F-127).
+- Combining those observed tick positions with F-133's accumulator semantics yields a bounded accounting constraint: after the initial startup drain, the per-part loop must account for nine tick advances in v3 (ticks 4–36) and fifteen in v4 (ticks 4–60); the `FUN_1000_265C` message adds the next step, and `FUN_1000_1E6C` supplies twelve further steps. The first tempo flush consumes the pending four-tick delta to reach 92 / 116.
+- The static per-part-loop counts remain 17 drains for v3 and 31 for v4 (F-125), so the exact calls that do not consume a delta are still to be identified. The tick sequence constrains the answer but does not identify every call's queue contents. Do not generalize this accounting to v2 tick 128.
+
+**Sources:** private reference `testdata/ballade/v3/sng2gs/START__0.MID` (SHA-1 `86d12ef849f2f808a1742ef56fc8e10fc11c4b84`), v4 `BOURREE0.MID` (SHA-1 `8bd4814a57d0b4585388be18175b99d97969d5d5`), SNG2S `FUN_1000_1E6C`, `FUN_1000_265C`, `FUN_1000_33D4`, `FUN_1000_3B68`, and F-101/F-125/F-126/F-127/F-133. Static code and reference-byte comparison only.
