@@ -287,7 +287,7 @@ No runtime trace, playback, converter changes, tests, or fixture changes were pe
 - The reference SysEx track confirms a four-tick sequence through tick 88 (v3) / 112 (v4). The twelve `FUN_1000_1E6C` producer/drain pairs map byte-for-byte to ticks 44–88 / 68–112, and `FUN_1000_265C` maps to tick 40 / 64. The first coarse tempo flush is at tick 92 / 116 (F-134).
 - F-138 corrects the earlier 17 / 31 per-part-loop count to 10 / 16: every decoded fixture state is 4 or 5, so each iteration takes one `FUN_1000_25B0(part)` path. Part 1 emits no message; parts 2–10 / 2–16 advance nine / fifteen times. The resulting static ledger reaches 92 / 116 at the first coarse-tempo event.
 - The default on-disk `0x766` channel-state table contains sixteen `0x0001` words (F-132), and `0x622` is initialized to zero, but runtime values and indirect writes remain unverified.
-- Do not infer a fixed offset or change converter/tests until the per-call ledger is complete. Keep v2 tick 128 separate.
+- The static per-call ledger is complete for the inspected v3/v4 fixtures; runtime execution and generalization remain unverified. Do not change converter/tests based on a fixed offset. Keep v2 tick 128 separate.
 
 No converter, test, or private fixture was changed; no runtime trace or playback was performed.
 
@@ -308,6 +308,6 @@ No converter, test, or private fixture was changed; no runtime trace or playback
 - Both inspected v3/v4 first part-information buffers contain `0x04` at offset `+0x11`. `FUN_1000_272A` retains this value in the part-state table.
 - Under the no-switch defaults, `FUN_1000_2144` consequently calls `FUN_1000_25B0(1)`. The helper does not run either SysEx producer branch for part 1, but does call `FUN_1000_08EC` and restores pending delta to 4.
 - The prior `FUN_1000_26A6` call drains the queue, and no queue producer intervenes before the part-1 helper. This supports the interpretation that the part-1 drain is empty and does not advance the absolute tick.
-- This closes the uncertainty about whether the leading helper is reached on the inspected v3/v4 default path. It does not account for all other non-advancing drains or prove the behavior for uninspected fixtures. Continue enumerating state-dependent branch paths and queued events; do not apply a fixed tick offset.
+- This closes the uncertainty about whether the leading helper is reached and whether it advances the tick on the inspected v3/v4 default path. F-138 accounts for the rest of the inspected setup sequence; behavior for uninspected fixtures and runtime execution remain unverified.
 
 No converter, tests, or private fixtures were changed; no runtime trace or playback was performed.
