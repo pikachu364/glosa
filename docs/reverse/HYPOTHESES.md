@@ -281,13 +281,13 @@ No runtime trace, playback, converter changes, tests, or fixture changes were pe
 
 ### H-023 — v3/v4 first coarse-tempo tick accounting resolved statically for inspected fixtures (2026-10-27)
 
-**Status:** The fixture-specific part-state and branch ledger now accounts for v3 tick 92 and v4 tick 116 (F-138). Runtime trace/playback and v2 tick 128 remain unresolved.
+**Status:** The fixture-specific setup ledger accounts statically for v3 tick 92 and v4 tick 116 (F-138); v2 tick 128's placement is also accounted for by the 32-tick scheduler boundary (F-139). Runtime trace/playback remains unverified.
 
 - The visible `0x6F2:0x6F4` accumulator is initialized at startup and advanced by `FUN_1000_08EC` when it emits an eligible event; the complete available export shows no later direct reset (F-133).
 - The reference SysEx track confirms a four-tick sequence through tick 88 (v3) / 112 (v4). The twelve `FUN_1000_1E6C` producer/drain pairs map byte-for-byte to ticks 44–88 / 68–112, and `FUN_1000_265C` maps to tick 40 / 64. The first coarse tempo flush is at tick 92 / 116 (F-134).
 - F-138 corrects the earlier 17 / 31 per-part-loop count to 10 / 16: every decoded fixture state is 4 or 5, so each iteration takes one `FUN_1000_25B0(part)` path. Part 1 emits no message; parts 2–10 / 2–16 advance nine / fifteen times. The resulting static ledger reaches 92 / 116 at the first coarse-tempo event.
 - The default on-disk `0x766` channel-state table contains sixteen `0x0001` words (F-132), and `0x622` is initialized to zero, but runtime values and indirect writes remain unverified.
-- The static per-call ledger is complete for the inspected v3/v4 fixtures; runtime execution and generalization remain unverified. Do not change converter/tests based on a fixed offset. Keep v2 tick 128 separate.
+- F-139 explains v2 tick 128 as the next 32-tick boundary after setup reaches tick 104: the first scheduler byte is `0x20`, which the caller passes as the interval to `FUN_1000_61EC`; `104 mod 32 = 8`, leaving 24 ticks to 128. This is static arithmetic and reference-MIDI correlation, not runtime proof. The exact v2 tempo-value mapping remains separate.
 
 No converter, test, or private fixture was changed; no runtime trace or playback was performed.
 
