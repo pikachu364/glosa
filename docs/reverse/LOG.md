@@ -949,3 +949,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Derived the first part-information buffer offsets from the documented block lengths and parser seek/read sequence: v3 offset 3861 and v4 offset 2585. Both buffer byte `+0x11` values are `0x04` (raw offsets 3878 / 2602), so the loader retains part-1 state 4.
 - With no-switch flags, that state routes the part-1 iteration through `FUN_1000_25B0(1)`. The helper skips both SysEx producer conditions but still calls the queue drain and resets pending delta to 4. The immediately preceding `FUN_1000_26A6` drains the queue, and no producer intervenes before the part loop; the empty-queue interpretation is therefore statically supported.
 - Added FACTS F-137 and HYPOTHESES H-025; refined H-024 and T-015. The remaining v3/v4 per-call queue/event/delta ledger is still open. No converter, tests, or private fixtures changed; no runtime trace or playback performed.
+
+
+## 2026-10-27 — corrected v3/v4 per-part drain counts and completed static tick ledger
+
+- Parsed every v3/v4 per-part information record by following the loader's 0x50-byte reads, variable-length blocks, and nineteen relative seeks per part. v3 states are 4 for parts 1–9 and 5 for part 10; v4 states are 4 for parts 1–9, 5 for part 10, and 4 for parts 11–16.
+- Re-evaluated `FUN_1000_2144` using those actual state bytes and no-switch flags. Each iteration reaches one `FUN_1000_25B0(part)` call, so the per-part drain counts are 10 / 16, not the earlier 17 / 31 recorded in F-125. The `FUN_1000_2554` and `FUN_1000_22A4` alternatives are not reached for these fixture states/default flags.
+- The corrected ledger accounts for reference timing: part 1 calls the helper but emits no SysEx and does not advance tick; parts 2–10 / 2–16 advance to 36 / 60; `FUN_1000_265C` advances to 40 / 64; twelve `FUN_1000_1E6C` messages advance to 88 / 112; the first eligible event in the initial scheduler/tempo flush consumes pending delta 4 and reaches 92 / 116.
+- Updated F-124/F-125, added F-138, revised H-023/H-024 and T-015. This supersedes the prior 17 / 31 and 31 / 45 call-count estimate. No converter, tests, or private fixtures changed; no runtime trace or playback performed.
