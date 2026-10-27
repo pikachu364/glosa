@@ -910,6 +910,20 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 ## 2026-10-27 — SNG2S default part-state table read from the original EXE image
 
 - Retrieved the private `SNG2S.EXE` through the GitHub connector's Base64 encoding and decoded the bytes without treating the executable as UTF-8 text.
-- Confirmed the file size (32,383 bytes), SHA-1 (`0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`), DOS `MZ` signature, and data-image mapping anchored by the previously verified `DS:0x07BC → file offset 0x6C2C` location.
+- Confirmed the file size (32,383 bytes), raw-file SHA-1 (`bf0fbeed636762310356a9e571adf758d5f38bf0`), Git blob SHA (`0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`), DOS `MZ` signature, and data-image mapping anchored by the previously verified `DS:0x07BC → file offset 0x6C2C` location.
 - The 32 bytes at file offset `0x6BD6`, corresponding to `DS:0x0766..0x0785`, decode as sixteen little-endian words all equal to `0x0001`. Recorded as FACTS F-132; updated H-021 and marked H-022 superseded.
 - This is an initialized-image observation, not a runtime trace. The first coarse tempo ticks 92/116 and the separate v2 tick 128 remain unresolved. No converter, test, or private fixture was changed; next work is the fixture-specific queue/event/delta ledger.
+
+
+## 2026-10-27 — absolute-tick accumulator write sites narrowed
+
+- Searched the complete available SNG2S analysis export for `0x6F2` / `0x6F4`. Visible writes are the startup zero-initialization and the delta-add/carry operations inside `FUN_1000_08EC`; no later direct reset/store appears in the export.
+- `FUN_1000_08EC` consumes pending delta only on eligible channel/system-event paths and clears it after adding to the absolute accumulator. This confirms that static helper-call totals are not themselves tick totals.
+- Added FACTS F-133 and HYPOTHESES H-023. The per-call queue/event/delta ledger remains necessary to explain v3 tick 92 and v4 tick 116; v2 tick 128 remains separate. No converter, test, or private fixture changed.
+
+
+## 2026-10-27 — fixed setup SysEx sequence matched to v3/v4 reference ticks
+
+- Parsed the private reference MIDIs directly. v3 track 1 has setup SysEx ticks 4–92 in four-tick steps; v4 has ticks 4–116. The first coarse tempo meta events are at tick 92 / 116 in track 0.
+- Matched all twelve sequential `FUN_1000_1E6C` producer/drain pairs to the reference SysEx payloads byte-for-byte: ticks 44–88 for v3 and 68–112 for v4. Matched `FUN_1000_265C`'s `52 00 10 4B` message to tick 40 / 64.
+- Added FACTS F-134 and refined H-023/T-015. The remaining task is to identify which per-part-loop drain calls do not consume a delta; static counts are 17 / 31, while the observed tick progression requires nine / fifteen per-part advances. No converter, test, or private fixture changed; no runtime trace or playback was performed.

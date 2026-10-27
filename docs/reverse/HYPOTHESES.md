@@ -277,3 +277,16 @@ No runtime trace, playback, converter changes, tests, or fixture changes were pe
 - The earlier text-only retrieval did reject binary data, but the same private executable was subsequently retrieved as Base64 and decoded without text corruption.
 - F-132 establishes the on-disk initial words at `DS:0x0766` through `DS:0x0785`. H-022 is closed as a retrieval blocker; this does not close H-021's runtime-write caveat or resolve the tempo-tick discrepancy.
 
+
+
+### H-023 — exact pre-tempo absolute-tick accounting remains partially unresolved (2026-10-27)
+
+**Status:** Fixed setup sequence mapped against reference bytes; exact per-part no-advance calls remain open (F-133/F-134).
+
+- The visible `0x6F2:0x6F4` accumulator is initialized at startup and advanced by `FUN_1000_08EC` when it emits an eligible event; the complete available export shows no later direct reset (F-133).
+- The reference SysEx track confirms a four-tick sequence through tick 88 (v3) / 112 (v4). The twelve `FUN_1000_1E6C` producer/drain pairs map byte-for-byte to ticks 44–88 / 68–112, and `FUN_1000_265C` maps to tick 40 / 64. The first coarse tempo flush is at tick 92 / 116 (F-134).
+- The remaining gap is which of the 17 v3 / 31 v4 per-part-loop drain calls do not consume a pending delta. The observed track requires nine per-part tick advances in v3 and fifteen in v4; call-by-call queue contents and event eligibility must identify the remaining calls.
+- The default on-disk `0x766` channel-state table contains sixteen `0x0001` words (F-132), and `0x622` is initialized to zero, but runtime values and indirect writes remain unverified.
+- Do not infer a fixed offset or change converter/tests until the per-call ledger is complete. Keep v2 tick 128 separate.
+
+No converter, test, or private fixture was changed; no runtime trace or playback was performed.

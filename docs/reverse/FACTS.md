@@ -1431,7 +1431,7 @@ This narrows the source of the initial timer base but does not show that tempo r
 
 **Status:** Investigation limitation confirmed; no new conclusion about runtime memory contents.
 
-- The private repository identifies the original `SNG2S.EXE` as a 32,383-byte file with SHA-1 `0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`. Its GitHub contents metadata is available, but the connected GitHub retrieval interface rejects the non-UTF-8 executable bytes rather than returning a byte-preserving payload.
+- The private repository identifies the original `SNG2S.EXE` as a 32,383-byte file; `0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0` is its Git blob SHA, not the raw-file SHA-1. Its GitHub contents metadata is available, but the connected GitHub retrieval interface rejects the non-UTF-8 executable bytes rather than returning a byte-preserving payload.
 - Therefore this pass could not parse the DOS MZ header, calculate the load-image/data-segment mapping, or inspect the initialized bytes at DS offsets around `0x766`. No claim is made that those bytes are zero or nonzero.
 - The text Ghidra export remains insufficient to establish the original image's initial value at `0x766`. H-021 remains open; the v3/v4 first tempo ticks 92/116 remain unexplained.
 - Next evidence must be a byte-preserving source for the private executable or a verified local hex/header dump. Keep the executable and any private fixture contents out of the public repository.
@@ -1443,10 +1443,35 @@ This narrows the source of the initial timer base but does not show that tempo r
 
 **Status:** Byte-preserving inspection of the private executable's Base64 payload and static data-image mapping. This is on-disk initialized data, not a runtime trace.
 
-- Retrieved `testdata/ballade/sng2gs/SNG2S.EXE` with `encoding=base64`; decoded size is 32,383 bytes and SHA-1 is `0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`. The DOS header begins with `MZ`; the header-paragraph field is `0x0020`.
+- Retrieved `testdata/ballade/sng2gs/SNG2S.EXE` with `encoding=base64` and decoded 32,383 bytes. The raw-file SHA-1 is `bf0fbeed636762310356a9e571adf758d5f38bf0`; the Git blob SHA is `0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`. The DOS header begins with `MZ`; the header-paragraph field is `0x0020`.
 - The previously established data-segment mapping places `DS:0x07BC` at file offset `0x6C2C`, giving the corresponding file offset for `DS:0x0766` as `0x6BD6` (offset difference `0x6470`). The bytes at `0x6C2C` remain `00 00 05 00 00 00 05 00 03 00 00 00 24 00 5A 00`, matching the earlier initialized-data observation.
 - At file offset `0x6BD6`, the 32 bytes covering `DS:0x0766` through `DS:0x0785` are sixteen little-endian words, each `0x0001`. Thus all sixteen on-disk entries rooted at `0x766 + 2*i` are initialized to 1 in this image.
 - F-129/F-130 show that the `/N`-gated scan is skipped for the documented no-switch reference command, so these initialized values are the relevant static default unless runtime code changes them. The available export has no other visible direct stores, but indirect/aliased writes and actual runtime values are not fully ruled out.
 - This resolves the binary-retrieval and on-disk-initial-value question from F-131/H-022. It does **not** explain the first coarse-tempo ticks 92/116, prove that every initialized entry is consulted for each version, or substitute for runtime tracing. Continue with the fixture-specific queue/event/delta ledger; keep v2 tick 128 separate.
 
 **Sources:** private `testdata/ballade/sng2gs/SNG2S.EXE` Base64 payload (SHA-1 above), the established `DS:0x07BC → file offset 0x6C2C` mapping, and F-125/F-128/F-129/F-130/F-131. Binary initialized-data inspection only; no runtime trace, MIDI regeneration, or playback.
+
+
+## F-133 — visible absolute-tick accumulator writes are confined to initialization and event flush (2026-10-27)
+
+**Status:** Complete-text-export search and control-flow inspection. No runtime trace or playback was performed.
+
+- In the main startup path `FUN_1000_0010`, the 32-bit absolute-tick accumulator `0x6F4:0x6F2` is initialized to zero before the initial header events are flushed (export lines 154–160; instructions at `1000:0333–0336`).
+- A search across the complete available 18,795-line SNG2S Ghidra export finds the visible accumulator update sites in `FUN_1000_08EC`: it adds pending delta `0xF9C:0xF9A` to `0x6F4:0x6F2` for an eligible channel event or an allowed system event, then clears the pending delta. The export contains no other visible direct reset/store to `0x6F2` / `0x6F4` after startup initialization.
+- The channel-event path is gated by the channel-state entry at `0x766 + 2*channelIndex`; the system-event path is gated by `0x622` except for status `0xFF` (F-128/F-132). The original EXE image has sixteen initial channel-state words of `0x0001`, and `0x622` is initialized to zero, but indirect/aliased runtime writes are not ruled out.
+- Therefore the first coarse-tempo tick must be explained by the actual queue bytes, event eligibility, and pending delta consumed by each drain—not by equating the static 31/45 setup-call totals with tick advances. Reference ticks 92/116 imply a pre-flush tick of 88/112 only under the stated pending-delta-4 condition; these values are constraints, not observations. v2 tick 128 remains separate.
+
+**Sources:** private `sng2gs解析データ.txt`, `FUN_1000_0010` and `FUN_1000_08EC` decompilation/instructions; F-126/F-128/F-132. Static export analysis only.
+
+
+## F-134 — reference SysEx tick sequence maps the fixed v3/v4 setup producers (2026-10-27)
+
+**Status:** Byte-level parsing of the private reference MIDIs plus static producer-call/template comparison. No runtime trace or playback was performed.
+
+- Parsed reference MIDI track 1 directly from `START__0.MID` and `BOURREE0.MID`. Before the first coarse-tempo event, the v3 SysEx track has distinct event ticks every four ticks from 4 through 88; v4 has the same four-tick progression from 4 through 112. Track 0 places the first coarse-tempo meta event at tick 92 for v3 and tick 116 for v4.
+- The twelve sequential producer/drain pairs in `FUN_1000_1E6C` match the reference SysEx payloads byte-for-byte and in order: six template-`0x40` messages, three template-`0x10` messages, and three template-`0x52` messages. They occupy ticks **44–88** in v3 and **68–112** in v4 (12 messages, one four-tick step each). This maps the fixed sequence to reference output rather than treating its twelve calls as an unexplained count.
+- The `FUN_1000_265C` message `F0 41 10 16 12 52 00 10 4B ... F7` matches the reference event at tick **40** in v3 and tick **64** in v4. The first coarse-tempo flush then places the tempo event at tick 92 / 116 alongside the known setup SysEx messages at that same tick (F-101/F-127).
+- Combining those observed tick positions with F-133's accumulator semantics yields a bounded accounting constraint: after the initial startup drain, the per-part loop must account for nine tick advances in v3 (ticks 4–36) and fifteen in v4 (ticks 4–60); the `FUN_1000_265C` message adds the next step, and `FUN_1000_1E6C` supplies twelve further steps. The first tempo flush consumes the pending four-tick delta to reach 92 / 116.
+- The static per-part-loop counts remain 17 drains for v3 and 31 for v4 (F-125), so the exact calls that do not consume a delta are still to be identified. The tick sequence constrains the answer but does not identify every call's queue contents. Do not generalize this accounting to v2 tick 128.
+
+**Sources:** private reference `testdata/ballade/v3/sng2gs/START__0.MID` (raw-file SHA-1 `ca66f59b236abb31e274e0baf95a281e7c6c9460`; Git blob SHA `86d12ef849f2f808a1742ef56fc8e10fc11c4b84`), v4 `BOURREE0.MID` (raw-file SHA-1 `7d895565396e4a5f0aaa3b95fbcd9a9b2c7bb53d`; Git blob SHA `8bd4814a57d0b4585388be18175b99d97969d5d5`), SNG2S `FUN_1000_1E6C`, `FUN_1000_265C`, `FUN_1000_33D4`, `FUN_1000_3B68`, and F-101/F-125/F-126/F-127/F-133. Static code and reference-byte comparison only.
