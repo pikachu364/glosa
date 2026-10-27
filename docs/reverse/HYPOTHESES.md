@@ -261,19 +261,19 @@ Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute t
 
 ### H-021 — default-path contents of the 0x766 part-state table (2026-10-27)
 
-**Status:** Open. Direct stores are localized in the available export, but the table's default contents are not established.
+**Status:** On-disk initial values resolved; runtime values and any indirect/aliased writes remain unverified (F-132).
 
-- The available SNG2S export shows direct writes to 0x766 + 2*i only in FUN_1000_1668, which is gated by 0x628 != 0 and therefore by /N (F-129/F-130).
-- On the no-switch reference path, the scan is expected to be skipped, while FUN_1000_08EC still reads the table to gate part-associated output. The table's effective state must therefore come from the executable/data-segment initialization state or from a write mechanism not captured by the direct-reference search.
-- Do not assume that skipped scan means every part is active, inactive, or zero. Do not use this state to explain tempo tick 92/116 until the initial values and relevant writes are demonstrated.
-- Next evidence: inspect the original EXE's DOS MZ load layout and data-segment initialization for offsets covering 0x766; if that cannot be established from the binary/export, mark runtime state as unresolved rather than inferring it from the observed MIDI.
+- The original EXE initialized image contains sixteen little-endian words of `0x0001` at `DS:0x0766` through `DS:0x0785` (file offset `0x6BD6` through `0x6BF5`), one entry per `0x766 + 2*i` slot (F-132).
+- The available SNG2S export shows direct writes to this table only in `FUN_1000_1668`, gated by `0x628 != 0` and therefore by `/N` (F-129/F-130). The confirmed no-switch reference commands are expected to skip that scan.
+- `FUN_1000_08EC` still reads the table to gate part-associated output. The initialized value 1 is therefore the static default for each slot on the inspected image; this does not prove the value remains unchanged at runtime or that every slot is relevant for every SNG version.
+- The initialized-data question is resolved, but this result alone does not explain v3/v4 first coarse-tempo ticks 92/116 or v2 tick 128. Continue with the fixture-specific queue/event/delta ledger; do not infer a tick correction from the table values.
 
 No runtime trace, playback, converter changes, tests, or fixture changes were performed.
 
-### H-022 — text-only retrieval cannot establish SNG2S initialized data at DS:0x766 (2026-10-27)
+### H-022 — text-only retrieval limitation for SNG2S initialized data (2026-10-27)
 
-**Status:** Open; evidence acquisition blocked, not a runtime-state conclusion.
+**Status:** Superseded by byte-preserving inspection in F-132.
 
-- The original executable's file metadata and hash are known, but the available GitHub connector rejects its binary bytes as non-UTF-8. The MZ header and load image have therefore not been inspected in this pass.
-- This does not support any assumption about the initial contents of the part-state table. Keep H-021 unresolved and do not infer zero, all-active, or all-inactive state.
-- Required next input: byte-preserving access to the private executable, or a verified local dump of the MZ header and initialized image covering the data-segment mapping and DS offsets around 0x766. Only then determine whether the initial bytes are present in the file image or supplied by another initialization path.
+- The earlier text-only retrieval did reject binary data, but the same private executable was subsequently retrieved as Base64 and decoded without text corruption.
+- F-132 establishes the on-disk initial words at `DS:0x0766` through `DS:0x0785`. H-022 is closed as a retrieval blocker; this does not close H-021's runtime-write caveat or resolve the tempo-tick discrepancy.
+

@@ -1437,3 +1437,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - Next evidence must be a byte-preserving source for the private executable or a verified local hex/header dump. Keep the executable and any private fixture contents out of the public repository.
 
 **Sources:** private `testdata/ballade/sng2gs/SNG2S.EXE` repository metadata and the available private Ghidra export. Retrieval limitation only; no binary-byte analysis, runtime trace, or playback was performed.
+
+
+## F-132 — initialized DS:0x766 part-state entries are 1 in the original EXE image (2026-10-27)
+
+**Status:** Byte-preserving inspection of the private executable's Base64 payload and static data-image mapping. This is on-disk initialized data, not a runtime trace.
+
+- Retrieved `testdata/ballade/sng2gs/SNG2S.EXE` with `encoding=base64`; decoded size is 32,383 bytes and SHA-1 is `0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`. The DOS header begins with `MZ`; the header-paragraph field is `0x0020`.
+- The previously established data-segment mapping places `DS:0x07BC` at file offset `0x6C2C`, giving the corresponding file offset for `DS:0x0766` as `0x6BD6` (offset difference `0x6470`). The bytes at `0x6C2C` remain `00 00 05 00 00 00 05 00 03 00 00 00 24 00 5A 00`, matching the earlier initialized-data observation.
+- At file offset `0x6BD6`, the 32 bytes covering `DS:0x0766` through `DS:0x0785` are sixteen little-endian words, each `0x0001`. Thus all sixteen on-disk entries rooted at `0x766 + 2*i` are initialized to 1 in this image.
+- F-129/F-130 show that the `/N`-gated scan is skipped for the documented no-switch reference command, so these initialized values are the relevant static default unless runtime code changes them. The available export has no other visible direct stores, but indirect/aliased writes and actual runtime values are not fully ruled out.
+- This resolves the binary-retrieval and on-disk-initial-value question from F-131/H-022. It does **not** explain the first coarse-tempo ticks 92/116, prove that every initialized entry is consulted for each version, or substitute for runtime tracing. Continue with the fixture-specific queue/event/delta ledger; keep v2 tick 128 separate.
+
+**Sources:** private `testdata/ballade/sng2gs/SNG2S.EXE` Base64 payload (SHA-1 above), the established `DS:0x07BC → file offset 0x6C2C` mapping, and F-125/F-128/F-129/F-130/F-131. Binary initialized-data inspection only; no runtime trace, MIDI regeneration, or playback.

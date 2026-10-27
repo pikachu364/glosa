@@ -905,3 +905,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Consequently, the DOS MZ header and initialized data image were not inspected in this pass. No initial value for DS:0x766 is inferred.
 - Added FACTS F-131 and HYPOTHESES H-022; changed T-015 to request a byte-preserving source or verified local dump before resuming the default-path state analysis.
 - No converter, tests, or private fixtures changed. No runtime trace or playback was performed.
+
+
+## 2026-10-27 — SNG2S default part-state table read from the original EXE image
+
+- Retrieved the private `SNG2S.EXE` through the GitHub connector's Base64 encoding and decoded the bytes without treating the executable as UTF-8 text.
+- Confirmed the file size (32,383 bytes), SHA-1 (`0e7a9d20f0d45eaf3f4c11958a0c74b76ead9ef0`), DOS `MZ` signature, and data-image mapping anchored by the previously verified `DS:0x07BC → file offset 0x6C2C` location.
+- The 32 bytes at file offset `0x6BD6`, corresponding to `DS:0x0766..0x0785`, decode as sixteen little-endian words all equal to `0x0001`. Recorded as FACTS F-132; updated H-021 and marked H-022 superseded.
+- This is an initialized-image observation, not a runtime trace. The first coarse tempo ticks 92/116 and the separate v2 tick 128 remain unresolved. No converter, test, or private fixture was changed; next work is the fixture-specific queue/event/delta ledger.
