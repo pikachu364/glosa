@@ -941,3 +941,19 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Compared the first setup SysEx events against the static producer templates in `FUN_1000_25B0`. v3 ticks 4–36 match part arguments 2–10 using template `0x10`; v4 ticks 4–36 match parts 2–10 and ticks 40–60 match parts 11–16 using template `0x52`.
 - Both sequences imply a leading part-1 helper call that emits no setup record, consistent with a no-tick drain if the queue is empty. This is a static/template match, not runtime confirmation.
 - Added F-136/H-025 and refined T-015 to separate static call-site counts from actual tick advances. Remaining conditional paths and queue-entry state are still unresolved. No converter, tests, or private fixtures changed.
+
+
+## 2026-10-27 — part-1 no-output drain confirmed from fixture state byte
+
+- Re-read `FUN_1000_272A`, `FUN_1000_2144`, `FUN_1000_25B0`, `FUN_1000_26A6`, and `FUN_1000_08EC` in the private SNG2S analysis export.
+- Derived the first part-information buffer offsets from the documented block lengths and parser seek/read sequence: v3 offset 3861 and v4 offset 2585. Both buffer byte `+0x11` values are `0x04` (raw offsets 3878 / 2602), so the loader retains part-1 state 4.
+- With no-switch flags, that state routes the part-1 iteration through `FUN_1000_25B0(1)`. The helper skips both SysEx producer conditions but still calls the queue drain and resets pending delta to 4. The immediately preceding `FUN_1000_26A6` drains the queue, and no producer intervenes before the part loop; the empty-queue interpretation is therefore statically supported.
+- Added FACTS F-137 and HYPOTHESES H-025; refined H-024 and T-015. The remaining v3/v4 per-call queue/event/delta ledger is still open. No converter, tests, or private fixtures changed; no runtime trace or playback performed.
+
+
+## 2026-10-27 — corrected v3/v4 per-part drain counts and completed static tick ledger
+
+- Parsed every v3/v4 per-part information record by following the loader's 0x50-byte reads, variable-length blocks, and nineteen relative seeks per part. v3 states are 4 for parts 1–9 and 5 for part 10; v4 states are 4 for parts 1–9, 5 for part 10, and 4 for parts 11–16.
+- Re-evaluated `FUN_1000_2144` using those actual state bytes and no-switch flags. Each iteration reaches one `FUN_1000_25B0(part)` call, so the per-part drain counts are 10 / 16, not the earlier 17 / 31 recorded in F-125. The `FUN_1000_2554` and `FUN_1000_22A4` alternatives are not reached for these fixture states/default flags.
+- The corrected ledger accounts for reference timing: part 1 calls the helper but emits no SysEx and does not advance tick; parts 2–10 / 2–16 advance to 36 / 60; `FUN_1000_265C` advances to 40 / 64; twelve `FUN_1000_1E6C` messages advance to 88 / 112; the first eligible event in the initial scheduler/tempo flush consumes pending delta 4 and reaches 92 / 116.
+- Updated F-124/F-125, added F-138, revised H-023/H-024 and T-015. This supersedes the prior 17 / 31 and 31 / 45 call-count estimate. No converter, tests, or private fixtures changed; no runtime trace or playback performed.

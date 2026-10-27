@@ -252,12 +252,12 @@ Still unresolved: why the coarse 869000 µs/qn event is serialized at absolute t
 
 **Status:** Constrained by static call order and queue-parser behavior; exact event-by-event tick ledger remains unverified.
 
-- The v3/v4 default-path setup totals of 31 / 45 calls to `FUN_1000_08EC` are confirmed static call counts (F-125), not effective tick advances. Queue producers can append templates or messages without flushing; one queue-parser invocation can emit multiple events, and pending delta is consumed only by an eligible emitted event (F-126/F-127).
+- The earlier v3/v4 setup totals of 31 / 45 calls were corrected by F-138 to 24 / 30 after enumerating fixture-specific state bytes and branch conditions. Even the corrected drain-call totals are not effective tick advances: one invocation can emit multiple events or return on an empty queue (F-126/F-127).
 - The first scheduler/tempo queue is flushed after `FUN_1000_33D4` and before the next grid-boundary delta is calculated. Therefore that later boundary calculation cannot itself explain the already-flushed first coarse-tempo event.
 - If the first eligible event in that flush consumes the pending delta of 4, the observed first coarse-tempo ticks constrain the absolute tick before that flush to 88 for v3 and 112 for v4. This is a conditional arithmetic constraint, not an observed runtime state.
-- No supported evidence currently identifies which individual setup drains contribute to the absolute tick at that point. Do not treat the 31 / 45 call totals, or the 88 / 112 conditional values, as an implementation rule.
+- F-138 now supplies a fixture-specific static tick ledger for v3/v4: the inspected setup events reach tick 88 / 112 before the first scheduler/tempo flush consumes pending delta 4 and reaches 92 / 116. This is not runtime evidence and does not resolve v2 tick 128.
 
-**Next evidence:** produce a fixture-specific event ledger for v3 and v4: queue bytes before each relevant drain, events emitted, whether pending delta is consumed, and the resulting `0x6F2:0x6F4` absolute tick. Keep v2 tick 128 as a separate unresolved case.
+**Remaining evidence boundary:** runtime queue contents and actual execution remain unobserved, and the static result is established only for the inspected v3/v4 fixtures. Keep v2 tick 128 as a separate unresolved case.
 
 ### H-021 — default-path contents of the 0x766 part-state table (2026-10-27)
 
@@ -279,23 +279,35 @@ No runtime trace, playback, converter changes, tests, or fixture changes were pe
 
 
 
-### H-023 — exact pre-tempo absolute-tick accounting remains partially unresolved (2026-10-27)
+### H-023 — v3/v4 first coarse-tempo tick accounting resolved statically for inspected fixtures (2026-10-27)
 
-**Status:** Fixed setup sequence mapped against reference bytes; exact per-part no-advance calls remain open (F-133/F-134).
+**Status:** The fixture-specific part-state and branch ledger now accounts for v3 tick 92 and v4 tick 116 (F-138). Runtime trace/playback and v2 tick 128 remain unresolved.
 
 - The visible `0x6F2:0x6F4` accumulator is initialized at startup and advanced by `FUN_1000_08EC` when it emits an eligible event; the complete available export shows no later direct reset (F-133).
 - The reference SysEx track confirms a four-tick sequence through tick 88 (v3) / 112 (v4). The twelve `FUN_1000_1E6C` producer/drain pairs map byte-for-byte to ticks 44–88 / 68–112, and `FUN_1000_265C` maps to tick 40 / 64. The first coarse tempo flush is at tick 92 / 116 (F-134).
-- The remaining gap is which of the 17 v3 / 31 v4 per-part-loop drain calls do not consume a pending delta. The observed track requires nine per-part tick advances in v3 and fifteen in v4; call-by-call queue contents and event eligibility must identify the remaining calls.
+- F-138 corrects the earlier 17 / 31 per-part-loop count to 10 / 16: every decoded fixture state is 4 or 5, so each iteration takes one `FUN_1000_25B0(part)` path. Part 1 emits no message; parts 2–10 / 2–16 advance nine / fifteen times. The resulting static ledger reaches 92 / 116 at the first coarse-tempo event.
 - The default on-disk `0x766` channel-state table contains sixteen `0x0001` words (F-132), and `0x622` is initialized to zero, but runtime values and indirect writes remain unverified.
-- Do not infer a fixed offset or change converter/tests until the per-call ledger is complete. Keep v2 tick 128 separate.
+- The static per-call ledger is complete for the inspected v3/v4 fixtures; runtime execution and generalization remain unverified. Do not change converter/tests based on a fixed offset. Keep v2 tick 128 separate.
 
 No converter, test, or private fixture was changed; no runtime trace or playback was performed.
 
 
-### H-024 — empty helper drains account for some, but not all, missing tick advances (2026-10-27)
+### H-024 — empty helper drains and state-gated alternatives (2026-10-27)
 
-**Status:** Open; one structurally empty producer case is identified (F-135).
+**Status:** The part-1 empty drain is confirmed for the inspected v3/v4 fixtures (F-137/F-138); alternative gates remain relevant to other states/options, not to this fixture path.
 
-- `FUN_1000_25B0(1)` calls the queue drain without producing a setup record. If the queue is empty at entry, this call should not advance `0x6F2:0x6F4`; the reference-specific reachability and entry queue state still need proof.
-- Other calls can also skip their producer/drain path because of branch gates, including `FUN_1000_2554` when argument 2 is even or `0x6FC != 0`, and `FUN_1000_23C0` when `0x6F8 != 0`. These are conditional path skips, not yet counted as reference MIDI tick advances.
-- Do not subtract a guessed fixed number from the 17 / 31 static per-part-loop drain-call counts. Build the fixture-specific ledger from state-byte values, branch conditions, queued bytes, and the delta consumed by each actual drain. v3/v4 reference tick constraints and v2 tick 128 remain separate.
+- `FUN_1000_25B0(1)` is reached because part 1's source byte is `0x04`; it skips both producer branches, drains the empty queue after `FUN_1000_26A6`, and restores pending delta 4 (F-137/F-138).
+- `FUN_1000_2554` can be gated by its second argument and `0x6FC`; `FUN_1000_23C0` can be gated by `0x6F8`. These alternative paths do not account for additional drains in the inspected v3/v4 part loop because the fixture states are 4/5 and the default flags are zero.
+- The corrected per-part loop counts are 10 / 16, not 17 / 31. The complete inspected v3/v4 tick ledger is in F-138. v2 tick 128 remains separate.
+
+
+### H-025 — leading part-1 no-output drain is statically confirmed (2026-10-27)
+
+**Status:** The part-1 path and the inspected v3/v4 tick ledger are accounted for statically in F-137/F-138; runtime execution remains unobserved.
+
+- Both inspected v3/v4 first part-information buffers contain `0x04` at offset `+0x11`. `FUN_1000_272A` retains this value in the part-state table.
+- Under the no-switch defaults, `FUN_1000_2144` consequently calls `FUN_1000_25B0(1)`. The helper does not run either SysEx producer branch for part 1, but does call `FUN_1000_08EC` and restores pending delta to 4.
+- The prior `FUN_1000_26A6` call drains the queue, and no queue producer intervenes before the part-1 helper. This supports the interpretation that the part-1 drain is empty and does not advance the absolute tick.
+- This closes the uncertainty about whether the leading helper is reached and whether it advances the tick on the inspected v3/v4 default path. F-138 accounts for the rest of the inspected setup sequence; behavior for uninspected fixtures and runtime execution remain unverified.
+
+No converter, tests, or private fixtures were changed; no runtime trace or playback was performed.
