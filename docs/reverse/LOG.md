@@ -964,3 +964,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Rechecked the v2 grid/scheduler bytes at raw offset 193: leading bytes are `20 01 06 04...`. Although the first word is little-endian `0x0120` (288), `FUN_1000_0010` passes the first byte `0x20` as `uVar11` to `FUN_1000_61EC`; the interval for this boundary calculation is therefore 32 ticks.
 - The caller computes the next-boundary delta as interval minus current tick modulo interval (or one full interval when already aligned). With the inspected v2 setup tick at 104, `104 mod 32 = 8`; delta 24 reaches tick 128, matching the saved reference MIDI's first changed-tempo event.
 - Confirmed the versioned setup call chain: v2 skips `FUN_1000_26A6`, executes `FUN_1000_2144`, then `FUN_1000_1C70` → `FUN_1000_1CE4`; v3/v4 use the distinct `FUN_1000_1E6C` path. Added F-139, refined H-023 and T-015. Static evidence only; no runtime trace/playback, converter changes, tests, or private fixture changes.
+
+
+## 2026-10-27 — v2 base-tempo byte confirmed; designated SNG2GS source aligned
+
+- After PR #30 merged, rechecked the v2 tempo finding against the preferred private analysis source `testdata/ballade/sng2gs/sng2gs_mimpiv4解析java使用.txt`. The file contains the static-export functions `FUN_1000_272a` and `FUN_1000_3406` used for the base-tempo source and coarse-tempo calculation.
+- Raw `SHIZUME0.SNG` inspection confirms byte `0x79 = 0x3C` (60); `0x78` and `0x7A` are zero. For tempo record value 64, the static formula gives 60 BPM and then 1,000,000 µs/qn, matching the saved reference MIDI tempo at tick 128.
+- Updated F-140's source citation and marked the corresponding T-015 byte-verification task complete. The tick-128 scheduler-boundary explanation remains separate (F-139).
+- Evidence boundary: byte inspection and static control-flow/arithmetic only; no runtime trace/playback and no generalization to all v2 files. No converter, test, or private fixture changes.
