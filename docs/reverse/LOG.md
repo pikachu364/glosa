@@ -979,3 +979,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - After PR #31 merged, removed stale statements in F-139/T-015 that still said the v2 base-tempo byte or fixture-specific tempo calculation was unverified. F-140 records `SHIZUME0.SNG[0x79] = 0x3C` and the static calculation to 1,000,000 µs/qn.
 - Preserved the evidence boundary: tick 128 placement is a static scheduler derivation; the value calculation is raw-byte inspection plus static analysis for this fixture only. Playback behavior is not established.
 - No converter code, tests, or private fixtures changed.
+
+
+## 2026-10-28 — later v3/v4 coarse-tempo record/tick comparison
+
+- Read the v3/v4 raw SNG tempo blocks from the offsets established in F-120 and compared cumulative nonzero record steps/values against the saved reference MIDI tempo events.
+- Added F-141 with the fixture-specific mapping: v3 cumulative positions 384/432/480/516/576 correspond to ticks 383/623/671/707/767; v4 positions 252/288/324/360/384 correspond to ticks 407/443/479/515/551.
+- The mappings show changing offsets rather than one global step - 1 rule. Updated T-015 to trace the grid countdown, tempo countdown, pending delta, and queue drain together before any converter implementation.
+- Static raw-byte/reference-MIDI comparison only. No runtime trace, playback, converter code, tests, or private fixtures changed.
