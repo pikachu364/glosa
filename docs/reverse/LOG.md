@@ -987,3 +987,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Added F-141 with the fixture-specific mapping: v3 cumulative positions 384/432/480/516/576 correspond to ticks 383/623/671/707/767; v4 positions 252/288/324/360/384 correspond to ticks 407/443/479/515/551.
 - The mappings show changing offsets rather than one global step - 1 rule. Updated T-015 to trace the grid countdown, tempo countdown, pending delta, and queue drain together before any converter implementation.
 - Static raw-byte/reference-MIDI comparison only. No runtime trace, playback, converter code, tests, or private fixtures changed.
+
+
+## 2026-10-28 — correct v3 later-tempo event ledger
+
+- Re-read the v3/v4 private raw SNG tempo blocks and parsed the saved reference MIDI tempo events directly after reviewing F-141.
+- Found that F-141 had omitted the v3 reference event at tick 575 (983000 µs/qn), corresponding to raw value 33 at cumulative step 432. That omission shifted the later value-to-event matching. Corrected F-141 to include the observed v3 sequence: tick 92/value 89, 383/value 36, 575/value 33, 623/value 27, 671/value 25, 707/value 22, and 767/value 44.
+- Recomputed the fixture-specific raw cumulative position → reference tick offsets. v3 later offsets are −1, +143, +143, +155, +131, −1 for cumulative positions 384, 432, 480, 516, 576, 768. The v4 mapping remains 252/288/324/360/384 → 407/443/479/515/551.
+- Kept exact-tempo events (v3 tick 192 = 361445; v4 tick 192 = 260869 µs/qn) separate from coarse-tempo records. The underlying countdown/grid/queue interaction is still unresolved; no converter or test changes were made.
+- Evidence is raw-byte and saved-MIDI parsing plus static analysis only. No runtime trace, MIDI regeneration, or playback.
