@@ -972,3 +972,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Raw `SHIZUME0.SNG` inspection confirms byte `0x79 = 0x3C` (60); `0x78` and `0x7A` are zero. For tempo record value 64, the static formula gives 60 BPM and then 1,000,000 µs/qn, matching the saved reference MIDI tempo at tick 128.
 - Updated F-140's source citation and marked the corresponding T-015 byte-verification task complete. The tick-128 scheduler-boundary explanation remains separate (F-139).
 - Evidence boundary: byte inspection and static control-flow/arithmetic only; no runtime trace/playback and no generalization to all v2 files. No converter, test, or private fixture changes.
+
+
+## 2026-10-28 — reconcile v2 tempo wording after F-140 verification
+
+- After PR #31 merged, removed stale statements in F-139/T-015 that still said the v2 base-tempo byte or fixture-specific tempo calculation was unverified. F-140 records `SHIZUME0.SNG[0x79] = 0x3C` and the static calculation to 1,000,000 µs/qn.
+- Preserved the evidence boundary: tick 128 placement is a static scheduler derivation; the value calculation is raw-byte inspection plus static analysis for this fixture only. Playback behavior is not established.
+- No converter code, tests, or private fixtures changed.
