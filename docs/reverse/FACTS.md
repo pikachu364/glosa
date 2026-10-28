@@ -1559,11 +1559,12 @@ This narrows the source of the initial timer base but does not show that tempo r
 
 **状態:** private raw SNG の tempo block と保存済み SNG2S reference MIDI を直接比較。元 EXE の runtime trace / playback ではない。
 
-- F-120 で確定した tempo block 開始位置から 4-byte record（step, value）を読み、step != 0 の record step を累積した。v3 START__0.SNG の先頭は (192,89), (192,36), (48,33), (48,27), (36,25), (60,22)。累積位置はそれぞれ 192, 384, 432, 480, 516, 576。
-- v3 reference START__0.MID の対応する coarse tempo 値の変更は tick 383 = 895000、623 = 1200000、671 = 1304000、707 = 1463000、767 = 731000。値は raw record value に対応するが、tick 対応は単純な累積 step ではない。特に累積 384 → tick 383 は −1、累積 432/480/516/576 → tick 623/671/707/767 は +191。
-- v4 BOURREE0.SNG の初期 records は (24,123),(24,123),(36,123),(36,123),(36,123),(12,123),(24,123),(24,123),(36,124),(36,125),(36,126),(36,127),(24,128)。累積位置 252/288/324/360/384 で values 124/125/126/127/128 に変わる。reference BOURREE0.MID の対応 coarse tempo events は tick 407/443/479/515/551 で、それぞれ raw cumulative position より +155 ticks。
-- この比較は、後続 tempo value changes の tick mapping が fixture 内でも一定の単純な step - 1 ではないことを示す。v3 の cumulative 384 と 432 の間で対応差が 192 ticks 変わり、v4 の最初の値変更群は +155 ticks。grid/scheduler stream との相互作用または scheduler phase が必要な説明であり、現時点では原因を特定していない。
+- F-120 で確定した tempo block 開始位置から 4-byte record（step, value）を読み、step != 0 の record step を累積した。v3 START__0.SNG の先頭 records は (192,89), (192,36), (48,33), (48,27), (36,25), (60,22), (192,44)。累積位置は 192, 384, 432, 480, 516, 576, 768。
+- v3 reference START__0.MID の coarse-tempo changes は tick 92 = 361000, 383 = 895000, 575 = 983000, 623 = 1200000, 671 = 1304000, 707 = 1463000, 767 = 731000 µs/qn。これらの値は raw record values 89, 36, 33, 27, 25, 22, 44 にそれぞれ対応する。tick 92 の初回 event は fixture-specific setup path によるため、累積 position 192 と同じ単純な mapping とみなさない。
+- v3 の後続 records では cumulative position → reference tick の差が一定ではない：384 → 383 (−1)、432 → 575 (+143)、480 → 623 (+143)、516 → 671 (+155)、576 → 707 (+131)、768 → 767 (−1)。前回の F-141 は tick 575 = 983000 のイベントを落とし、後続イベントの対応をずらしていたため、この ledger を訂正した。
+- v4 BOURREE0.SNG の初期 records は (24,123),(24,123),(36,123),(36,123),(36,123),(12,123),(24,123),(24,123),(36,124),(36,125),(36,126),(36,127),(24,128)。累積位置 252/288/324/360/384 で values 124/125/126/127/128 に変わる。reference BOURREE0.MID の対応 coarse-tempo events は tick 407/443/479/515/551 = 258000/256000/254000/252000/250000 µs/qn。それぞれ raw cumulative position より +155/+155/+155/+155/+167 ticks。
+- v3/v4 の reference MIDI には exact-tempo path に由来する別イベントもある（例：v3 tick 192 = 361445、v4 tick 192 = 260869 µs/qn）。これらを coarse-tempo record ledger に混ぜない。
 - FUN_1000_3406 の静的命令列では tempo countdown が step - 1 に設定され、通常呼び出しごとに countdown が減算される。通常呼び出し冒頭の pending delta increment、grid countdown (0x10A4) 処理、および queue drain は同じ関数／呼び出し列内で別段階にある（F-106/F-108/F-111/F-112）。この call order は候補を絞るが、上記 tick offsets の原因を単独で証明しない。
-- v3/v4 の初回 coarse events（tick 92 / 116）と v2 tick 128 は別の初期化／setup経路を持つため、この後続 event ledger と混ぜない。固定 offset や全体補正を実装しない。
+- v3/v4 の初回 coarse events（tick 92 / 116）と v2 tick 128 は別の初期化／setup 経路を持つため、この後続 event ledger と混ぜない。固定 offset や全体補正を実装しない。
 
 **Sources:** private testdata/ballade/v3/START__0.SNG, v3/sng2gs/START__0.MID, v4/BOURREE0.SNG, v4/sng2gs/BOURREE0.MID; private sng2s解析データ.txt, FUN_1000_3406; F-104/F-105/F-106/F-108/F-111/F-112/F-120. Raw-byte / saved-MIDI comparison and static analysis only; no runtime trace, MIDI regeneration, or playback.
