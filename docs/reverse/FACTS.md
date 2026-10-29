@@ -1568,3 +1568,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - v3/v4 の初回 coarse events（tick 92 / 116）と v2 tick 128 は別の初期化／setup 経路を持つため、この後続 event ledger と混ぜない。固定 offset や全体補正を実装しない。
 
 **Sources:** private testdata/ballade/v3/START__0.SNG, v3/sng2gs/START__0.MID, v4/BOURREE0.SNG, v4/sng2gs/BOURREE0.MID; private sng2s解析データ.txt, FUN_1000_3406; F-104/F-105/F-106/F-108/F-111/F-112/F-120. Raw-byte / saved-MIDI comparison and static analysis only; no runtime trace, MIDI regeneration, or playback.
+
+## F-142 — grid-stream termination can return before tempo countdown handling (2026-10-29)
+
+**Status:** Static control-flow inspection of the complete available SNG2S analysis export. This establishes branch order, not the cause of the later reference-MIDI tick offsets; no runtime trace or playback was performed.
+
+- In `FUN_1000_3406`, the normal-call path first increments pending delta `0xF9A:0xF9C` and processes timer entries. It then handles the grid/scheduler countdown `0x10A4` and, when that countdown reaches zero, reads the record through `0x21DC`, advances the grid cursor `0x10A6`, and updates grid state.
+- The grid branch can return at `LAB_1000_3481` when the next grid record has the `-1` sentinel, or when the grid-record counter `0x10A0` exceeds `0x1C22`. Both returns occur before the subsequent tempo-stream block begins at the `0x10AA` check. Therefore, on a call that takes either return, the tempo countdown is not processed by that invocation.
+- If the grid branch does not return, the same invocation then processes the independent tempo countdown `0x10AA`: it decrements a nonzero countdown, or reads the next 4-byte `(step,value)` record through `0x21E0` when the countdown is zero. Later event-stream and queue-related processing follows.
+- This adds a precise control-flow constraint to F-112/F-141: the streams use separate cursors/countdowns, but the grid branch is structurally earlier and can gate whether the tempo branch runs on a given call. The static export alone does **not** establish that this return path causes the observed v3/v4 tick offsets, nor does it justify a fixed correction. The exact per-call state sequence and reference-event mapping remain unresolved.
+- Evidence is limited to the checked-in static analysis export and comparison ledger in F-141. No raw fixture, converter, test, or saved MIDI was changed; no runtime trace, MIDI regeneration, or playback was performed.
+
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_3406` decompilation/instructions at `1000:3416–3481` and following `1000:34FD–3586`; FACTS F-106/F-111/F-112/F-141. Static control-flow analysis only.

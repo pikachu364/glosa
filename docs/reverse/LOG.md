@@ -996,3 +996,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Recomputed the fixture-specific raw cumulative position → reference tick offsets. v3 later offsets are −1, +143, +143, +155, +131, −1 for cumulative positions 384, 432, 480, 516, 576, 768. The v4 mapping remains 252/288/324/360/384 → 407/443/479/515/551.
 - Kept exact-tempo events (v3 tick 192 = 361445; v4 tick 192 = 260869 µs/qn) separate from coarse-tempo records. The underlying countdown/grid/queue interaction is still unresolved; no converter or test changes were made.
 - Evidence is raw-byte and saved-MIDI parsing plus static analysis only. No runtime trace, MIDI regeneration, or playback.
+
+## 2026-10-29 — trace grid early-return order before tempo countdown
+
+- Re-read the complete SNG2S static export for `FUN_1000_3406` after PR #34 merged.
+- Confirmed the grid/scheduler branch precedes the tempo countdown branch. The grid path can return on its `-1` record sentinel or record-count limit before the `0x10AA` tempo countdown is handled on that invocation.
+- Added FACTS F-142 and refined T-015 to record this as a control-flow constraint, not as a proven cause of the later v3/v4 tempo-event offsets.
+- The exact per-call state and queue-drain sequence remains unresolved. No converter, tests, raw fixtures, or reference MIDI files changed; no runtime trace, MIDI regeneration, or playback was performed.
