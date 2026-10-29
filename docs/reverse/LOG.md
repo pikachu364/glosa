@@ -1003,3 +1003,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Confirmed the grid/scheduler branch precedes the tempo countdown branch. The grid path can return on its `-1` record sentinel or record-count limit before the `0x10AA` tempo countdown is handled on that invocation.
 - Added FACTS F-142 and refined T-015 to record this as a control-flow constraint, not as a proven cause of the later v3/v4 tempo-event offsets.
 - The exact per-call state and queue-drain sequence remains unresolved. No converter, tests, raw fixtures, or reference MIDI files changed; no runtime trace, MIDI regeneration, or playback was performed.
+
+
+## 2026-10-30 — bound the grid early-return hypothesis for later tempo offsets
+
+- Followed both early-return branches in `FUN_1000_3406` beyond the branch-order finding in F-142.
+- The `-1` grid sentinel return leaves both the cursor and zero grid countdown unchanged; subsequent invocations revisit the same sentinel and return before tempo-countdown processing. Since the saved v3/v4 reference MIDIs contain later coarse-tempo events, this terminal path cannot by itself explain a selective delay within the observed later-event sequence.
+- Recorded this negative result as F-143 and updated T-015. The record-count-limit return occurs after cursor/countdown updates, but there is not yet fixture-specific evidence connecting it to the offsets.
+- Remaining task: trace the per-call tempo countdown, pending-delta accumulation, and queue-drain sequence against the later v3/v4 event ledger. No converter, tests, raw fixtures, or reference MIDIs changed; no runtime trace, MIDI regeneration, or playback was performed.
