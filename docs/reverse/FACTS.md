@@ -1582,14 +1582,27 @@ This narrows the source of the initial timer base but does not show that tempo r
 **Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_3406` decompilation/instructions at `1000:3416–3481` and following `1000:34FD–3586`; FACTS F-106/F-111/F-112/F-141. Static control-flow analysis only.
 
 
-## F-143 — grid sentinel return is terminal; it cannot explain an isolated middle tempo delay (2026-10-30)
+## F-143 — grid early-return branches converge on scheduler termination (2026-10-30)
 
-**Status:** Static control-flow deduction from the available SNG2S export, cross-checked against the later tempo events present in the saved v3/v4 reference MIDIs. No runtime trace or playback.
+**Status:** Static control-flow inspection of `FUN_1000_3406` and its caller `FUN_1000_0010`. This establishes the terminal control flow and one final queue-drain call; it is not a runtime trace or playback result.
 
-- In `FUN_1000_3406`, the grid `-1` sentinel check occurs while `0x10A4 == 0`. The sentinel branch returns before advancing grid cursor `0x10A6`, before setting a new grid countdown, and before the tempo countdown at `0x10AA` is processed.
-- Because the sentinel path leaves `0x10A4` at zero and leaves the cursor on the same sentinel, the next invocation checks the same record and returns again. Once this sentinel is reached, this path prevents all later tempo-record processing; it does not skip just one tempo event and then resume.
-- The other early return is different: the record-count limit check occurs after the current grid record has advanced the cursor and set `0x10A4`. That return can skip tempo-countdown handling on that particular invocation, but the countdown then governs when the grid path is checked again. The available fixture ledger does not establish that this branch explains any observed offset.
-- The saved v3/v4 reference MIDIs contain later coarse-tempo changes after their first coarse-tempo event. Therefore the terminal sentinel return cannot by itself explain the isolated +144-tick discontinuity in the v3 cumulative-position ledger or the mostly constant v4 offsets: if that sentinel had already been reached, later tempo events could not have been emitted through this function.
-- This narrows F-142: grid-before-tempo ordering is a real control-flow constraint, but the sentinel branch is not a sufficient explanation for the later event mapping. The per-call countdown, pending-delta accumulation, and queue-drain sequence remain unresolved. No converter, tests, fixtures, or reference MIDI files changed.
+- The grid `-1` sentinel branch returns from `FUN_1000_3406` without advancing the grid cursor `0x10A6` or changing the zero grid countdown `0x10A4`. A subsequent scheduler invocation would encounter the same sentinel again.
+- The record-count-limit branch is reached after the current grid record's cursor/countdown updates. Although its local path differs from the sentinel path, the caller-side termination state reached after either return is the same.
+- In `FUN_1000_0010`, after `FUN_1000_3406` returns, the caller invokes `FUN_1000_08EC` and then checks that termination state. Both early-return branches therefore leave the scheduler loop; the caller does not start another scheduler iteration after this drain.
+- The final `FUN_1000_08EC` invocation can emit bytes already queued before termination. It does not resume the skipped `0x10AA` tempo-countdown work or fetch another grid/tempo record. This is a one-time final drain, not a pause-and-resume path.
+- Since later coarse-tempo events exist in the saved v3/v4 reference MIDIs, reaching either terminal branch cannot explain a temporary one-call delay followed by continued tempo-record processing in those sequences. The branches may still affect the end of a scheduler run, but no fixture-specific evidence connects them to the observed later-event offsets.
+- The normal-call interaction among grid countdown `0x10A4`, tempo countdown `0x10AA`, pending delta `0xF9A:0xF9C`, and queue drain `FUN_1000_08EC` remains unresolved. No converter, tests, fixtures, or reference MIDIs changed.
 
-**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_3406` around `1000:3416–3481`; FACTS F-112/F-141/F-142. Static control-flow deduction plus saved-MIDI event comparison only.
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_3406` early-return paths and `FUN_1000_0010` caller loop; FACTS F-108/F-111/F-112/F-142. Static control-flow inspection plus saved-MIDI comparison only.
+
+
+## F-144 — caller performs one final queue drain after scheduler termination (2026-10-30)
+
+**Status:** Static caller/callee control-flow inspection. No runtime trace or playback.
+
+- The two early-return routes in `FUN_1000_3406` (grid `-1` sentinel and record-count limit) both lead to the same scheduler termination state observed by `FUN_1000_0010`.
+- After the scheduler call returns, `FUN_1000_0010` invokes `FUN_1000_08EC` once before checking the termination state. This call is the caller's final drain after either early exit.
+- The final drain may consume bytes already present in the event queue. It is not another scheduler iteration: it does not re-enter `FUN_1000_3406`, process the skipped tempo countdown, or advance the grid/tempo input cursors.
+- Consequently, the final drain cannot account for later tempo records being processed after a terminal early return. It also does not establish which pending events are present at that point; that requires the normal-call state ledger.
+
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, caller loop in `FUN_1000_0010` and queue consumer `FUN_1000_08EC`; FACTS F-108/F-111/F-142/F-143. Static analysis only.

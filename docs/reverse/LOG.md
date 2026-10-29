@@ -1005,9 +1005,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - The exact per-call state and queue-drain sequence remains unresolved. No converter, tests, raw fixtures, or reference MIDI files changed; no runtime trace, MIDI regeneration, or playback was performed.
 
 
-## 2026-10-30 — bound the grid early-return hypothesis for later tempo offsets
+## 2026-10-30 — both scheduler early exits converge on caller termination
 
-- Followed both early-return branches in `FUN_1000_3406` beyond the branch-order finding in F-142.
-- The `-1` grid sentinel return leaves both the cursor and zero grid countdown unchanged; subsequent invocations revisit the same sentinel and return before tempo-countdown processing. Since the saved v3/v4 reference MIDIs contain later coarse-tempo events, this terminal path cannot by itself explain a selective delay within the observed later-event sequence.
-- Recorded this negative result as F-143 and updated T-015. The record-count-limit return occurs after cursor/countdown updates, but there is not yet fixture-specific evidence connecting it to the offsets.
-- Remaining task: trace the per-call tempo countdown, pending-delta accumulation, and queue-drain sequence against the later v3/v4 event ledger. No converter, tests, raw fixtures, or reference MIDIs changed; no runtime trace, MIDI regeneration, or playback was performed.
+- Followed the grid `-1` sentinel and record-count-limit returns from `FUN_1000_3406` through the caller loop in `FUN_1000_0010`.
+- Although the two branches leave the grid cursor/countdown differently, both reach the same scheduler termination state. After the scheduler call returns, the caller invokes `FUN_1000_08EC` once and then checks that state.
+- This is a final drain of bytes already queued, not a resumed scheduler iteration. The caller does not re-enter `FUN_1000_3406`, so the drain cannot process the skipped tempo countdown or read another tempo record. Recorded the corrected caller-level result in F-143 and the distinct final-drain fact in F-144.
+- This rules out either terminal branch as an explanation for a one-call pause followed by later tempo processing. It does not explain the later v3/v4 offsets.
+- Next: trace normal-call transitions of grid countdown `0x10A4`, tempo countdown `0x10AA`, pending delta `0xF9A:0xF9C`, and queue drain `FUN_1000_08EC` against the fixture event ledger.
+- Documentation only. No converter, tests, raw fixtures, or reference MIDIs changed; no runtime trace, MIDI regeneration, or playback was performed.
