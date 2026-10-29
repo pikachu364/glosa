@@ -586,15 +586,15 @@ public class SequencerTests
             : $"{packed & 0xFF:X2} {(packed >> 8) & 0x7F:X2} {(packed >> 16) & 0x7F:X2}";
 
     /// <summary>
-    /// A SysEx split in two, its halves 300 ms apart, and a note at 1000 ms. Or, with
+    /// A SysEx split in two, its halves 300 ms apart by default, and a note after the second half. Or, with
     /// <paramref name="control"/>, a controller at 200 ms in place of the second half.
     /// </summary>
-    private static MidiSequence SplitSysEx(bool control = false)
+    private static MidiSequence SplitSysEx(bool control = false, int secondHalfTicks = 288)
     {
         var track = new TrackBuilder();
         track.SysEx(0, [0x41, 0x10, 0x42, 0x12, 0x40, 0x00, 0x7F]);   // no F7 yet
         if (control) track.Short(192, 0xB0, 7, 100).Short(768, 0x90, 60, 100);
-        else track.Escape(288, [0x00, 0x41, 0xF7]).Short(672, 0x90, 60, 100);
+        else track.Escape(secondHalfTicks, [0x00, 0x41, 0xF7]).Short(672, 0x90, 60, 100);
         track.End(0);
         return SmfReader.Read(new SmfBuilder(division: 480).Track(track).Build());
     }
@@ -674,7 +674,7 @@ public class SequencerTests
     {
         var sink = new RecordingSink();
         using var seq = new Sequencer(sink, new PlaybackOptions { SendAllNotesOffOnStop = true });
-        seq.Load(SplitSysEx());
+        seq.Load(SplitSysEx(secondHalfTicks: 2880));
 
         seq.Play();
         AwaitFirstHalf(sink);
@@ -688,7 +688,7 @@ public class SequencerTests
     {
         var sink = new RecordingSink();
         using var seq = new Sequencer(sink, new PlaybackOptions { SendAllNotesOffOnStop = false });
-        seq.Load(SplitSysEx());
+        seq.Load(SplitSysEx(secondHalfTicks: 2880));
 
         seq.Play();
         AwaitFirstHalf(sink);
