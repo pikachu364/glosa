@@ -1580,3 +1580,16 @@ This narrows the source of the initial timer base but does not show that tempo r
 - Evidence is limited to the checked-in static analysis export and comparison ledger in F-141. No raw fixture, converter, test, or saved MIDI was changed; no runtime trace, MIDI regeneration, or playback was performed.
 
 **Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_3406` decompilation/instructions at `1000:3416–3481` and following `1000:34FD–3586`; FACTS F-106/F-111/F-112/F-141. Static control-flow analysis only.
+
+
+## F-143 — grid sentinel return is terminal; it cannot explain an isolated middle tempo delay (2026-10-30)
+
+**Status:** Static control-flow deduction from the available SNG2S export, cross-checked against the later tempo events present in the saved v3/v4 reference MIDIs. No runtime trace or playback.
+
+- In `FUN_1000_3406`, the grid `-1` sentinel check occurs while `0x10A4 == 0`. The sentinel branch returns before advancing grid cursor `0x10A6`, before setting a new grid countdown, and before the tempo countdown at `0x10AA` is processed.
+- Because the sentinel path leaves `0x10A4` at zero and leaves the cursor on the same sentinel, the next invocation checks the same record and returns again. Once this sentinel is reached, this path prevents all later tempo-record processing; it does not skip just one tempo event and then resume.
+- The other early return is different: the record-count limit check occurs after the current grid record has advanced the cursor and set `0x10A4`. That return can skip tempo-countdown handling on that particular invocation, but the countdown then governs when the grid path is checked again. The available fixture ledger does not establish that this branch explains any observed offset.
+- The saved v3/v4 reference MIDIs contain later coarse-tempo changes after their first coarse-tempo event. Therefore the terminal sentinel return cannot by itself explain the isolated +144-tick discontinuity in the v3 cumulative-position ledger or the mostly constant v4 offsets: if that sentinel had already been reached, later tempo events could not have been emitted through this function.
+- This narrows F-142: grid-before-tempo ordering is a real control-flow constraint, but the sentinel branch is not a sufficient explanation for the later event mapping. The per-call countdown, pending-delta accumulation, and queue-drain sequence remain unresolved. No converter, tests, fixtures, or reference MIDI files changed.
+
+**Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, `FUN_1000_3406` around `1000:3416–3481`; FACTS F-112/F-141/F-142. Static control-flow deduction plus saved-MIDI event comparison only.
