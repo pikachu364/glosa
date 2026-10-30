@@ -226,7 +226,7 @@ public static class SngConverter
                 int at = layout.IsLegacyV1 || tempoTicksAreAbsolute
                     ? tempo.Tick
                     : tempo.Tick + barLength;
-                if (!layout.IsLegacyV1 && !laterTempoTicksAreAbsolute &&
+                if (!layout.IsLegacyV1 && !tempoTicksAreAbsolute &&
                     at <= previous && tempo.Tick == 0) continue;
                 WriteVar(body, (uint)Math.Max(0, at - previous));
                 WriteTempo(body, tempo.Microseconds);
