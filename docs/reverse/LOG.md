@@ -1043,3 +1043,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Added/retained the public regression assertion for default tempo at tick 0 and changed tempo at tick 128.
 - User-reported PR CI #1261 and post-merge main CI #1262 passed. This confirms public CI only; private fixture event-by-event CI and runtime trace/playback remain outstanding.
 - No claim is made for later v2 tempo records, every v2 file, or MIMPIV4 playback behavior.
+
+
+## 2026-10-30 — MIMPIV4 timer-base candidate 0x0438 write sites grouped
+
+- Re-read the complete private MIMPIV4 Ghidra export through its Git blob (2,588,668 characters; 108,750 lines) and searched every `0x0438` reference.
+- Grouped the loader-side writes by containing function: `FUN_1000_381B`, `FUN_1000_3C0E`, `FUN_1000_474A`, `FUN_1000_4933`, `FUN_1000_4C5F`, `FUN_1000_5284`, `FUN_1000_5704`, `FUN_1000_5811`, `FUN_1000_638A`, and `FUN_1000_6A42`. These initialize the field from different loaded-data offsets or calculated values; no direct SNG tempo-record second-word source is identified.
+- Confirmed six timer-driver initialization functions copy `0x0438` to `0x0440`: `FUN_1FF5_2769`, `FUN_1FF5_3DD2`, `FUN_1FF5_44E0`, `FUN_1FF5_4CF8`, `FUN_1FF5_5114`, and `FUN_1FF5_579C`.
+- Added FACTS F-146 and expanded T-016. This identifies the broader timer-base initialization candidates but does not identify the dynamic tempo-record consumer. No converter code, tests, or private fixtures changed; static analysis only, no runtime trace/playback.
