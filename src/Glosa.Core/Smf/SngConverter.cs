@@ -38,9 +38,29 @@ public static class SngConverter
         // v1 uses a different tempo-buffer start, a base-tempo byte in its
         // conductor header, and a separate song-start tempo event. Later versions
         // retain the slider curve implemented by ReadTempi.
-        var tempi = layout.IsLegacyV1
-            ? ReadLegacyV1Tempi(data, conductorStart, conductorEnd, barLength)
-            : ReadTempi(data, conductorStart, conductorEnd);
+        bool laterTempoTicksAreAbsolute = false;
+        List<TempoPoint> tempi;
+        string version = Encoding.ASCII.GetString(data.Slice(18, 4));
+        if (layout.IsLegacyV1)
+        {
+            tempi = ReadLegacyV1Tempi(data, conductorStart, conductorEnd, barLength);
+        }
+        else if (version is "3.00" or "4.00" &&
+                 TryGetLaterVersionInitialTempoTick(data, layout, out int initialTempoTick))
+        {
+            // The inspected v3/v4 default setup paths emit the first coarse
+            // tempo after their per-part setup drains. Later records use the
+            // 192-tick grid-boundary countdown rule (FACTS F-138/F-145).
+            tempi = ReadLaterVersionTempi(
+                data, conductorStart, conductorEnd, barLength, initialTempoTick);
+            laterTempoTicksAreAbsolute = true;
+        }
+        else
+        {
+            // Keep the legacy parser for layouts whose startup state has not
+            // yet been accounted for by the reverse-analysis evidence.
+            tempi = ReadTempi(data, conductorStart, conductorEnd);
+        }
         int settings = 0x46 + 4 * (layout.Parts + 1);
         int transpose = settings + 11 <= data.Length ? (short)U16(data, settings + 9) : 0;
         var tracks = new List<Track>();
@@ -185,17 +205,21 @@ public static class SngConverter
             int denPow = 0;
             for (int value = denominator; value > 1; value >>= 1) denPow++;
             WriteVar(body, 0); body.Write([0xFF, 0x58, 0x04, (byte)numerator, (byte)denPow, 24, 8]);
-            int firstTempo = layout.IsLegacyV1 || tempi.Count == 0
+            int firstTempo = layout.IsLegacyV1 || laterTempoTicksAreAbsolute || tempi.Count == 0
                 ? 500000
                 : tempi[0].Microseconds;
             WriteVar(body, 0); WriteTempo(body, firstTempo);
             int previous = 0;
             foreach (var tempo in tempi)
             {
-                // v1 points already carry SNG2S-observed absolute ticks; the
-                // later layouts' points are relative to the song's bar-in.
-                int at = layout.IsLegacyV1 ? tempo.Tick : tempo.Tick + barLength;
-                if (!layout.IsLegacyV1 && at <= previous && tempo.Tick == 0) continue;
+                // v1 and the evidence-backed v3/v4 scheduler path carry
+                // absolute SNG2S event ticks. The older fallback parser keeps
+                // its bar-in-relative representation.
+                int at = layout.IsLegacyV1 || laterTempoTicksAreAbsolute
+                    ? tempo.Tick
+                    : tempo.Tick + barLength;
+                if (!layout.IsLegacyV1 && !laterTempoTicksAreAbsolute &&
+                    at <= previous && tempo.Tick == 0) continue;
                 WriteVar(body, (uint)Math.Max(0, at - previous));
                 WriteTempo(body, tempo.Microseconds);
                 previous = at;
@@ -352,6 +376,85 @@ public static class SngConverter
         // exact integer microseconds rather than its scheduler's ms-rounded path.
         if (bpmAtSongStart != 120)
             result.Add(new TempoPoint(barLength, 60000000 / bpmAtSongStart));
+
+        return result.OrderBy(point => point.Tick).ToList();
+    }
+
+    private static bool TryGetLaterVersionInitialTempoTick(
+        ReadOnlySpan<byte> data, Layout layout, out int tick)
+    {
+        tick = 0;
+
+        // F-138 derives the default v3/v4 setup count from each part's
+        // information byte at +0x11. The inspected reference fixtures retain
+        // states 4/5, which take one setup drain per part. Other states may
+        // select different branches, so do not apply this tick rule to them.
+        for (int part = 1; part <= layout.Parts; part++)
+        {
+            int start = layout.Starts[part];
+            if (start < 0 || start + 0x12 > data.Length ||
+                data[start + 0x11] is not (4 or 5))
+                return false;
+        }
+
+        // One initial drain, one per part, one final setup drain, and twelve
+        // producer/drain pairs advance the initial scheduler tick by 4 each.
+        // The first eligible tempo flush consumes the final 4-tick delta:
+        // (1 + Parts + 1 + 12 - 1) * 4 == (Parts + 13) * 4.
+        tick = (layout.Parts + 13) * 4;
+        return true;
+    }
+
+    private static List<TempoPoint> ReadLaterVersionTempi(
+        ReadOnlySpan<byte> data, int start, int end, int barLength, int initialTempoTick)
+    {
+        var result = new List<TempoPoint>();
+        ReadOnlySpan<byte> sentinel = [0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF];
+        int last = -1;
+        for (int i = start; i + 6 <= end; i++)
+            if (data.Slice(i, 6).SequenceEqual(sentinel)) last = i;
+        if (last < 0) return result;
+
+        int at = last + 12;
+        int cumulativeSteps = 0;
+        int previousBpm = 120;
+        int bpmAtBar = 120;
+        bool firstRecord = true;
+
+        while (at + 4 <= end)
+        {
+            int step = U16(data, at), value = U16(data, at + 2);
+            if (value <= 0 || value > 500 || step > 4000) break;
+
+            int bpm = Math.Clamp(2 * value - ((value + 7) / 8), 1, 600);
+            if (firstRecord)
+            {
+                // The first record is loaded during the special startup call;
+                // its queue event is placed after the setup-drain sequence.
+                if (bpm != 120)
+                    result.Add(new TempoPoint(initialTempoTick, (60000 / bpm) * 1000));
+                bpmAtBar = bpm;
+                firstRecord = false;
+            }
+            else if (bpm != previousBpm)
+            {
+                // After startup, the event is queued at the 192-tick grid
+                // boundary minus one plus the preceding record-step sum.
+                int eventTick = 191 + cumulativeSteps;
+                result.Add(new TempoPoint(eventTick, (60000 / bpm) * 1000));
+                if (eventTick <= barLength)
+                    bpmAtBar = bpm;
+            }
+
+            previousBpm = bpm;
+            cumulativeSteps += step;
+            at += 4;
+        }
+
+        // SNG2S writes the exact integer-microsecond tempo at the first bar
+        // through a separate initialization path, distinct from coarse events.
+        if (bpmAtBar != 120)
+            result.Add(new TempoPoint(barLength, 60000000 / bpmAtBar));
 
         return result.OrderBy(point => point.Tick).ToList();
     }
