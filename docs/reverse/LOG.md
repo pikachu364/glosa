@@ -1023,3 +1023,14 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Derived reference tick = 191 + previous cumulative tempo steps. This matches all later changed-tempo ticks: v3 383/575/623/671/707/767 and v4 407/443/479/515/551. Same-value records still advance the tempo countdown but do not emit a changed-tempo event.
 - Checked 0xF96 stores: initialization sets it to 0xFFFF, the special call resets it to zero, and no other direct store appears in the complete available export. The later scheduler loop therefore follows the normal pending-delta path; no recurring pause is needed to explain the offsets.
 - Added FACTS F-145 and HYPOTHESES H-026; updated T-015 and this log. Evidence is static call-order plus private raw-byte/reference-MIDI comparison only. No converter, tests, private fixtures, or reference MIDIs changed; no runtime trace or playback performed.
+
+
+## 2026-10-30 — first v3/v4 tempo scheduler implementation
+
+- Confirmed PR #39 is merged and inspected the current `SngConverter.cs` / `SngConverterTests.cs` on main.
+- The previous later-version converter path parsed tempo records as a simple cumulative timeline, initialized the conductor tempo from the first record at tick 0, and added `barLength` to every later point. That representation cannot express the SNG2S startup coarse event and the distinct exact tempo at the first bar.
+- Created branch `fix/sng-v3-v4-tempo-event-timing-2026-10-30`.
+- Added an evidence-scoped v3/v4 path for default setup states 4/5: first coarse event tick from the F-138 setup-drain ledger; exact integer-microsecond tempo at the bar boundary; later changed coarse events at `191 + preceding cumulative tempo steps` per F-145. Other part states retain the previous fallback rather than inheriting an unverified rule.
+- Added a synthetic v3 regression test for ticks 0, 92, 192, 383, 575, and 623.
+- Updated T-015 to record the implementation and remaining v2 work. v2 tick 128 remains untouched and must use its separate 32-tick boundary/base-tempo path (F-139/F-140).
+- No build, public test run, private fixture CI, runtime trace, or playback has yet been performed. The implementation is not validated; do not mark T-015 complete.
