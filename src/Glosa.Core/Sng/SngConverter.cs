@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace Glosa.Core.Smf;
+namespace Glosa.Core.Sng;
 
 /// <summary>Converts Roland/Boss Ballade SNG song data to Standard MIDI Files.</summary>
 /// <remarks>
