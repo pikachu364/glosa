@@ -206,6 +206,54 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void ConvertsLaterTempoRecordsAtSng2sSchedulerTicks()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+        int firstPart = 0x46 + 4 * 11 + 94 + 120;
+        const int partBlockSize = 110 + 81;
+        for (int part = 0; part < 10; part++)
+            sng[firstPart + part * partBlockSize + 0x11] = 4;
+
+        int conductor = 0x46 + 4 * 11 + 94;
+        new byte[] { 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF }
+            .CopyTo(sng, conductor + 84);
+        (ushort Step, ushort Value)[] records =
+        [
+            (192, 89), (192, 36), (48, 33), (48, 27),
+        ];
+        for (int i = 0; i < records.Length; i++)
+        {
+            BinaryPrimitives.WriteUInt16LittleEndian(
+                sng.AsSpan(conductor + 96 + i * 4), records[i].Step);
+            BinaryPrimitives.WriteUInt16LittleEndian(
+                sng.AsSpan(conductor + 98 + i * 4), records[i].Value);
+        }
+
+        MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
+        var tempos = sequence.Events
+            .Where(e => e.Kind == MidiEventKind.Meta && e.MetaType == MetaType.Tempo)
+            .Select(e =>
+            {
+                ReadOnlySpan<byte> value = sequence.GetData(e);
+                int microseconds = (value[0] << 16) | (value[1] << 8) | value[2];
+                return (e.Ticks, microseconds);
+            })
+            .ToArray();
+
+        Assert.Equal(
+            new (long Ticks, int Microseconds)[]
+            {
+                (0, 500_000),
+                (92, 361_000),
+                (192, 361_445),
+                (383, 895_000),
+                (575, 983_000),
+                (623, 1_200_000),
+            },
+            tempos);
+    }
+
+    [Fact]
     public void IgnoresMalformedTempoRecordsAndUsesDefaultTempo()
     {
         foreach ((ushort step, ushort value) in new[]
