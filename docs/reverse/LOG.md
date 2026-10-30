@@ -1034,3 +1034,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Added a synthetic v3 regression test for ticks 0, 92, 192, 383, 575, and 623.
 - Updated T-015 to record the implementation and remaining v2 work. v2 tick 128 remains untouched and must use its separate 32-tick boundary/base-tempo path (F-139/F-140).
 - No build, public test run, private fixture CI, runtime trace, or playback has yet been performed. The implementation is not validated; do not mark T-015 complete.
+
+
+## 2026-10-30 — v2 initial tempo tick-128 implementation merged
+
+- PR #42 (`fix: place v2 initial tempo at tick 128`) was merged to `main` as `4c6f145b4227a58b69613007fb5a7ff16c866e0b`.
+- The v2 path is separate from the v3/v4 192-tick scheduler path and is limited to the evidence-backed startup record `(step=0,value=64)` in the inspected SHIZUME0 fixture. It reads the base-tempo byte at raw offset `0x79` and emits the changed tempo at absolute tick 128, based on F-139/F-140.
+- Added/retained the public regression assertion for default tempo at tick 0 and changed tempo at tick 128.
+- User-reported PR CI #1261 and post-merge main CI #1262 passed. This confirms public CI only; private fixture event-by-event CI and runtime trace/playback remain outstanding.
+- No claim is made for later v2 tempo records, every v2 file, or MIMPIV4 playback behavior.

@@ -310,11 +310,11 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Inspect the current Glosa tempo conversion/emission implementation. The old later-version path treated records as a simple cumulative timeline and added a blanket bar-length lead-in; this does not model the separate startup coarse event, exact bar tempo, and later scheduler events.
 - [x] Add a v3/v4 path for the inspected default setup states (part-information bytes +0x11 are 4/5): derive the first coarse event tick from the setup-drain ledger, emit the exact tempo at the bar boundary, and place later changed-tempo records at 191 + preceding cumulative steps. Keep the old fallback for states outside the evidence scope. No global offset is applied.
 - [x] Add a public synthetic v3 regression test for first coarse, exact bar, and later coarse tempo positions.
-- [ ] Implement the separate v2 tick-128 startup/boundary path from F-139/F-140; do not reuse the v3/v4 slider/base-tempo assumptions.
+- [x] Implement the separate v2 tick-128 startup/boundary path from F-139/F-140; do not reuse the v3/v4 slider/base-tempo assumptions (PR #42, merge commit `4c6f145b`).
 - [ ] Add/adjust private event-by-event regression assertions for v2/v3/v4 and run private fixture CI. Inspect the actual workflow result before reporting pass/fail.
 - [ ] Runtime trace/playback and additional fixtures remain desirable for generalization; do not label static fixture matching as runtime verification.
 
-**Result (updated 2026-10-30):** First source implementation is now on branch `fix/sng-v3-v4-tempo-event-timing-2026-10-30`. It covers the evidence-backed v3/v4 default setup states and later scheduler tick formula, with a synthetic regression test. v2 remains unchanged. No build, test, private fixture CI, or runtime trace has yet been performed; do not treat this implementation as validated.
+**Result (updated 2026-10-30):** The evidence-scoped v3/v4 implementation and separate v2 tick-128 startup path are merged to `main`. PR #42 (`4c6f145b`) passed PR CI #1261; post-merge main CI #1262 also passed. Public CI validates the repository build/test suite, but does not replace private fixture event-by-event comparisons or runtime trace/playback. Keep those as outstanding validation.
 
 ## T-016 — MIMPIV4 legacy tempo records to playback timer
 
@@ -480,3 +480,12 @@ Private workflow run [#6](https://github.com/pikachu364/glosa-private-data/actio
 - [x] 元の SNG2S.EXE の CS:0x3F82 を読み、template が F0 41 10 16 12、終端が FF であることを確認。
 - [x] 0x7DE の initialized word 0x004B と、runner.MID / TEST.MID の tick 8 SysEx 2 payload を照合。A は 41 10 16 12 10 00 16 4B 0F F7、B は 41 10 16 12 52 00 10 4B 53 F7 で、静的生成式と byte-for-byte 一致。
 - [ ] runtime trace や再生での確認は未実施。今回の一致は EXE initialized image・静的命令列・保存済み MIDI の比較による。
+
+
+## 2026-10-30 — v2 initial tempo tick-128 implementation merged
+
+- PR #42 (`fix: place v2 initial tempo at tick 128`) was merged to `main` as `4c6f145b4227a58b69613007fb5a7ff16c866e0b`.
+- The change keeps the v2 `(step=0,value=64)` startup case separate from the v3/v4 192-tick scheduler path, uses the v2 base-tempo byte at raw offset `0x79`, and emits the inspected SHIZUME0 startup tempo at absolute tick 128 (F-139/F-140).
+- Regression coverage asserts default tempo at tick 0 and changed tempo at tick 128. User-reported PR CI #1261 and post-merge main CI #1262 both passed.
+- Scope remains limited to the inspected v2 startup record / SHIZUME0 evidence. No general rule for later v2 tempo records or all v2 files is claimed; runtime trace/playback and private fixture CI remain outstanding.
+- Next: continue with the remaining evidence tasks, prioritizing the MIMPIV4 playback tempo-record consumer (T-016) and the separate 3/4 rounding investigation (T-014). Do not re-open the resolved v2 tick-128 implementation without new contradictory evidence.
