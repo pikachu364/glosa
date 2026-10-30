@@ -1606,3 +1606,18 @@ This narrows the source of the initial timer base but does not show that tempo r
 - Consequently, the final drain cannot account for later tempo records being processed after a terminal early return. It also does not establish which pending events are present at that point; that requires the normal-call state ledger.
 
 **Sources:** private `testdata/ballade/sng2gs/sng2gs解析データ.txt`, caller loop in `FUN_1000_0010` and queue consumer `FUN_1000_08EC`; FACTS F-108/F-111/F-142/F-143. Static analysis only.
+
+
+## F-145 — v3/v4 後続 coarse-tempo tick は初回 grid-boundary delta で説明できる（2026-10-30）
+
+**状態:** private SNG raw tempo records、保存済み reference MIDI、FUN_1000_0010 / FUN_1000_33D4 / FUN_1000_3406 / FUN_1000_61EC / FUN_1000_08EC の静的制御フローを照合。runtime trace / playback ではない。
+
+- FUN_1000_3DE2 は初期化時に 0xF96 = 0xFFFF とする。FUN_1000_33D4 はその状態で FUN_1000_3406 を1回呼び、FUN_1000_3B68 の後に 0xF96 = 0 とする。完全な利用可能 export で確認できる 0xF96 への直接 store はこの初期化と reset の2箇所だけであり、以後の main scheduler loop は 0xF96 == 0 の通常経路を通る。従って、後続イベントの差を「途中の scheduler 呼び出しで pending delta だけが停止した」と説明する根拠はない。
+- FUN_1000_33D4 の特別呼び出しは最初の tempo record を読み、0x10AA = step - 1 を設定する。初回 coarse-tempo event の queue drain 後、FUN_1000_0010 は FUN_1000_61EC に現在の absolute tick と grid interval を渡し、次の grid boundary までの delta を 0xF9A:0xF9C に設定する。v3/v4 の最初の grid interval は 192 ticks（F-120）、初回 coarse event は tick 92 / 116（F-138）なので、追加 delta はそれぞれ 100 / 76 ticks。
+- main loop の直前に caller は pending delta を1減らす。各通常 FUN_1000_3406 呼び出しは先頭でそれを1増やすため、最初の呼び出しでは相殺され、その後 N 回の呼び出しによる pending-delta 増分は N-1 ticks となる。一方、tempo countdown は step - 1 から通常呼び出しごとに減り、ゼロの次の呼び出しで次 record を読み込む。この call order により、後続 record が queue に積まれる時点の absolute tick は 191 + その record より前の cumulative tempo steps となる。
+- v3 START__0.SNG: 先行 cumulative steps 192/384/432/480/516/576 に対する reference tempo ticks は 383/575/623/671/707/767。式 191 + previous steps と全件一致する。
+- v4 BOURREE0.SNG: 値が変化する record の先行 cumulative steps 216/252/288/324/360 に対する reference tempo ticks は 407/443/479/515/551。式と全件一致する。同値のままの record も countdown を進めるため、raw cumulative position そのものを event tick と見なさない。
+- これにより F-141 の可変 offset は、初回 setup tick から次の 192-tick grid boundary までの pending delta と、main-loop 開始時の1-tick補正を含めれば説明できる。固定 offset や recordごとの補正は不要。v2 tick 128 は別の32-tick boundary経路（F-139）として扱う。
+- **証拠範囲:** 対象の v3/v4 fixtures について raw bytes・reference MIDI・static call order が一致した。runtime trace/playback、未調査 fixture への一般化、converter の現行実装との同等性はまだ未確認。実装変更後は private fixture CI と event-by-event 比較が必要。
+
+**Sources:** private testdata/ballade/v3/START__0.SNG, v3/sng2gs/START__0.MID, v4/BOURREE0.SNG, v4/sng2gs/BOURREE0.MID; private sng2gs_mimpiv4解析java使用.txt, functions FUN_1000_0010, FUN_1000_33D4, FUN_1000_3406, FUN_1000_3DE2, FUN_1000_61EC, FUN_1000_08EC; F-120/F-138/F-139/F-141. Static control-flow and raw-byte/reference-MIDI comparison only.
