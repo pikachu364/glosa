@@ -311,3 +311,13 @@ No converter, test, or private fixture was changed; no runtime trace or playback
 - This closes the uncertainty about whether the leading helper is reached and whether it advances the tick on the inspected v3/v4 default path. F-138 accounts for the rest of the inspected setup sequence; behavior for uninspected fixtures and runtime execution remain unverified.
 
 No converter, tests, or private fixtures were changed; no runtime trace or playback was performed.
+
+
+### H-026 — v3/v4 later coarse-tempo event positions follow the initial grid-boundary delta (2026-10-30)
+
+**Status:** Resolved statically for the inspected START__0.SNG and BOURREE0.SNG fixtures; see FACTS F-145. Runtime trace/playback and generalization remain unverified.
+
+- The first coarse-tempo event is emitted during the special FUN_1000_33D4 call. After that queue drain, the caller calculates the pending delta to the first 192-tick grid boundary: 100 ticks for v3 (92 → 192) and 76 ticks for v4 (116 → 192).
+- The caller's pre-loop decrement and the first normal-call increment cancel. Later normal calls therefore add one fewer pending-delta tick than their call count, while 0x10AA counts down independently.
+- The later reference events match tick = 191 + previous cumulative tempo steps: v3 383/575/623/671/707/767 and v4 407/443/479/515/551. Same-value records still consume countdown steps even when they do not emit a changed-tempo event.
+- This replaces the earlier unresolved-offset framing in H-023/T-015 for these fixtures. Do not turn the fixture-specific result into a global correction; validate converter behavior with event-by-event private tests.
