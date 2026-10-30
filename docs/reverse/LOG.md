@@ -1013,3 +1013,13 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - This rules out either terminal branch as an explanation for a one-call pause followed by later tempo processing. It does not explain the later v3/v4 offsets.
 - Next: trace normal-call transitions of grid countdown `0x10A4`, tempo countdown `0x10AA`, pending delta `0xF9A:0xF9C`, and queue drain `FUN_1000_08EC` against the fixture event ledger.
 - Documentation only. No converter, tests, raw fixtures, or reference MIDIs changed; no runtime trace, MIDI regeneration, or playback was performed.
+
+
+## 2026-10-30 — later v3/v4 coarse-tempo event positions explained by grid-boundary delta
+
+- Re-read FUN_1000_0010, FUN_1000_33D4, FUN_1000_3406, FUN_1000_3DE2, FUN_1000_61EC, and FUN_1000_08EC together with the v3/v4 raw tempo records and saved reference MIDIs.
+- Confirmed the first tempo record is loaded during the special FUN_1000_33D4 call. After its queue drain, the caller computes the pending delta to the first 192-tick grid boundary: 100 ticks from v3 tick 92 and 76 ticks from v4 tick 116.
+- The caller decrements pending delta once before the scheduler loop; the first normal FUN_1000_3406 call increments it once, cancelling that decrement. Thereafter the tempo countdown reaches the next record after its configured step, while pending delta advances by one fewer tick than the elapsed normal-call count.
+- Derived reference tick = 191 + previous cumulative tempo steps. This matches all later changed-tempo ticks: v3 383/575/623/671/707/767 and v4 407/443/479/515/551. Same-value records still advance the tempo countdown but do not emit a changed-tempo event.
+- Checked 0xF96 stores: initialization sets it to 0xFFFF, the special call resets it to zero, and no other direct store appears in the complete available export. The later scheduler loop therefore follows the normal pending-delta path; no recurring pause is needed to explain the offsets.
+- Added FACTS F-145 and HYPOTHESES H-026; updated T-015 and this log. Evidence is static call-order plus private raw-byte/reference-MIDI comparison only. No converter, tests, private fixtures, or reference MIDIs changed; no runtime trace or playback performed.
