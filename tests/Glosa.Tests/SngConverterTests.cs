@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 using Glosa.Core.Smf;
+using Glosa.Core.Sng;
 
 namespace Glosa.Tests;
 
