@@ -26,7 +26,7 @@ internal static class SngCommand
         }
 
         byte[] source = File.ReadAllBytes(inputPath);
-        byte[] midi = Glosa.Core.Smf.SngConverter.ToSmf(source);
+        byte[] midi = Glosa.Core.Sng.SngConverter.ToSmf(source);
         File.WriteAllBytes(outputPath, midi);
 
         Console.WriteLine($"{inputPath} -> {outputPath} ({midi.Length} bytes)");
