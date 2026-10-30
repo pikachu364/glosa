@@ -38,12 +38,20 @@ public static class SngConverter
         // v1 uses a different tempo-buffer start, a base-tempo byte in its
         // conductor header, and a separate song-start tempo event. Later versions
         // retain the slider curve implemented by ReadTempi.
-        bool laterTempoTicksAreAbsolute = false;
+        bool tempoTicksAreAbsolute = false;
         List<TempoPoint> tempi;
         string version = Encoding.ASCII.GetString(data.Slice(18, 4));
         if (layout.IsLegacyV1)
         {
             tempi = ReadLegacyV1Tempi(data, conductorStart, conductorEnd, barLength);
+        }
+        else if (version == "2.00" &&
+                 TryReadV2InitialTempo(data, conductorStart, conductorEnd, out tempi))
+        {
+            // F-139/F-140 establish the first changed tempo for SHIZUME0:
+            // the v2 startup path reaches the next 32-tick grid boundary at tick 128.
+            // This is deliberately separate from the v3/v4 192-tick scheduler path.
+            tempoTicksAreAbsolute = true;
         }
         else if (version is "3.00" or "4.00" &&
                  TryGetLaterVersionInitialTempoTick(data, layout, out int initialTempoTick))
@@ -53,7 +61,7 @@ public static class SngConverter
             // 192-tick grid-boundary countdown rule (FACTS F-138/F-145).
             tempi = ReadLaterVersionTempi(
                 data, conductorStart, conductorEnd, barLength, initialTempoTick);
-            laterTempoTicksAreAbsolute = true;
+            tempoTicksAreAbsolute = true;
         }
         else
         {
@@ -205,7 +213,7 @@ public static class SngConverter
             int denPow = 0;
             for (int value = denominator; value > 1; value >>= 1) denPow++;
             WriteVar(body, 0); body.Write([0xFF, 0x58, 0x04, (byte)numerator, (byte)denPow, 24, 8]);
-            int firstTempo = layout.IsLegacyV1 || laterTempoTicksAreAbsolute || tempi.Count == 0
+            int firstTempo = layout.IsLegacyV1 || tempoTicksAreAbsolute || tempi.Count == 0
                 ? 500000
                 : tempi[0].Microseconds;
             WriteVar(body, 0); WriteTempo(body, firstTempo);
@@ -215,10 +223,10 @@ public static class SngConverter
                 // v1 and the evidence-backed v3/v4 scheduler path carry
                 // absolute SNG2S event ticks. The older fallback parser keeps
                 // its bar-in-relative representation.
-                int at = layout.IsLegacyV1 || laterTempoTicksAreAbsolute
+                int at = layout.IsLegacyV1 || tempoTicksAreAbsolute
                     ? tempo.Tick
                     : tempo.Tick + barLength;
-                if (!layout.IsLegacyV1 && !laterTempoTicksAreAbsolute &&
+                if (!layout.IsLegacyV1 && !tempoTicksAreAbsolute &&
                     at <= previous && tempo.Tick == 0) continue;
                 WriteVar(body, (uint)Math.Max(0, at - previous));
                 WriteTempo(body, tempo.Microseconds);
@@ -378,6 +386,33 @@ public static class SngConverter
             result.Add(new TempoPoint(barLength, 60000000 / bpmAtSongStart));
 
         return result.OrderBy(point => point.Tick).ToList();
+    }
+
+    private static bool TryReadV2InitialTempo(
+        ReadOnlySpan<byte> data, int start, int end, out List<TempoPoint> tempi)
+    {
+        tempi = [];
+        ReadOnlySpan<byte> sentinel = [0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF];
+        int last = -1;
+        for (int i = start; i + 6 <= end; i++)
+            if (data.Slice(i, 6).SequenceEqual(sentinel)) last = i;
+        if (last < 0 || last + 16 > end || data.Length <= 0x79)
+            return false;
+
+        int at = last + 12;
+        int step = U16(data, at);
+        int value = U16(data, at + 2);
+        // The tick-128 derivation is specific to the inspected v2 startup record:
+        // (step=0,value=64) in SHIZUME0.SNG. Do not generalize it to other v2 streams.
+        if (step != 0 || value <= 0 || value > 254)
+            return false;
+
+        int baseTempo = data[0x79];
+        if (baseTempo == 0) return false;
+        int bpm = Math.Clamp((value * baseTempo) / 64, 1, 480);
+        if (bpm != 120)
+            tempi.Add(new TempoPoint(128, (60000 / bpm) * 1000));
+        return true;
     }
 
     private static bool TryGetLaterVersionInitialTempoTick(

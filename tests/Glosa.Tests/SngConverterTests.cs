@@ -207,6 +207,37 @@ public class SngConverterTests
     }
 
     [Fact]
+    public void ConvertsVersionTwoInitialTempoAtTick128()
+    {
+        byte[] sng = CreateMinimalSong("2.00", 10);
+        sng[0x79] = 60; // F-140: v2 base-tempo byte in SHIZUME0.SNG.
+        int conductor = 0x46 + 4 * 11 + 94;
+        new byte[] { 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF }
+            .CopyTo(sng, conductor + 84);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 98), 64);
+
+        MidiSequence sequence = SmfReader.Read(SngConverter.ToSmf(sng));
+        var tempos = sequence.Events
+            .Where(e => e.Kind == MidiEventKind.Meta && e.MetaType == MetaType.Tempo)
+            .Select(e =>
+            {
+                ReadOnlySpan<byte> value = sequence.GetData(e);
+                return (e.Ticks, Microseconds:
+                    (value[0] << 16) | (value[1] << 8) | value[2]);
+            })
+            .ToArray();
+
+        Assert.Equal(
+            new (long Ticks, int Microseconds)[]
+            {
+                (0, 500_000),
+                (128, 1_000_000),
+            },
+            tempos);
+    }
+
+    [Fact]
     public void ConvertsLaterTempoRecordsAtSng2sSchedulerTicks()
     {
         byte[] sng = CreateMinimalSong("3.00", 10);
