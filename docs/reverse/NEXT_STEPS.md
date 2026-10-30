@@ -307,12 +307,14 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Trace normal-call order in FUN_1000_3406: pending delta increment, grid countdown 0x10A4, then tempo countdown 0x10AA; the streams have separate cursors and state (F-111/F-112/F-142).
 - [x] Trace both grid early-return paths through the caller and rule out a pause/resume explanation for later tempo records (F-143/F-144).
 - [x] Trace the post-first-event grid-boundary delta, caller's pre-loop decrement, first normal-call increment, and step - 1 tempo countdown. The resulting tick = 191 + previous cumulative tempo steps matches every later changed-tempo event in inspected v3/v4 references (F-145).
-- [ ] Inspect the current Glosa tempo conversion/emission implementation and identify the exact divergence from the evidenced SNG2S scheduler rule. Keep raw record decoding separate from scheduler-to-SMF event emission.
-- [ ] Implement the evidenced fixture-scoped rule only after confirming version scope and existing converter architecture; do not add a global tick offset or loosen comparisons.
+- [x] Inspect the current Glosa tempo conversion/emission implementation. The old later-version path treated records as a simple cumulative timeline and added a blanket bar-length lead-in; this does not model the separate startup coarse event, exact bar tempo, and later scheduler events.
+- [x] Add a v3/v4 path for the inspected default setup states (part-information bytes +0x11 are 4/5): derive the first coarse event tick from the setup-drain ledger, emit the exact tempo at the bar boundary, and place later changed-tempo records at 191 + preceding cumulative steps. Keep the old fallback for states outside the evidence scope. No global offset is applied.
+- [x] Add a public synthetic v3 regression test for first coarse, exact bar, and later coarse tempo positions.
+- [ ] Implement the separate v2 tick-128 startup/boundary path from F-139/F-140; do not reuse the v3/v4 slider/base-tempo assumptions.
 - [ ] Add/adjust private event-by-event regression assertions for v2/v3/v4 and run private fixture CI. Inspect the actual workflow result before reporting pass/fail.
 - [ ] Runtime trace/playback and additional fixtures remain desirable for generalization; do not label static fixture matching as runtime verification.
 
-**Result (updated 2026-10-30):** F-145 resolves the later v3/v4 coarse-tempo tick offsets for the inspected fixtures. v2 tick 128 remains separately explained by F-139. The next work is to compare this scheduler rule with current Glosa code, then implement and validate through private fixture CI. No converter or test code has yet been changed for this finding.
+**Result (updated 2026-10-30):** First source implementation is now on branch `fix/sng-v3-v4-tempo-event-timing-2026-10-30`. It covers the evidence-backed v3/v4 default setup states and later scheduler tick formula, with a synthetic regression test. v2 remains unchanged. No build, test, private fixture CI, or runtime trace has yet been performed; do not treat this implementation as validated.
 
 ## T-016 — MIMPIV4 legacy tempo records to playback timer
 
