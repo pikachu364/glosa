@@ -1621,3 +1621,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **証拠範囲:** 対象の v3/v4 fixtures について raw bytes・reference MIDI・static call order が一致した。runtime trace/playback、未調査 fixture への一般化、converter の現行実装との同等性はまだ未確認。実装変更後は private fixture CI と event-by-event 比較が必要。
 
 **Sources:** private testdata/ballade/v3/START__0.SNG, v3/sng2gs/START__0.MID, v4/BOURREE0.SNG, v4/sng2gs/BOURREE0.MID; private sng2gs_mimpiv4解析java使用.txt, functions FUN_1000_0010, FUN_1000_33D4, FUN_1000_3406, FUN_1000_3DE2, FUN_1000_61EC, FUN_1000_08EC; F-120/F-138/F-139/F-141. Static control-flow and raw-byte/reference-MIDI comparison only.
+
+
+## F-146 — MIMPIV4 の timer-base 候補 0x0438 は複数の loader が初期化する
+
+- 完全な private MIMPIV4 Ghidra export（`testdata/ballade/MIMPI427/mimpiv427解析データ.txt`）で、`0x0438` の全参照を検索した。
+- `0x0438` への値設定は複数の file-loader routine に存在する。確認した関数は `FUN_1000_381B`、`FUN_1000_3C0E`、`FUN_1000_474A`、`FUN_1000_4933`、`FUN_1000_4C5F`、`FUN_1000_5284`、`FUN_1000_5704`、`FUN_1000_5811`、`FUN_1000_638A`、`FUN_1000_6A42`。設定元は各ロード済みデータ構造の異なる byte/word offset、または loader 内の計算値であり、単一の tempo-record second word 参照としては現れない。
+- timer-driver 初期化側の `FUN_1FF5_2769`、`FUN_1FF5_3DD2`、`FUN_1FF5_44E0`、`FUN_1FF5_4CF8`、`FUN_1FF5_5114`、`FUN_1FF5_579C` は `0x0438` を `0x0440` へコピーして timer 初期化を行う。したがって `0x0438` は timer 起動時の基準値候補だが、この loader 群の設定値と SNG conductor tempo-record の各 record を結ぶ dataflow はまだ確認できない。
+- `FUN_1000_22FC` の legacy branch は引き続き conductor header の `+0x1C` byte を `0x7BF0` / `0x0440` に設定する。今回の検索でも、tempo-record second word が再生中に `0x0438`、`0x0440`、`0x7BF0` を更新する直接経路は特定できなかった。
+- **証拠範囲:** 完全な Ghidra export の静的検索と decompilation / instruction view の照合。runtime trace/playback は未実施。tempo record を無視すると結論づけない。
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; functions `FUN_1000_22FC`, `FUN_1000_381B`, `FUN_1000_3C0E`, `FUN_1000_474A`, `FUN_1000_4933`, `FUN_1000_4C5F`, `FUN_1000_5284`, `FUN_1000_5704`, `FUN_1000_5811`, `FUN_1000_638A`, `FUN_1000_6A42`, `FUN_1FF5_2769`, `FUN_1FF5_3DD2`, `FUN_1FF5_44E0`, `FUN_1FF5_4CF8`, `FUN_1FF5_5114`, `FUN_1FF5_579C`. Static analysis only.
