@@ -1068,3 +1068,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Followed mode-1 scheduling reads: `FUN_1000_8888` parses a text-command value, stores it in `0x043E`, and calls `FUN_1FF5_0DE1(0x043E + 0x0440)`. `FUN_1000_A3BB` can reset the relative offset and schedule the base alone. `FUN_1000_C6A4` changes `0x043E` for keyboard timing controls and schedules the adjusted value plus `0x0440`.
 - This separates the mutable event-relative offset `0x043E` from the base `0x0440`. It does not prove any connection between `0x043E` and the binary SNG conductor tempo-record second word; the text-command parser is a distinct path unless a caller/dataflow link is demonstrated.
 - Added FACTS F-148 and refined T-016. Documentation-only evidence update; no converter/tests/fixtures changed. Static export analysis only; no runtime trace or playback.
+
+
+## 2026-11-01 — audit all MIMPIV4 0x043E writes and text-command caller
+
+- Enumerated all direct `0x043E` references in the complete private export. Outside mode-specific driver initialization, writes are confined to `FUN_1000_8888` (parsed text-command value), `FUN_1000_A3BB` (clear), `FUN_1000_C6A4` (keyboard timing increment/decrement), and the legacy mode-1 driver reset in `FUN_1FF5_1409`.
+- Traced `FUN_1000_8888` to `FUN_1000_7E55`, a textual `@` command scanner/dispatcher. This confirms the known parser path is text-command input rather than a demonstrated binary SNG conductor tempo-record path.
+- No binary tempo-record writer to `0x043E` was found. Recorded this as a bounded negative result for this one global only; other variables, indirect writes, or other scheduler paths remain possible.
+- Added FACTS F-149, refined T-016, and appended this log. Docs only; no code/tests/private fixtures changed. Static analysis only; no runtime trace/playback.

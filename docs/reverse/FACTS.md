@@ -1652,3 +1652,13 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** complete private export text/reference audit and static decompilation of the named routines. No runtime trace or playback; no claim that MIMPIV4 ignores later tempo records.
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_22FC`, `FUN_1FF5_1344`, `FUN_1FF5_1409`, `FUN_1000_8888`, `FUN_1000_A3BB`, `FUN_1000_C6A4`, `FUN_1FF5_0DE1`; F-090/F-147. Static analysis only.
+
+
+## F-149 — MIMPIV4 mode-1 event-relative offset 0x043E has no identified binary tempo-record writer
+
+- Audited every direct reference/write to `0x043E` in the complete private MIMPIV4 Ghidra export. Outside driver initialization, the identified writes are: `FUN_1000_8888` stores a parsed text-command value; `FUN_1000_A3BB` clears it; and `FUN_1000_C6A4` increments/decrements it for keyboard timing controls. The mode-1 driver initializer `FUN_1FF5_1409` also clears it. Other driver initializers seed it as part of their separate mode paths.
+- The `FUN_1000_8888` call is reached from the text-command dispatcher `FUN_1000_7E55`, which scans an `@` command stream and dispatches textual command handlers. This is a text-command route, not evidence of a binary conductor tempo-record parser.
+- No direct write to `0x043E` from a binary SNG tempo-record consumer was identified in the export. This is a bounded negative result for this global only: the tempo record could be consumed through another variable, an indirect write, or a different timer/scheduler path. It does not prove that MIMPIV4 ignores tempo records.
+- **Evidence boundary:** static reference/write audit and call-chain inspection in the complete private export. No runtime trace or playback.
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_7E55`, `FUN_1000_8888`, `FUN_1000_A3BB`, `FUN_1000_C6A4`, `FUN_1FF5_1409`, other mode-specific driver initializers; F-148. Static analysis only.
