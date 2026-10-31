@@ -1060,3 +1060,11 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - `FUN_1FF5_1344` dispatches mode 1 to `FUN_1FF5_1409`, which restores `0x0440` from `0x7BF0`. Modes 2–4 use a different initializer (`FUN_1FF5_1F45`); the `0x0438 → 0x0440` copies in other initializers must not be treated as the mode-1 path.
 - Added FACTS F-147 and refined T-016. This narrows the correct startup path but does not identify the consumer of later conductor tempo records or establish runtime playback behavior.
 - Documentation only. No converter, tests, private fixtures, or analysis dumps changed. Static analysis only; no runtime trace or playback.
+
+
+## 2026-11-01 — audit mode-1 timer-base reads and event-relative scheduling offset
+
+- Re-scanned all `0x0440` and `0x7BF0` references in the complete private MIMPIV4 export, separating mode-1 writes from other driver initializers. The legacy mode-1 base is set by `FUN_1000_22FC` and restored by `FUN_1FF5_1409`; the other `0x0440` assignments belong to other driver branches.
+- Followed mode-1 scheduling reads: `FUN_1000_8888` parses a text-command value, stores it in `0x043E`, and calls `FUN_1FF5_0DE1(0x043E + 0x0440)`. `FUN_1000_A3BB` can reset the relative offset and schedule the base alone. `FUN_1000_C6A4` changes `0x043E` for keyboard timing controls and schedules the adjusted value plus `0x0440`.
+- This separates the mutable event-relative offset `0x043E` from the base `0x0440`. It does not prove any connection between `0x043E` and the binary SNG conductor tempo-record second word; the text-command parser is a distinct path unless a caller/dataflow link is demonstrated.
+- Added FACTS F-148 and refined T-016. Documentation-only evidence update; no converter/tests/fixtures changed. Static export analysis only; no runtime trace or playback.
