@@ -1632,3 +1632,13 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **証拠範囲:** 完全な Ghidra export の静的検索と decompilation / instruction view の照合。runtime trace/playback は未実施。tempo record を無視すると結論づけない。
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; functions `FUN_1000_22FC`, `FUN_1000_381B`, `FUN_1000_3C0E`, `FUN_1000_474A`, `FUN_1000_4933`, `FUN_1000_4C5F`, `FUN_1000_5284`, `FUN_1000_5704`, `FUN_1000_5811`, `FUN_1000_638A`, `FUN_1000_6A42`, `FUN_1FF5_2769`, `FUN_1FF5_3DD2`, `FUN_1FF5_44E0`, `FUN_1FF5_4CF8`, `FUN_1FF5_5114`, `FUN_1FF5_579C`. Static analysis only.
+
+
+## F-147 — MIMPIV4 legacy Ballade mode 1 selects the 0x7BF0 timer-base restore path
+
+- The top-level loader `FUN_1000_0010` sets format/mode word `0x016E = 1` before calling `FUN_1000_22C4`, which reaches the legacy Ballade loader `FUN_1000_22FC`. In that mode, `FUN_1000_22FC` reads the conductor-header byte at `header+0x1C` and stores it in both `0x7BF0` and `0x0440`.
+- The timer-driver dispatcher `FUN_1FF5_1344` branches on `0x016E`: mode 1 calls `FUN_1FF5_1409`, whose body restores `0x0440` from `0x7BF0`. Modes 2–4 instead select `FUN_1FF5_1F45`, and other modes select their own driver initializers.
+- Therefore the `0x0438 -> 0x0440` copy path seen in several other driver initializers must not be assumed to be the timer-base path used by the legacy Ballade mode 1 case. This narrows the relevant startup path, but does not identify any routine that consumes later SNG conductor tempo-record second words or changes timer state during playback.
+- **Evidence boundary:** static inspection of the complete private MIMPIV4 Ghidra export and call/branch targets. No runtime trace or actual playback was performed; no claim that tempo records are ignored.
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_0010`, `FUN_1000_22C4`, `FUN_1000_22FC`, `FUN_1FF5_1344`, `FUN_1FF5_1409`; F-090/F-146. Static analysis only.

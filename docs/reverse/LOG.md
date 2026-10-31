@@ -1051,3 +1051,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Grouped the loader-side writes by containing function: `FUN_1000_381B`, `FUN_1000_3C0E`, `FUN_1000_474A`, `FUN_1000_4933`, `FUN_1000_4C5F`, `FUN_1000_5284`, `FUN_1000_5704`, `FUN_1000_5811`, `FUN_1000_638A`, and `FUN_1000_6A42`. These initialize the field from different loaded-data offsets or calculated values; no direct SNG tempo-record second-word source is identified.
 - Confirmed six timer-driver initialization functions copy `0x0438` to `0x0440`: `FUN_1FF5_2769`, `FUN_1FF5_3DD2`, `FUN_1FF5_44E0`, `FUN_1FF5_4CF8`, `FUN_1FF5_5114`, and `FUN_1FF5_579C`.
 - Added FACTS F-146 and expanded T-016. This identifies the broader timer-base initialization candidates but does not identify the dynamic tempo-record consumer. No converter code, tests, or private fixtures changed; static analysis only, no runtime trace/playback.
+
+
+## 2026-11-01 — distinguish legacy Ballade mode-1 timer initialization from other driver modes
+
+- Re-traced the top-level MIMPIV4 mode selection and timer-driver dispatch in the complete private export.
+- `FUN_1000_0010` sets `0x016E = 1` for the legacy Ballade loader path and calls `FUN_1000_22C4` → `FUN_1000_22FC`. That loader copies the legacy conductor-header byte at `+0x1C` into `0x7BF0` and `0x0440`.
+- `FUN_1FF5_1344` dispatches mode 1 to `FUN_1FF5_1409`, which restores `0x0440` from `0x7BF0`. Modes 2–4 use a different initializer (`FUN_1FF5_1F45`); the `0x0438 → 0x0440` copies in other initializers must not be treated as the mode-1 path.
+- Added FACTS F-147 and refined T-016. This narrows the correct startup path but does not identify the consumer of later conductor tempo records or establish runtime playback behavior.
+- Documentation only. No converter, tests, private fixtures, or analysis dumps changed. Static analysis only; no runtime trace or playback.
