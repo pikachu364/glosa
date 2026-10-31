@@ -1642,3 +1642,13 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** static inspection of the complete private MIMPIV4 Ghidra export and call/branch targets. No runtime trace or actual playback was performed; no claim that tempo records are ignored.
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_0010`, `FUN_1000_22C4`, `FUN_1000_22FC`, `FUN_1FF5_1344`, `FUN_1FF5_1409`; F-090/F-146. Static analysis only.
+
+
+## F-148 — MIMPIV4 mode-1 timer-base write audit separates base 0x0440 from event-relative 0x043E
+
+- Re-scanned every textual reference to `0x0440` and `0x7BF0` in the complete private MIMPIV4 Ghidra export. The only mode-1 loader assignment to `0x0440` is in `FUN_1000_22FC`; the mode-1 driver restore is in `FUN_1FF5_1409`. Other `0x0440` assignments belong to distinct driver initializer functions (`FUN_1FF5_1F45` and the `0x0438`-copy initializers), not to a later mode-1 tempo-record update.
+- In the same export, playback/scheduling code reads `0x0440` as an additive base when calling `FUN_1FF5_0DE1`. Relevant examples include `FUN_1000_8888`, which parses a text-command value into `0x043E` and schedules `0x043E + 0x0440`; `FUN_1000_A3BB` can clear `0x043E` and schedule the base alone; and `FUN_1000_C6A4` adjusts `0x043E` for keyboard-driven timing controls before scheduling the adjusted value plus the base.
+- This identifies `0x043E` as a mutable event-relative/scheduling offset in these paths, distinct from the mode-1 base `0x0440`. It does **not** establish that `0x043E` is loaded from, or updated by, the binary SNG conductor tempo-record second word. The text-command path is not proof of a binary tempo-table connection.
+- **Evidence boundary:** complete private export text/reference audit and static decompilation of the named routines. No runtime trace or playback; no claim that MIMPIV4 ignores later tempo records.
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_22FC`, `FUN_1FF5_1344`, `FUN_1FF5_1409`, `FUN_1000_8888`, `FUN_1000_A3BB`, `FUN_1000_C6A4`, `FUN_1FF5_0DE1`; F-090/F-147. Static analysis only.
