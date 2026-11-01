@@ -1076,3 +1076,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Traced `FUN_1000_8888` to `FUN_1000_7E55`, a textual `@` command scanner/dispatcher. This confirms the known parser path is text-command input rather than a demonstrated binary SNG conductor tempo-record path.
 - No binary tempo-record writer to `0x043E` was found. Recorded this as a bounded negative result for this one global only; other variables, indirect writes, or other scheduler paths remain possible.
 - Added FACTS F-149, refined T-016, and appended this log. Docs only; no code/tests/private fixtures changed. Static analysis only; no runtime trace/playback.
+
+
+## 2026-11-01 — separate MIMPIV4 mode-1 tempo investigation from mode-2 special-record pre-scan
+
+- Re-read the complete private MIMPIV4 Ghidra export and followed the direct caller chain for `FUN_1000_341E`.
+- Confirmed that `FUN_1000_341E` is called only by `FUN_1000_30E0`, after `FUN_1000_3240`. The top-level dispatcher `FUN_1000_0010` selects `FUN_1000_22C4` → `FUN_1000_22FC` for mode 1, while mode 2 selects `FUN_1000_30E0`.
+- Therefore, the earlier special-record scan of types 0x01 / 0x02 / 0x03 and copies to 0x3BA / 0x400 belongs to the separate mode-2 branch. It is not evidence about whether the legacy Ballade mode-1 path consumes conductor tempo records.
+- Added FACTS F-150 and corrected the T-016 evidence boundary. The mode-1 tempo-record consumer remains unidentified; no conclusion that tempo records are ignored.
+- Documentation only. No converter, tests, private fixtures, or analysis dumps changed. Static call-graph/decompilation inspection only; no runtime trace or playback.
