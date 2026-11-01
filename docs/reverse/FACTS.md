@@ -1684,3 +1684,15 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** complete private MIMPIV4 Ghidra export の direct-call references と decompilation の静的照合。runtime trace / playback は未実施。
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_0010`, `FUN_1000_22FC`, `FUN_1000_30E0`, `FUN_1000_3240`, `FUN_1000_3543`, `FUN_1000_2D27`; F-150. Static analysis only.
+
+
+## F-152 — MIMPIV4 mode-1 の /Zbar tempo 引数は binary SNG tempo-record consumer ではない
+
+- MIMPIV4 の option parser FUN_1000_0C2C は /Zbar<,tempo> に対応する値を 0x43A（bar target）と 0x43C（tempo argument）へ格納する。付属 MIMPIV4 Ver 4.27 説明書も /Zbar<,tempo> を指定小節への早送りとして説明している。
+- 再生開始時の FUN_1000_0010 は 0x43A が設定されている場合に 0x43C を 0x43E へ移し、0x43E + 0x0440 を FUN_1FF5_0DE1 に渡す。この経路はコマンドライン指定の早送り初期化であり、曲データ内の conductor tempo record を読んだ証拠ではない。
+- FUN_1FF5_0DE1 の直接 caller は、完全な Ghidra export の call-reference 表では FUN_1000_0010、FUN_1000_8888、FUN_1000_A3BB、FUN_1000_C6A4 の4箇所。各 caller は起動時の /Zbar、text-command、終了/復帰時の base reset、または keyboard timing adjustment に対応する。FUN_1000_8888 は FUN_1000_7E55 の @ text-command dispatcher 経由である。
+- FUN_1FF5_0DE1 は引数を FUN_1FF5_0DEE に渡し、同関数は scheduled count を 0x3390 に格納する。別の timer 初期化 FUN_1FF5_0D61 は 0x0440 を CX に読み、FUN_1FF5_0DFA がその値と 0x3386 / 0x3392 を使って PIT divisor を計算する。これは timer setup / scheduling の役割を分ける根拠だが、tempo-record 値の取り込み先を示すものではない。
+- よって 0x43A / 0x43C / 0x43E の既知経路を binary tempo-record consumer とみなすことはできない。mode-1 tempo-record consumer は依然未特定であり、MIMPIV4 が tempo records を無視すると結論しない。
+- **Evidence boundary:** private MIMPIV4 Ghidra export の静的 call/reference・命令列・decompilation と、同梱 Ver 4.27 説明書の option 説明。runtime trace / actual playback は未実施。
+
+**Sources:** private testdata/ballade/MIMPI427/mimpiv427解析データ.txt / MIMPIV4.DOC; FUN_1000_0C2C、FUN_1000_0010、FUN_1000_7E55、FUN_1000_8888、FUN_1000_A3BB、FUN_1000_C6A4、FUN_1FF5_0DE1、FUN_1FF5_0DEE、FUN_1FF5_0D61、FUN_1FF5_0DFA. Static analysis only.
