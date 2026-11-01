@@ -1662,3 +1662,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** static reference/write audit and call-chain inspection in the complete private export. No runtime trace or playback.
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_7E55`, `FUN_1000_8888`, `FUN_1000_A3BB`, `FUN_1000_C6A4`, `FUN_1FF5_1409`, other mode-specific driver initializers; F-148. Static analysis only.
+
+
+## F-150 — MIMPIV4 の FUN_1000_341E special-record pre-scan は mode-1 legacy Ballade loader 経路ではない
+
+- 完全な private MIMPIV4 Ghidra export で直接 caller を確認した。`FUN_1000_341E` の caller は `FUN_1000_30E0` のみであり、`FUN_1000_30E0` は内部で `FUN_1000_3240` の後に `FUN_1000_341E` を呼ぶ。
+- top-level `FUN_1000_0010` の mode dispatch では、`0x016E = 1` の分岐（dispatch index 0）が `FUN_1000_22C4` を呼び、同関数から legacy loader `FUN_1000_22FC` に進む。一方、dispatch index 1（mode 2）は `FUN_1000_30E0` を呼ぶ。mode 2 への fallback 経路でも `0x016E = 2` を設定してから `FUN_1000_30E0` を呼ぶ。
+- よって、`FUN_1000_341E` が record type `0x01` / `0x02` / `0x03` を走査して display buffer `0x3BA` / `0x400` にコピーするという既存の観察は、mode-2 loader branch の処理である。これを legacy Ballade mode 1 の tempo-record consumer が見つからない根拠として使ってはならない。
+- mode 1 の loader `FUN_1000_22FC` から後続の再生中 event / conductor tempo-record 処理へ進む経路は、引き続き特定が必要。今回の結果は調査対象を正しい mode branch に限定するものであり、tempo record の処理有無を結論しない。
+- **Evidence boundary:** complete private MIMPIV4 Ghidra export の top-level dispatch、直接 caller、decompilation / instruction call sites の静的照合。runtime trace / playback は未実施。
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_0010`, `FUN_1000_22C4`, `FUN_1000_22FC`, `FUN_1000_30E0`, `FUN_1000_3240`, `FUN_1000_341E`; F-147/F-149. Static analysis only.
