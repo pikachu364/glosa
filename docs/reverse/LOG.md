@@ -1085,3 +1085,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Therefore, the earlier special-record scan of types 0x01 / 0x02 / 0x03 and copies to 0x3BA / 0x400 belongs to the separate mode-2 branch. It is not evidence about whether the legacy Ballade mode-1 path consumes conductor tempo records.
 - Added FACTS F-150 and corrected the T-016 evidence boundary. The mode-1 tempo-record consumer remains unidentified; no conclusion that tempo records are ignored.
 - Documentation only. No converter, tests, private fixtures, or analysis dumps changed. Static call-graph/decompilation inspection only; no runtime trace or playback.
+
+
+## 2026-11-01 — classify MIMPIV4 event pre-scan FUN_1000_3543 by caller chain
+
+- Audited direct call references in the complete private MIMPIV4 Ghidra export. `FUN_1000_3543` is called only by `FUN_1000_3240`; `FUN_1000_3240` is called only by `FUN_1000_30E0`.
+- Since `FUN_1000_30E0` is the mode-2 loader branch, the `FUN_1000_3543` per-track event pre-scan and maximum-absolute-tick calculation also belong to mode 2. It is not evidence about the legacy Ballade mode-1 tempo-record consumer.
+- Confirmed the distinction for `FUN_1000_2D27`: it is conditionally called by the mode-1 `FUN_1000_22FC` loader and rewrites Program Change data. Its lack of timer-base writes does not establish whether another mode-1 routine consumes tempo records.
+- Added FACTS F-151 and refined T-016 / README evidence boundaries. Mode-1 tempo-record consumer remains unidentified; no conclusion that tempo records are ignored.
+- Documentation only. No converter, tests, private fixtures, or analysis dumps changed. Static call-reference/decompilation inspection only; no runtime trace or playback.
