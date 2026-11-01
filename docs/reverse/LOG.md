@@ -1094,3 +1094,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Confirmed the distinction for `FUN_1000_2D27`: it is conditionally called by the mode-1 `FUN_1000_22FC` loader and rewrites Program Change data. Its lack of timer-base writes does not establish whether another mode-1 routine consumes tempo records.
 - Added FACTS F-151 and refined T-016 / README evidence boundaries. Mode-1 tempo-record consumer remains unidentified; no conclusion that tempo records are ignored.
 - Documentation only. No converter, tests, private fixtures, or analysis dumps changed. Static call-reference/decompilation inspection only; no runtime trace or playback.
+
+
+## 2026-11-01 — separate /Zbar tempo argument from MIMPIV4 mode-1 SNG tempo records
+
+- Audited the remaining known 0x43A / 0x43C references in the complete private MIMPIV4 export. FUN_1000_0C2C parses the /Zbar<,tempo> option and stores its arguments in 0x43A / 0x43C; the bundled Ver 4.27 manual describes this option as fast-forwarding to a specified bar.
+- The main FUN_1000_0010 startup path copies 0x43C to 0x43E and schedules 0x43E + 0x0440 through FUN_1FF5_0DE1 when 0x43A is nonzero. This is the /Zbar startup path, not evidence of parsing a binary SNG conductor tempo record.
+- Audited direct call references to FUN_1FF5_0DE1: callers are FUN_1000_0010 (startup /Zbar), FUN_1000_8888 (text @ command path), FUN_1000_A3BB (reset to base), and FUN_1000_C6A4 (keyboard timing adjustment). Its wrapper FUN_1FF5_0DEE stores the requested count in 0x3390. Timer initialization is separate: FUN_1FF5_0D61 passes 0x0440 to FUN_1FF5_0DFA for hardware divisor calculation.
+- This narrows the already-known scheduling paths and prevents the /Zbar tempo argument from being misclassified as the missing binary tempo-record consumer. It does not rule out a consumer using another global or per-event delta path.
+- Added FACTS F-152 and updated T-016 / README. Documentation only; no converter, tests, private fixtures, or analysis dumps changed. Static analysis and manual inspection only; no runtime trace or playback.
