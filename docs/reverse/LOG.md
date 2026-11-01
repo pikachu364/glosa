@@ -1103,3 +1103,10 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - Audited direct call references to FUN_1FF5_0DE1: callers are FUN_1000_0010 (startup /Zbar), FUN_1000_8888 (text @ command path), FUN_1000_A3BB (reset to base), and FUN_1000_C6A4 (keyboard timing adjustment). Its wrapper FUN_1FF5_0DEE stores the requested count in 0x3390. Timer initialization is separate: FUN_1FF5_0D61 passes 0x0440 to FUN_1FF5_0DFA for hardware divisor calculation.
 - This narrows the already-known scheduling paths and prevents the /Zbar tempo argument from being misclassified as the missing binary tempo-record consumer. It does not rule out a consumer using another global or per-event delta path.
 - Added FACTS F-152 and updated T-016 / README. Documentation only; no converter, tests, private fixtures, or analysis dumps changed. Static analysis and manual inspection only; no runtime trace or playback.
+
+## 2026-11-01 — locate the unresolved MIMPIV4 mode-1 driver callback target
+
+- Re-read the mode-1 dispatch and initialization sequence in the complete private Ghidra export. `FUN_1FF5_1344` writes `0x1430` to the callback pointer at `CS:[0x1406]` before calling `FUN_1FF5_1409`.
+- `FUN_1FF5_1409` restores `0x0440` from `0x7BF0`, clears `0x043E`, and invokes the thunk at `1FF5:142B`. The thunk performs an indirect jump through `CS:[0x1406]`, so this path reaches `1FF5:1430`.
+- The current export contains no function entry, decompilation, or instruction listing for `1FF5:1430`. This is a concrete missing code target in the mode-1 driver initialization path; its role is not yet known and it is not evidence by itself of tempo-record consumption.
+- Added FACTS F-153 and refined T-016 to inspect this exact address next. Documentation only; no converter, tests, private fixtures, or analysis dumps changed. Static export inspection only; no runtime trace or playback.
