@@ -1673,3 +1673,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** complete private MIMPIV4 Ghidra export の top-level dispatch、直接 caller、decompilation / instruction call sites の静的照合。runtime trace / playback は未実施。
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_0010`, `FUN_1000_22C4`, `FUN_1000_22FC`, `FUN_1000_30E0`, `FUN_1000_3240`, `FUN_1000_341E`; F-147/F-149. Static analysis only.
+
+
+## F-151 — MIMPIV4 の FUN_1000_3543 event pre-scan も mode-2 loader branch に属する
+
+- 完全な private MIMPIV4 Ghidra export の call reference を照合した。`FUN_1000_3543` の直接 caller は `FUN_1000_3240` のみであり、`FUN_1000_3240` の直接 caller は `FUN_1000_30E0` のみ。
+- `FUN_1000_30E0` は mode-2 loader branch である（F-150）。したがって `FUN_1000_3543` が per-track event stream を走査して最大 absolute tick を求める処理も mode 2 に属し、legacy Ballade mode 1 の `FUN_1000_22FC` の tempo-record consumer を調べる証拠にはならない。
+- 対照的に `FUN_1000_2D27` は `FUN_1000_22FC` から条件付きで呼ばれる mode-1 loader 内の Program Change rewrite 処理である。timer-base write がないことは確認済みだが、tempo-record consumer かどうかは別途判定が必要。
+- 今回の caller-chain audit は `FUN_1000_3543` の所属 branch を確定するものであり、MIMPIV4 が tempo records を処理するかどうかは結論しない。
+- **Evidence boundary:** complete private MIMPIV4 Ghidra export の direct-call references と decompilation の静的照合。runtime trace / playback は未実施。
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1000_0010`, `FUN_1000_22FC`, `FUN_1000_30E0`, `FUN_1000_3240`, `FUN_1000_3543`, `FUN_1000_2D27`; F-150. Static analysis only.
