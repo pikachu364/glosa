@@ -1,5 +1,4 @@
 # 逆解析の進捗サマリー（2026-10-25 更新）
-- [x] Audit /Zbar<,tempo> handling and direct callers of FUN_1FF5_0DE1: FUN_1000_0C2C parses the command-line option into 0x43A / 0x43C; FUN_1000_0010 applies it as startup fast-forward scheduling. Direct FUN_1FF5_0DE1 callers are FUN_1000_0010, FUN_1000_8888 (@ text command), FUN_1000_A3BB (base reset), and FUN_1000_C6A4 (keyboard timing). This is not evidence of a binary tempo-record consumer (FACTS F-152).
 
 ## GitHub 統合状況（2026-10-25）
 
@@ -333,6 +332,7 @@ src/Glosa.Core/Smf/SngConverter.cs の Tie またはレイアウト処理を変�
 - [x] Trace the top-level mode/driver dispatch for legacy Ballade mode 1: `FUN_1000_0010` selects `0x016E = 1` and calls `FUN_1000_22C4` → `FUN_1000_22FC`; `FUN_1FF5_1344` then selects `FUN_1FF5_1409`, which restores `0x0440` from `0x7BF0`. Do not attribute the `0x0438 → 0x0440` copies in other driver modes to this mode-1 path (FACTS F-147).
 - [x] Recheck the top-level mode dispatch and direct call graph: mode 1 selects `FUN_1000_22C4` → `FUN_1000_22FC`; mode 2 selects `FUN_1000_30E0`. Both `FUN_1000_341E` (F-150) and `FUN_1000_3543` (F-151) belong to the mode-2 branch. Do not use either pre-scan as evidence about mode-1 tempo handling.
 - [x] Audit every `0x0440` / `0x7BF0` reference in the complete export and distinguish mode-1 base writes from other driver initializers. Confirmed that mode-1 scheduling routines read `0x0440` as the additive base; `FUN_1000_8888` parses a text-command value into `0x043E`, then schedules `0x043E + 0x0440`; `FUN_1000_A3BB` can schedule the base alone; and keyboard-control handling in `FUN_1000_C6A4` adjusts `0x043E` before adding the base. This maps a mutable event-relative offset but does not link it to binary conductor tempo records (FACTS F-148).
+- [x] Audit /Zbar<,tempo> handling and direct callers of FUN_1FF5_0DE1: FUN_1000_0C2C parses the command-line option into 0x43A / 0x43C; FUN_1000_0010 applies it as startup fast-forward scheduling. Direct FUN_1FF5_0DE1 callers are FUN_1000_0010, FUN_1000_8888 (@ text command), FUN_1000_A3BB (base reset), and FUN_1000_C6A4 (keyboard timing). This is not evidence of a binary tempo-record consumer (FACTS F-152).
 - [ ] Identify which MIMPIV4 routine consumes the v1 conductor tempo records and determine whether it changes another timer parameter or per-event delta scaling.
 - [ ] Reconcile that routine against the actual v1 `runner.SNG` records without assuming the SNG2S MIDI-export curve applies to MIMPIV4 playback.
 - [ ] If the path cannot be proven statically, record the exact remaining dataflow gap; do not claim runtime behavior without a trace.
