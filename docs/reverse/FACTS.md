@@ -1696,3 +1696,13 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** private MIMPIV4 Ghidra export の静的 call/reference・命令列・decompilation と、同梱 Ver 4.27 説明書の option 説明。runtime trace / actual playback は未実施。
 
 **Sources:** private testdata/ballade/MIMPI427/mimpiv427解析データ.txt / MIMPIV4.DOC; FUN_1000_0C2C、FUN_1000_0010、FUN_1000_7E55、FUN_1000_8888、FUN_1000_A3BB、FUN_1000_C6A4、FUN_1FF5_0DE1、FUN_1FF5_0DEE、FUN_1FF5_0D61、FUN_1FF5_0DFA. Static analysis only.
+
+## F-153 — MIMPIV4 mode-1 driver initialization indirectly calls 1FF5:1430
+
+- `FUN_1FF5_1344` の mode-1 分岐は、`1FF5:138E` で code pointer `CS:[0x1406]` の値を `0x1430` に設定し、その後 `FUN_1FF5_1409` を呼ぶ。
+- `FUN_1FF5_1409` は `0x043E` を 0 にし、`0x0440` を `0x7BF0` から復元した後、thunk `1FF5:142B` を呼ぶ。thunk は `JMP word ptr CS:[0x1406]` を実行するため、この mode-1 初期化経路は `1FF5:1430` へ間接分岐する。
+- 完全な private Ghidra export では `1FF5:1430` を Entry とする関数定義・decompilation・命令列を確認できなかった。従って、ここは mode-1 driver initialization の未解析 target として残る。tempo-record consumer であるとはまだ言えない。
+- この target は、既知の `0x0440` / `0x043E` 参照監査だけでは説明できなかった追加の実行経路であり、次の静的調査対象を具体的に限定する。ただし、`1FF5:1430` がテンポ値を読むか、event delta を変換するかは未確認。
+- **Evidence boundary:** complete private MIMPIV4 Ghidra export の `FUN_1FF5_1344`、`FUN_1FF5_1409`、`thunk_FUN_1FF5_74B3` の decompilation / instruction references を静的照合。`1FF5:1430` の本体は export に含まれず、runtime trace / playback は未実施。
+
+**Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1FF5_1344` (1FF5:138E–1395), `FUN_1FF5_1409` (1FF5:1409–142A), `thunk_FUN_1FF5_74B3` (1FF5:142B–142F). Static analysis only.
