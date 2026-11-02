@@ -1119,3 +1119,12 @@ Keep T-016 open: the consumer is still unidentified, and static analysis is not 
 - The thunk's reference annotation points to `1FF5:74B3`, but the decompilation warns that the jumptable could not be recovered. The dispatcher explicitly writes `0x1430` to `CS:[0x1406]`; the annotation is not enough to replace that pointer value or identify the callback's role.
 - Added FACTS F-154 and refined T-016. The next required evidence is the original EXE byte range with a verified MZ segment/relocation-to-file-offset mapping, followed by disassembly. The raw target bytes have not yet been inspected; no tempo-record consumer is identified.
 - Documentation only. No converter, tests, private fixtures, or analysis dumps changed. Static export inspection only; no runtime trace or playback.
+
+
+## 2026-11-02 — decode the MIMPIV4 mode-1 callback from the original EXE
+
+- Corrected the earlier export-only conclusion: the Ghidra text export omitted the function body at `1FF5:1430`, but the original `MIMPIV4.EXE` in the same private directory contains executable code at that address.
+- Read the 136,903-byte MZ image. Verified the 0x0A00-byte header and segment-to-file mapping by matching bytes at `1000:0010` to the exported `ENTER` instruction and bytes at `1FF5:138E` to the exported `MOV CS:[0x1406],0x1430`. The target maps to file offset `0x11D80`.
+- Static decoding of the callback found a likely tempo-record path: a 16-bit value at stream-record `+2) is multiplied by `0x7BF0`, divided by 64, clamped to 1..480, written to `0x0440), combined with `0x043E), and passed to `FUN_1FF5_0DEE`.
+- Added FACTS F-155 and refined T-016. The next task is to reconcile the candidate record fields and scaling with the actual v1 `runner.SNG` bytes; exact record semantics and runtime behavior are not yet confirmed.
+- Documentation only. The private EXE and raw bytes were not modified or copied into the public repository. No runtime trace or playback was performed.
