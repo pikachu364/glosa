@@ -1706,3 +1706,25 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** complete private MIMPIV4 Ghidra export の `FUN_1FF5_1344`、`FUN_1FF5_1409`、`thunk_FUN_1FF5_74B3` の decompilation / instruction references を静的照合。`1FF5:1430` の本体は export に含まれず、runtime trace / playback は未実施。
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1FF5_1344` (1FF5:138E–1395), `FUN_1FF5_1409` (1FF5:1409–142A), `thunk_FUN_1FF5_74B3` (1FF5:142B–142F). Static analysis only.
+
+
+## F-154 — MIMPIV4 mode-1 callback target 1FF5:1430 is absent from the current Ghidra export
+
+- Re-read the complete private Ghidra export blob for MIMPIV4 Ver 4.27 (2,588,668 characters; 572 exported functions; zero decompiler errors). `FUN_1FF5_1344` assigns `0x1430` to `CS:[0x1406]` in its mode-1 branch, then calls `FUN_1FF5_1409`.
+- The exported body of `FUN_1FF5_1409` ends at `1FF5:142A`. Its following thunk occupies `1FF5:142B–142F` and executes `JMP word ptr CS:[0x1406]`. The export contains no function entry, decompilation, or instruction listing beginning at `1FF5:1430`; the address is not present as a code-location reference elsewhere in the export.
+- The thunk's Ghidra reference annotation reports a computed-jump destination at `1FF5:74B3`, while its decompilation explicitly says that the jumptable could not be recovered because there are too many branches. This annotation does not override the immediate pointer value `0x1430` written by the mode-1 dispatcher, and it does not establish that `1FF5:74B3` is the mode-1 callback target.
+- The export omission is limited to Ghidra's exported function/instruction coverage; it does not mean the corresponding bytes are absent from the executable. The original MIMPIV4.EXE must be used to recover and inspect this target (see F-155).
+- **Evidence boundary:** complete text export and its function/instruction/reference sections were inspected. The export itself does not contain a disassembly for this target. No runtime trace or playback was performed.
+
+**Sources:** private testdata/ballade/MIMPI427/mimpiv427解析データ.txt and MIMPIV4.EXE; `FUN_1FF5_1344` (1FF5:138E–1395), `FUN_1FF5_1409` (1FF5:1409–142A), `thunk_FUN_1FF5_74B3` (1FF5:142B–142F). Static export inspection only.
+
+
+## F-155 — MIMPIV4 mode-1 callback bytes reveal a tempo-scaling path
+
+- Read the private `MIMPIV4.EXE` (MZ, 136,903 bytes). Its MZ header declares a 0x0A00-byte header, initial `CS:IP = 0000:CF16`, and 626 relocation entries. Ghidra's `1000:0010` maps to file offset `0x0A10`; the bytes there match the exported `ENTER 0x10,0` instruction. The mode-1 dispatcher at `1FF5:138E` maps to file offset `0x11CDE`; its bytes match the exported instruction that writes `0x1430` to `CS:[0x1406]`. These independent matches validate the mapping used here: `file_offset = 0x0A00 + (segment - 0x1000) * 16 + offset`.
+- Under that mapping, `1FF5:1430` is file offset `0x11D80` and contains executable x86 code, not a missing or unmapped target. The initial branch gates inspect words at `0x3410` and `0x0432`; the path then reads a stream record through the pointer loaded from `ES:[0x6E6C]`.
+- In the inspected path, the code reads a 16-bit value at record offset `+2), treats values below `0x00FF` as the candidate tempo value, advances the record cursor by four bytes, and reads the associated word at offset `+0`. It multiplies the candidate value by the word at `0x7BF0`, divides by `0x40`, clamps the result to `1..0x01E0`, writes it to `0x0440), adds `0x043E`, and passes the resulting count to `FUN_1FF5_0DEE`.
+- This is strong static evidence that the previously missing mode-1 callback contains the legacy tempo-scaling / timer-update path. The interpretation of the four-byte record fields must still be reconciled with the actual v1 `runner.SNG` records before declaring the exact record semantics or complete behavior. The calculation is not evidence of runtime playback.
+- **Evidence boundary:** original private EXE bytes, MZ header, verified file-offset mapping, and static instruction decoding. No runtime trace or playback was performed. Raw executable bytes remain private and are not copied into public documentation.
+
+**Sources:** private `testdata/ballade/MIMPI427/MIMPIV4.EXE` and `mimpiv427解析データ.txt`; `1FF5:138E–1395`, `1FF5:1409–142F`, raw target `1FF5:1430` onward, and `FUN_1FF5_0DEE`. Static binary analysis only.
