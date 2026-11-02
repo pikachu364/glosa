@@ -1706,3 +1706,14 @@ This narrows the source of the initial timer base but does not show that tempo r
 - **Evidence boundary:** complete private MIMPIV4 Ghidra export の `FUN_1FF5_1344`、`FUN_1FF5_1409`、`thunk_FUN_1FF5_74B3` の decompilation / instruction references を静的照合。`1FF5:1430` の本体は export に含まれず、runtime trace / playback は未実施。
 
 **Sources:** private `testdata/ballade/MIMPI427/mimpiv427解析データ.txt`; `FUN_1FF5_1344` (1FF5:138E–1395), `FUN_1FF5_1409` (1FF5:1409–142A), `thunk_FUN_1FF5_74B3` (1FF5:142B–142F). Static analysis only.
+
+
+## F-154 — MIMPIV4 mode-1 callback target 1FF5:1430 is absent from the current Ghidra export
+
+- Re-read the complete private Ghidra export blob for MIMPIV4 Ver 4.27 (2,588,668 characters; 572 exported functions; zero decompiler errors). `FUN_1FF5_1344` assigns `0x1430` to `CS:[0x1406]` in its mode-1 branch, then calls `FUN_1FF5_1409`.
+- The exported body of `FUN_1FF5_1409` ends at `1FF5:142A`. Its following thunk occupies `1FF5:142B–142F` and executes `JMP word ptr CS:[0x1406]`. The export contains no function entry, decompilation, or instruction listing beginning at `1FF5:1430`; the address is not present as a code-location reference elsewhere in the export.
+- The thunk's Ghidra reference annotation reports a computed-jump destination at `1FF5:74B3`, while its decompilation explicitly says that the jumptable could not be recovered because there are too many branches. This annotation does not override the immediate pointer value `0x1430` written by the mode-1 dispatcher, and it does not establish that `1FF5:74B3` is the mode-1 callback target.
+- Therefore the next evidence needed is the raw executable bytes mapped to `1FF5:1430` (with the segment/relocation mapping checked), followed by disassembly of that address and its surrounding range. Until then, the callback's purpose and any relationship to tempo-record consumption remain unknown.
+- **Evidence boundary:** complete text export and its function/instruction/reference sections were inspected. The original MIMPIV4.EXE is present in the private repository, but its raw bytes at the target have not been decoded in this step. No runtime trace or playback was performed.
+
+**Sources:** private testdata/ballade/MIMPI427/mimpiv427解析データ.txt and MIMPIV4.EXE; `FUN_1FF5_1344` (1FF5:138E–1395), `FUN_1FF5_1409` (1FF5:1409–142A), `thunk_FUN_1FF5_74B3` (1FF5:142B–142F). Static export inspection only.
