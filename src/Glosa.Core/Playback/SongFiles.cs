@@ -13,8 +13,8 @@ namespace Glosa.Core.Playback;
 public static class SongFiles
 {
     /// <summary>
-    /// What the reader can open: SMF, its RIFF wrapper RMI, and Recomposer's four (RCP and
-    /// R36 from 2.5F back, G18 and G36 after).
+    /// What the reader can open: SMF, its RIFF wrapper RMI, Recomposer's four formats
+    /// (RCP, R36, G18 and G36), and Roland/Boss Ballade SNG.
     /// </summary>
     public static readonly string[] Extensions =
         [".mid", ".midi", ".rmi", ".rcp", ".r36", ".g18", ".g36", ".sng"];
