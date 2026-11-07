@@ -219,7 +219,8 @@ public static class SngConverter
                 ? 500000
                 : tempi[0].Microseconds;
             WriteVar(body, 0); WriteTempo(body, firstTempo);
-            int previous = 0;            foreach (var tempo in tempi)
+            int previous = 0;
+            foreach (var tempo in tempi)
             {
                 // v1 and the evidence-backed v3/v4 scheduler path carry
                 // absolute SNG2S event ticks. The older fallback parser keeps
