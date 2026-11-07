@@ -17,7 +17,7 @@ public static class SongFiles
     /// R36 from 2.5F back, G18 and G36 after).
     /// </summary>
     public static readonly string[] Extensions =
-        [".mid", ".midi", ".rmi", ".rcp", ".r36", ".g18", ".g36"];
+        [".mid", ".midi", ".rmi", ".rcp", ".r36", ".g18", ".g36", ".sng"];
 
     /// <summary>
     /// Expands folders and keeps only playable files, in the order given; a folder's own
