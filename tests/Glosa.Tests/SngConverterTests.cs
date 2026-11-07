@@ -1,12 +1,27 @@
 using System.Buffers.Binary;
 using System.Text;
 using Glosa.Core.Smf;
+using Glosa.Core.Playback;
 using Glosa.Core.Sng;
 
 namespace Glosa.Tests;
 
 public sealed class SngConverterTests
 {
+
+    [Fact]
+    public void SmfReaderAndSongFilesRecognizeBalladeSng()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+
+        Assert.True(SongFiles.IsSong("concert.SNG"));
+        MidiSequence sequence = SmfReader.Read(sng);
+        Assert.Equal(11, sequence.TrackCount);
+
+        // Playlist summaries use the same SNG-to-SMF path as full playback.
+        _ = SmfReader.ReadSummary(sng, openingMessages: 4);
+    }
+
     [Theory]
     [InlineData("3.00", 10, 0x79, 92)]
     [InlineData("4.00", 16, 0x91, 116)]
