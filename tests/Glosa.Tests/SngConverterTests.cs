@@ -22,6 +22,23 @@ public sealed class SngConverterTests
         _ = SmfReader.ReadSummary(sng, openingMessages: 4);
     }
 
+
+    [Fact]
+    public void ConvertsVersionTwoInitialTempoUsingItsBaseTempo()
+    {
+        byte[] sng = CreateMinimalSong("2.00", 10);
+        sng[0x79] = 60;
+
+        int conductor = 0x46 + 4 * 11 + 94;
+        new byte[] { 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF }
+            .CopyTo(sng, conductor + 84);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 98), 64);
+
+        var tempos = ReadTempos(SmfReader.Read(sng));
+        Assert.Contains((Ticks: 128L, Microseconds: 1_000_000), tempos);
+    }
+
     [Theory]
     [InlineData("3.00", 10, 0x79, 92)]
     [InlineData("4.00", 16, 0x91, 116)]
