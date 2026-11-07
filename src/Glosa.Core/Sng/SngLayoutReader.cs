@@ -97,12 +97,17 @@ internal static class SngLayoutReader
             sizes[0] = entries[0];
             offset += entries[0];
 
+            // The conductor block is part of the declared layout too. Reject
+            // candidates whose declared range runs beyond the input before
+            // attempting to interpret any part headers.
+            if (offset > data.Length) continue;
+
             bool valid = true;
             for (int part = 1; part <= parts; part++)
             {
                 long size = (long)entries[part] + 81;
-                if (offset < 0 || offset + 158 > data.Length ||
-                    size < 158 || size > int.MaxValue)
+                if (offset < 0 || size < 158 || size > int.MaxValue ||
+                    offset + size > data.Length)
                 {
                     valid = false;
                     break;
