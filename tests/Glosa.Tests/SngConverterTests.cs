@@ -22,7 +22,7 @@ public sealed class SngConverterTests
 
         // baseTempo 60 * slider 89 / 64 = timerCount 83.
         // SNG2S's coarse tempo is floor(60000 / 83) ms.
-        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 96), 192);
         BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 98), 89);
         // The next record changes the curve after the first bar.
         BinaryPrimitives.WriteUInt16LittleEndian(sng.AsSpan(conductor + 100), 192);
