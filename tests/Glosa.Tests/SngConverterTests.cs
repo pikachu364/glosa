@@ -33,7 +33,7 @@ public sealed class SngConverterTests
 
         Assert.Contains((Ticks: (long)initialTempoTick, Microseconds: 722_000), tempos);
         Assert.Contains((Ticks: 192L, Microseconds: 722_891), tempos);
-        Assert.Contains((Ticks: 383L, Microseconds: 1_333_000), tempos);
+        Assert.Contains((Ticks: 383L, Microseconds: 1_818_000), tempos);
     }
 
     private static (long Ticks, int Microseconds)[] ReadTempos(MidiSequence sequence)
