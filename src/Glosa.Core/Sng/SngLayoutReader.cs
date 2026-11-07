@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Text;
 
 namespace Glosa.Core.Sng;
 
@@ -27,15 +26,15 @@ internal static class SngLayoutReader
     public static SngLayout Read(ReadOnlySpan<byte> data)
     {
         SngHeader header = SngHeader.Read(data);
-        if (!TryRead(data, header.Version, out SngLayout? layout))
+        if (!TryRead(data, header.Version, out SngLayout layout))
             throw new InvalidDataException("Invalid or unsupported Ballade SNG block layout.");
         return layout;
     }
 
     private static bool TryRead(ReadOnlySpan<byte> data, SngVersion version,
-                                out SngLayout? layout)
+                                out SngLayout layout)
     {
-        layout = null;
+        layout = null!;
         int parts = version == SngVersion.V4 ? 16 : 10;
         int tableEnd = PartTableOffset + 4 * (parts + 1);
         if (data.Length < tableEnd + 8) return false;
