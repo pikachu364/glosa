@@ -1,12 +1,16 @@
 version: 2
 updates:
-  # .NET / NuGet dependencies
+  # .NET / NuGet dependencies: keep version updates in one pull request
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
+    groups:
+      all-nuget-updates:
+        patterns:
+          - "*"
 
   # GitHub Actions used by workflows
   - package-ecosystem: "github-actions"
@@ -15,3 +19,7 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+    groups:
+      all-github-actions-updates:
+        patterns:
+          - "*"
