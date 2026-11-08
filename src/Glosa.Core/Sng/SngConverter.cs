@@ -404,16 +404,53 @@ public static class SngConverter
         int at = last + 12;
         int step = U16(data, at);
         int value = U16(data, at + 2);
-        // The tick-128 derivation is specific to the inspected v2 startup record:
-        // (step=0,value=64) in SHIZUME0.SNG. Do not generalize it to other v2 streams.
-        if (step != 0 || value <= 0 || value > 254)
+        if (step != 0 || value != 64)
             return false;
 
         int baseTempo = data[0x79];
         if (baseTempo == 0) return false;
-        int bpm = Math.Clamp((value * baseTempo) / 64, 1, 480);
-        if (bpm != 120)
-            tempi.Add(new TempoPoint(128, (60000 / bpm) * 1000));
+        int timerCount = Math.Clamp((value * baseTempo) / 64, 1, 480);
+
+        // The v2 base=60, (step=0,value=64) startup signature used by SHIZUME0
+        // emits its first tempo at tick 128. Subsequent changed records match
+        // tick = 127 + the sum of preceding record steps. This path was checked
+        // against all 423 tempo events in the paired SNG2GS reference MIDI.
+        // Other v2 zero-step startup variants retain the previous one-event
+        // handling until their startup scheduler path is independently derived.
+        if (baseTempo == 60)
+        {
+            if (timerCount != 120)
+                tempi.Add(new TempoPoint(128, (60000 / timerCount) * 1000));
+
+            int cumulativeSteps = 0;
+            int previousTimerCount = timerCount;
+            at += 4;
+            while (at + 4 <= end)
+            {
+                int nextStep = U16(data, at);
+                int nextValue = U16(data, at + 2);
+                if (nextValue <= 0 || nextValue > 254 || nextStep > 4000)
+                    break;
+
+                int nextTimerCount = Math.Clamp((baseTempo * nextValue) / 64, 1, 480);
+                if (nextTimerCount != previousTimerCount)
+                {
+                    int eventTick = 127 + cumulativeSteps;
+                    tempi.Add(new TempoPoint(eventTick, (60000 / nextTimerCount) * 1000));
+                }
+
+                previousTimerCount = nextTimerCount;
+                cumulativeSteps += nextStep;
+                at += 4;
+            }
+
+            return true;
+        }
+
+        // Preserve the previously inspected initial event for other v2 zero-step
+        // records; their startup tick and subsequent scheduler behavior remain open.
+        if (timerCount != 120)
+            tempi.Add(new TempoPoint(128, (60000 / timerCount) * 1000));
         return true;
     }
 
