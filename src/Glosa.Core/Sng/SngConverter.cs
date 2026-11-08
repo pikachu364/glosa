@@ -5,8 +5,12 @@ namespace Glosa.Core.Sng;
 
 /// <summary>Converts Roland/Boss Ballade SNG song data to Standard MIDI Files.</summary>
 /// <remarks>
-/// The SNG layout and tempo conversion are based on sngmidi.cpp from jmplayer
-/// (MIT License), https://github.com/jihodaya/jmplayer. This implementation is a C# port.
+/// Historical parts of this converter were ported from jmplayer's sngmidi.cpp (MIT License).
+/// That port is provenance only, not a specification or behavioral reference: JMPlayer is
+/// incomplete for this project's compatibility target. Conversion behavior must be derived
+/// from SNG2S v3.3, and direct SNG playback behavior from MIMPI V4.27, then checked against
+/// the private SNG/reference-MID fixtures. The remaining ported paths are subject to replacement
+/// where they do not reproduce those two reference programs.
 /// </remarks>
 public static class SngConverter
 {
