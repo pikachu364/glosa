@@ -1,6 +1,6 @@
 # Ballade SNG v1-v4: research baseline
 
-Status: research handoff; no SNG implementation has been ported into this repository yet.
+Status: partial implementation exists on this feature branch. It is not yet compatible enough to claim complete v1-v4 conversion or playback.
 
 ## Scope and implementation direction
 
@@ -10,6 +10,14 @@ Glosa is intended to support Ballade SNG versions 1.00 through 4.00 through two 
 - **Direct SNG playback:** independently reproduce the relevant direct-input and playback behavior of MIMPI V4.27. This path must not rely on converting the SNG to SMF first.
 
 The two paths must not be conflated. JMPlayer's SNG implementation is incomplete and does not support v1; it is historical reference material, not a format specification.
+
+## Current Glosa branch status
+
+The current branch contains `SngHeader`, `SngLayoutReader`, and `SngConverter`. `SmfReader` currently routes an SNG file through `SngConverter.ToSmf()` and then parses the generated SMF. Consequently, the current playback path is conversion-based; a MIMPI V4.27-derived direct SNG reader/player has not yet been implemented.
+
+A recent private regression run parsed and converted 35 paired v1-v4 fixtures with zero conversion exceptions, and the existing 996 Glosa unit tests passed. This is only a parser/build baseline, not proof of compatibility: the paired event comparison still reports substantial note-tick, tempo, controller, Meta and SysEx differences. In particular, the current output has one fewer track than the SNG2S reference for every inspected version, consistent with the missing default SysEx track.
+
+Historical converter code includes a JMPlayer-derived port. That code is retained as provenance only and must be replaced or corrected wherever it differs from SNG2S v3.3. It is not the specification.
 
 ## Primary references and data handling
 
