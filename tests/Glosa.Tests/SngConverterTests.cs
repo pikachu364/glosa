@@ -39,6 +39,38 @@ public sealed class SngConverterTests
         Assert.Contains((Ticks: 128L, Microseconds: 1_000_000), tempos);
     }
 
+    [Fact]
+    public void ConvertsAllTempoChangesInTheObservedVersionTwoStartupPath()
+    {
+        byte[] sng = CreateMinimalSong("2.00", 10, conductorSize: 160);
+        sng[0x79] = 60;
+
+        int conductor = 0x46 + 4 * 11 + 94;
+        new byte[] { 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF }
+            .CopyTo(sng, conductor + 84);
+
+        ushort[] records =
+        [
+            0, 64,
+            192, 64,
+            96, 64,
+            192, 64,
+            12, 64,
+            12, 63,
+            12, 61,
+            12, 59
+        ];
+        for (int i = 0; i < records.Length; i++)
+            BinaryPrimitives.WriteUInt16LittleEndian(
+                sng.AsSpan(conductor + 96 + i * 2), records[i]);
+
+        var tempos = ReadTempos(SmfReader.Read(SngConverter.ToSmf(sng)));
+        Assert.Contains((Ticks: 128L, Microseconds: 1_000_000), tempos);
+        Assert.Contains((Ticks: 619L, Microseconds: 1_016_000), tempos);
+        Assert.Contains((Ticks: 631L, Microseconds: 1_052_000), tempos);
+        Assert.Contains((Ticks: 643L, Microseconds: 1_090_000), tempos);
+    }
+
     [Theory]
     [InlineData("3.00", 10, 0x79, 92)]
     [InlineData("4.00", 16, 0x91, 116)]
@@ -78,12 +110,11 @@ public sealed class SngConverterTests
             })
             .ToArray();
 
-    private static byte[] CreateMinimalSong(string version, int parts)
+    private static byte[] CreateMinimalSong(string version, int parts, int conductorSize = 120)
     {
         const int table = 0x46;
         int tableEnd = table + 4 * (parts + 1);
         int firstBlock = tableEnd + 94;
-        const int conductorSize = 120;
         const int partEntrySize = 110;
         const int partBlockSize = partEntrySize + 81;
         byte[] data = new byte[firstBlock + conductorSize + parts * partBlockSize];
