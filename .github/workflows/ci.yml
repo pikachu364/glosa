@@ -19,7 +19,24 @@ env:
   AVALONIA_TELEMETRY_OPTOUT: 1
 
 jobs:
+  time-window:
+    runs-on: ubuntu-latest
+    outputs:
+      run_macos: ${{ steps.window.outputs.run_macos }}
+    steps:
+      - name: Check Japan time
+        id: window
+        run: |
+          hour=$(TZ=Asia/Tokyo date +%H)
+          if [ "$hour" -ge 9 ] && [ "$hour" -lt 20 ]; then
+            echo "run_macos=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_macos=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: time-window
+    if: ${{ needs.time-window.outputs.run_macos == 'true' || matrix.os != 'macos-latest' }}
     strategy:
       fail-fast: false
       matrix:
