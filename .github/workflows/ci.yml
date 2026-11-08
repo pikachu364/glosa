@@ -4,6 +4,8 @@ name: CI
 on:
   push:
   pull_request:
+  schedule:
+    - cron: '0 0 * * *' # 09:00 JST (00:00 UTC)
 
 # A newer push to the same branch makes the run for the older one pointless.
 concurrency:
