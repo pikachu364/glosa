@@ -496,11 +496,25 @@ public class SequencerTests
         // port. Split between A and B, taking turns, each port's cable carries half of them.
         // Every wait overshoots a little on a busy machine, so the two are compared with each
         // other rather than with the clock.
-        double onOne = Span(PlayCapped(ports: 1), 7);
-        double onTwo = Span(PlayCapped(ports: 2), 7);
+        // Wall-clock measurements can have a single scheduling outlier on CI. Take the
+        // median of three independent runs so one delayed thread does not decide the test.
+        double onOne = MedianSpan(ports: 1);
+        double onTwo = MedianSpan(ports: 2);
 
         Assert.True(onOne >= 45, $"sixty controllers on one port took {onOne:F0} ms");
         Assert.True(onTwo < onOne * 0.75, $"two ports took {onTwo:F0} ms against {onOne:F0} on one");
+
+        static double MedianSpan(int ports)
+        {
+            double[] spans =
+            [
+                Span(PlayCapped(ports), 7),
+                Span(PlayCapped(ports), 7),
+                Span(PlayCapped(ports), 7),
+            ];
+            Array.Sort(spans);
+            return spans[1];
+        }
 
         static RecordingSink PlayCapped(int ports)
         {
