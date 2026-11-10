@@ -354,7 +354,7 @@ Fix or delete define.override.yaml, and restart Glosa.</value>
     <value>Playlists</value>
   </data>
   <data name="FileTypeSongs" xml:space="preserve">
-    <value>MIDI, SNG and archive files</value>
+    <value>MIDI, and archive files</value>
   </data>
   <data name="FilterAll" xml:space="preserve">
     <value>All Songs</value>

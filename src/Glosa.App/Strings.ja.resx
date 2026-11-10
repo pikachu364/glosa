@@ -351,7 +351,7 @@ define.override.yaml を修正するか削除して Glosa を起動し直して�
     <value>プレイリスト</value>
   </data>
   <data name="FileTypeSongs" xml:space="preserve">
-    <value>MIDI・SNG・圧縮ファイル</value>
+    <value>MIDI・圧縮ファイル</value>
   </data>
   <data name="FilterAll" xml:space="preserve">
     <value>すべて</value>
