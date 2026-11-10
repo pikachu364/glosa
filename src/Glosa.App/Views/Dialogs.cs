@@ -10,7 +10,7 @@ internal static class Dialogs
     internal static readonly FilePickerFileType MidiFiles =
         new(Strings.FileTypeSongs)
         {
-            Patterns = AnyCase("*.mid", "*.midi", "*.rmi", "*.rcp", "*.r36", "*.g18", "*.g36",
+            Patterns = AnyCase("*.mid", "*.midi", "*.rmi", "*.rcp", "*.r36", "*.g18", "*.g36", "*.sng",
                                "*.lzh", "*.lha", "*.zip"),
         };
 
