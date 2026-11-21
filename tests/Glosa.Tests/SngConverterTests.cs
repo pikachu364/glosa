@@ -39,13 +39,16 @@ public sealed class SngConverterTests
 
         byte[] smf = SngConverter.ToSmf(sng, new SngConversionOptions
         {
-            // SNG2S /U PCM routing uses MIDI channel 16 for this part.
+            // MIDI channel 16 (zero-based channel 15).
             PartMidiChannels = new Dictionary<int, int> { [1] = 15 }
         });
 
         MidiSequence sequence = SmfReader.Read(smf);
-        var noteOn = Assert.Single(sequence.Events.Where(e => e.Kind == MidiEventKind.NoteOn));
-        Assert.Equal(15, sequence.GetData(noteOn)[0] & 0x0F);
+        var noteOn = Assert.Single(sequence.Events.Where(e =>
+            e.Kind == MidiEventKind.Channel &&
+            (e.Status & 0xF0) == 0x90 &&
+            e.Data2 != 0));
+        Assert.Equal(15, noteOn.Channel);
     }
 
     [Fact]
