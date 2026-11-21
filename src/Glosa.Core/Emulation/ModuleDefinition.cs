@@ -339,6 +339,7 @@ public sealed class ModuleDefinition
             for (int i = 0; i < best; i++)
             {
                 if (!_dataRules[i].Pattern.Matches(message)) continue;
+                if (_dataRules[i].RequiresValidRolandDt1 && !IsValidRolandDt1(message)) continue;
                 best = i;
                 matched = Hex(message);
                 break;
@@ -432,7 +433,10 @@ public sealed class ModuleDefinition
 
     private sealed record Rule(string Module, Regex Pattern, bool Fallback);
 
-    private sealed record DataRule(string Module, ExclusivePattern Pattern);
+    private sealed record DataRule(
+        string Module,
+        ExclusivePattern Pattern,
+        bool RequiresValidRolandDt1 = false);
 
     /// <summary>
     /// What a song's own messages say, the rule listed first winning
@@ -448,9 +452,37 @@ public sealed class ModuleDefinition
         new("XG", ExclusivePattern.Parse("F0 43 1? 4C")),
         // GS parameter set (GS Reset, the SC-88's mode setting and others)
         new("GS", ExclusivePattern.Parse("F0 41 1? 42 12")),
-        // MT-32 / CM family (LA synthesis) parameter set
-        new("CM-64", ExclusivePattern.Parse("F0 41 1? 16 12")),
+        // MT-32 / CM family (LA synthesis) parameter set. Require a complete Roland DT1
+        // frame and valid checksum: the five-byte prefix alone is not enough to identify it.
+        new("CM-64", ExclusivePattern.Parse("F0 41 1? 16 12"), RequiresValidRolandDt1: true),
     ];
+
+    /// <summary>
+    /// Checks the framing and checksum of a Roland DT1 message for the MT-32/CM family.
+    /// The checksum covers the three address bytes, data bytes, and checksum byte; their
+    /// seven-bit sum must be zero. Device ID may vary within Roland's 0x10-0x1F range.
+    /// </summary>
+    private static bool IsValidRolandDt1(ReadOnlySpan<byte> message)
+    {
+        // F0 41 1x 16 12 aa bb cc data... checksum F7
+        if (message.Length < 11 ||
+            message[0] != 0xF0 ||
+            message[1] != 0x41 ||
+            (message[2] & 0xF0) != 0x10 ||
+            message[3] != 0x16 ||
+            message[4] != 0x12 ||
+            message[^1] != 0xF7)
+            return false;
+
+        for (int i = 1; i < message.Length - 1; i++)
+            if (message[i] > 0x7F) return false;
+
+        int sum = 0;
+        for (int i = 5; i < message.Length - 1; i++)
+            sum += message[i];
+
+        return (sum & 0x7F) == 0;
+    }
 
     /// <summary>
     /// The start of an exclusive message, as hex bytes; <c>?</c> stands for any one digit.
