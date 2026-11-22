@@ -70,7 +70,7 @@ public static class Cm64SystemAreaSysEx
         foreach (byte value in values) sum += value;
         byte checksum = (byte)((128 - (sum & 0x7F)) & 0x7F);
 
-        byte[] message = new byte[9 + values.Length];
+        byte[] message = new byte[10 + values.Length];
         message[0] = 0xF0;
         message[1] = RolandId;
         message[2] = DeviceId;
