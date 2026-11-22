@@ -427,6 +427,24 @@ public class ModuleDataTests
         => Assert.Equal("CM-64", Define().ScanData(Song(0, Mt32))?.Module);
 
     [Fact]
+    public void AnMt32MessageWithAnInvalidChecksumIsNotTheCmFamily()
+    {
+        byte[] invalid = [.. Mt32];
+        invalid[^2] = 0x01;
+
+        Assert.Null(Define().ScanData(Song(0, invalid)));
+    }
+
+    [Fact]
+    public void AnMt32MessageWithAHighBitDataByteIsNotTheCmFamily()
+    {
+        byte[] invalid = [.. Mt32];
+        invalid[5] = 0x80;
+
+        Assert.Null(Define().ScanData(Song(0, invalid)));
+    }
+
+    [Fact]
     public void TheRuleListedFirstWinsWhereverItsMessageIs()
         => Assert.Equal("XG", Define().ScanData(Song(0, GsReset, Mt32, XgOn))?.Module);
 

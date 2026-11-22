@@ -95,6 +95,7 @@ public class MoveToLibs : Microsoft.Build.Utilities.Task
     private static string AddLocalPaths(string json, string libs, out int moved)
     {
         var inserts = new List<KeyValuePair<int, string>>();
+        var replacements = new List<(int Start, int Length, string Text)>();
         // Per open object: its key path, the key last read in it, where a localPath would go.
         var paths = new Stack<List<string>>();
         var keys = new Stack<string>();
@@ -106,12 +107,27 @@ public class MoveToLibs : Microsoft.Build.Utilities.Task
             char c = json[i];
             if (c == '"')
             {
+                int valueStart = i + 1;
                 var text = new StringBuilder();
                 for (i++; json[i] != '"'; i++)
                 {
                     if (json[i] == '\\') i++;
                     text.Append(json[i]);
                 }
+
+                // .NET 10 may already emit localPath entries. Rewrite those paths too:
+                // the asset has moved under libs/, so the original flat path is no longer valid.
+                if (keys.Count > 0 && keys.Peek() == "localPath" && paths.Count > 0)
+                {
+                    string published = PublishedPath(paths.Peek());
+                    if (published != null && File.Exists(Path.Combine(libs, published)))
+                    {
+                        string desired = "libs/" + published;
+                        if (text.ToString() != desired)
+                            replacements.Add((valueStart, i - valueStart, desired));
+                    }
+                }
+
                 lastString = text.ToString();
             }
             else if (c == ':' && keys.Count > 0)
@@ -120,7 +136,7 @@ public class MoveToLibs : Microsoft.Build.Utilities.Task
                 keys.Push(lastString);
                 if (lastString == "localPath" && pending.Peek() != null)
                 {
-                    // Already given one, on an earlier publish into this folder.
+                    // An existing localPath will be rewritten when its value is read.
                     pending.Pop();
                     pending.Push(null);
                 }
@@ -150,10 +166,27 @@ public class MoveToLibs : Microsoft.Build.Utilities.Task
         }
 
         var result = new StringBuilder(json);
-        foreach (var insert in inserts.OrderByDescending(p => p.Key))
-            result.Insert(insert.Key, insert.Value);
-        moved = inserts.Count;
+        // Apply edits from the end so offsets from the original JSON remain valid.
+        var edits = new List<(int Start, int Length, string Text)>();
+        edits.AddRange(replacements);
+        foreach (var insert in inserts)
+            edits.Add((insert.Key, 0, insert.Value));
+        foreach (var edit in edits.OrderByDescending(e => e.Start))
+            result.Remove(edit.Start, edit.Length).Insert(edit.Start, edit.Text);
+
+        moved = inserts.Count + replacements.Count;
         return result.ToString();
+    }
+
+    private static string PublishedPath(List<string> path)
+    {
+        string[] kinds = { "runtime", "native", "resources", "runtimeTargets" };
+        if (path.Count != 5 || path[0] != "targets" || !kinds.Contains(path[3])) return null;
+
+        string[] parts = path[4].Split('/');
+        return path[3] == "resources" && parts.Length >= 2
+            ? parts[parts.Length - 2] + "/" + parts[parts.Length - 1]
+            : path[3] == "runtimeTargets" ? path[4] : parts[parts.Length - 1];
     }
 
     private static KeyValuePair<int, string>? Insert(string json, int brace, List<string> path, string libs)

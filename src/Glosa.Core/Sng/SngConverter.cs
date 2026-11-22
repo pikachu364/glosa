@@ -21,9 +21,18 @@ public static class SngConverter
         => data.Length >= 32 && data.StartsWith(Signature);
 
     public static byte[] ToSmf(ReadOnlySpan<byte> data)
+        => ToSmf(data, new SngConversionOptions());
+
+    /// <summary>
+    /// Converts an SNG file to SMF, optionally overriding the MIDI channel for
+    /// individual one-based SNG part numbers.
+    /// </summary>
+    public static byte[] ToSmf(ReadOnlySpan<byte> data, SngConversionOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
         if (!IsSng(data)) throw new InvalidDataException("Not a Ballade SNG file.");
         if (!TryLayout(data, out Layout layout)) throw new InvalidDataException("Invalid or unsupported Ballade SNG layout.");
+        options.Validate(layout.Parts);
 
         int barLength = 192, numerator = 4, denominator = 4;
         int conductorStart = layout.Starts[0];
@@ -86,7 +95,7 @@ public static class SngConverter
             int used = U16(data, start + (layout.IsLegacyV1 ? 115 : 112));
             int controllerBytes = U16(data, start + (layout.IsLegacyV1 ? 117 : 114));
             int stream = start + streamOffset, controllers = stream + used;
-            int channel = part - 1, module = data[start + 94];
+            int channel = options.GetMidiChannel(part, part - 1), module = data[start + 94];
             int shift = layout.IsLegacyV1 || module is 2 or 5 ? 0 : transpose;
             int nameOffset = layout.IsLegacyV1 ? start + 69 : start + 81;
             int nameLength = 0;

@@ -24,6 +24,46 @@ public sealed class SngConverterTests
 
 
     [Fact]
+    public void AllowsExplicitMidiChannelOverridesPerSngPart()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+        int firstPart = 0x46 + 4 * 11 + 94 + 120;
+        int stream = firstPart + 158;
+
+        // One note in SNG part 1, followed by the stream terminator.
+        sng[stream] = 60;
+        sng[stream + 1] = 24;
+        sng[stream + 2] = 24;
+        sng[stream + 4] = 100;
+        sng[stream + 8] = 0xFC;
+
+        byte[] smf = SngConverter.ToSmf(sng, new SngConversionOptions
+        {
+            // MIDI channel 16 (zero-based channel 15).
+            PartMidiChannels = new Dictionary<int, int> { [1] = 15 }
+        });
+
+        MidiSequence sequence = SmfReader.Read(smf);
+        var noteOn = Assert.Single(sequence.Events.Where(e =>
+            e.Kind == MidiEventKind.Channel &&
+            (e.Status & 0xF0) == 0x90 &&
+            e.Data2 != 0));
+        Assert.Equal(15, noteOn.Channel);
+    }
+
+    [Fact]
+    public void RejectsInvalidMidiChannelOverrides()
+    {
+        byte[] sng = CreateMinimalSong("3.00", 10);
+        var options = new SngConversionOptions
+        {
+            PartMidiChannels = new Dictionary<int, int> { [1] = 16 }
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => SngConverter.ToSmf(sng, options));
+    }
+
+    [Fact]
     public void ConvertsVersionTwoInitialTempoUsingItsBaseTempo()
     {
         byte[] sng = CreateMinimalSong("2.00", 10);
