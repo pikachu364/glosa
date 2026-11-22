@@ -92,4 +92,12 @@ public sealed class Cm64SystemAreaSysExTests
             Assert.Equal(0, message.Skip(5).Take(message.Length - 7).Sum(value => value) + message[^2] & 0x7F);
         }
     }
+    [Fact]
+    public void BuildsAValidFrameForAnEmptyDataBlock()
+    {
+        Assert.Equal(
+            new byte[] { 0xF0, 0x41, 0x10, 0x16, 0x12, 0x10, 0x00, 0x00, 0x70, 0xF7 },
+            Cm64SystemAreaSysEx.CreateDt1(0x10, 0x00, 0x00));
+    }
+
 }
